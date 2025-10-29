@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Pastikan nama package sesuai dengan pubspec.yaml Anda
-import 'pages/MainScreen.dart';
+import 'pages/main_screen.dart';
 
 void main() {
   runApp(const MyApp());

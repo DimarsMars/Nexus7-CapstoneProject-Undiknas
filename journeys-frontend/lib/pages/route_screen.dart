@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 
-class HistoryScreen extends StatefulWidget {
-  const HistoryScreen({super.key});
+class RouteScreen extends StatefulWidget {
+  const RouteScreen({super.key});
 
   @override
-  State<HistoryScreen> createState() => _MyHistoryScreen();
+  State<RouteScreen> createState() => _MyRouteScreen();
 }
 
-class _MyHistoryScreen extends State<HistoryScreen> {
+class _MyRouteScreen extends State<RouteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[200],
       appBar: AppBar(
-        title: const Text('History'),
+        title: const Text('Forge Your Route'),
         backgroundColor: Colors.white,
         titleTextStyle: TextStyle(
           color: Colors.black,
@@ -23,7 +24,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
       ),
 
       body: const Center(
-        child: Text('History Screen'),
+        child: Text('Route Screen'),
       ),
     );
   }

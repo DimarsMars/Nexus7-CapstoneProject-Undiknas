@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:journeys/pages/HistoryScreen.dart';
-import 'RouteScreen.dart';
-import 'ProfileScreen.dart';
-import 'HomeScreen.dart';
+import 'package:journeys/pages/history_screen.dart';
+import 'route_screen.dart';
+import 'profile_screen.dart';
+import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
