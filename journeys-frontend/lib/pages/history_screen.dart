@@ -11,7 +11,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Color(0xFFe9ebee),
       appBar: AppBar(
         title: const Text('History'),
         backgroundColor: Colors.white,
@@ -22,9 +22,8 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ),
         elevation: 0,
       ),
-
       body: const Center(
-        child: Text('History Screen'),
+        child: Text('History'),
       ),
     );
   }
