@@ -22,7 +22,6 @@ class _MainScreenState extends State<MainScreen> {
     const ProfileScreen(),
   ];
 
-  // Fungsi untuk mengubah halaman saat tab ditekan
   void _onTabTapped(int index) {
     setState(() {
       _currentIndex = index;
@@ -37,9 +36,9 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
-        elevation: 0, // Tanpa bayangan
-        showSelectedLabels: false, // Sembunyikan label
-        showUnselectedLabels: false, // Sembunyikan label
+        elevation: 0,
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
 
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
@@ -51,7 +50,6 @@ class _MainScreenState extends State<MainScreen> {
               width: 24,
               height: 24,
             ),
-            // Ikon saat AKTIF
             activeIcon: Image.asset(
               'assets/icons/home_active.png',
               width: 24,

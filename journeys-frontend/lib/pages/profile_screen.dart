@@ -160,7 +160,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
         title,
         style: const TextStyle(
           fontSize: 16,
-          color: Color(0xFF1C314A), // Gunakan warna yang konsisten
+          color: Color(0xFF1C314A),
           fontWeight: FontWeight.normal,
         ),
       ),
