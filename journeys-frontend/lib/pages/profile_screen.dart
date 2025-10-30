@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -99,7 +100,12 @@ class _MyProfileScreen extends State<ProfileScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal:90.0),
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             elevation: 5,
                             backgroundColor: Color(0xFF1C314A),
