@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Pastikan nama file ini 'history_screen.dart'
-// dan nama Class-nya 'HistoryScreen'
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -10,23 +8,21 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _MyHistoryScreen extends State<HistoryScreen> {
-  // --- Warna Konsisten (dari profile_screen.dart) ---
+
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
   static const Color _lightGreyText = Colors.black;
-  // Warna latar belakang dari profile_screen.dart
+
   static const Color _backgroundColor = Color(0xFFe9ebee);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // 1. Latar belakang disamakan dengan profile_screen.dart
       backgroundColor: _backgroundColor,
 
-      // 2. Menambahkan AppBar seperti di desain
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0, // Hapus bayangan AppBar
+        elevation: 0,
         title: const Text('History'),
         titleTextStyle: const TextStyle(
           color: Colors.black,
@@ -35,20 +31,16 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ),
       ),
 
-      // 3. Gunakan SingleChildScrollView agar bisa di-scroll
+
       body: SingleChildScrollView(
-        // 4. Padding utama (MARGIN LUAR) untuk seluruh halaman,
-        //    disamakan dengan style profile_screen.dart
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
-          
-          // --- INI CONTAINER PUTIH UTAMA YANG ANDA MAKSUD ---
           child: Container(
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(4.0), // Style dari profile_screen
-              boxShadow: [ // Style dari profile_screen
+              borderRadius: BorderRadius.circular(4.0),
+              boxShadow: [
                 BoxShadow(
                   color: Colors.black.withAlpha(60),
                   spreadRadius: 1,
@@ -58,7 +50,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
               ],
             ),
             
-            // --- PADDING DI DALAM CONTAINER PUTIH ---
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -88,7 +79,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                     description:
                         'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
                     location: 'Bedugul - Gianyar',
-                    icon: Icons.bookmark, // Ikon Bookmark
+                    icon: Icons.bookmark,
                   ),
 
                   const SizedBox(height: 32),
@@ -192,9 +183,8 @@ class _MyHistoryScreen extends State<HistoryScreen> {
               size: 40,
             ),
           ),
-          // ------------------------------------------
+
           const SizedBox(width: 12),
-          // Kolom Teks (Expanded agar mengisi sisa ruang)
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,7 +247,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        // Style dari profile_screen.dart
         borderRadius: BorderRadius.circular(4.0),
         boxShadow: [
           BoxShadow(
@@ -274,7 +263,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: Colors.grey[300], // Warna placeholder
+              color: Colors.grey[300],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(

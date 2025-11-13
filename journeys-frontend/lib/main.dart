@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// Pastikan nama package sesuai dengan pubspec.yaml Anda
 import 'pages/main_screen.dart';
+import 'pages/other_profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,20 +13,19 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Journeys',
-      debugShowCheckedModeBanner: false, // Menghilangkan banner debug
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // Tema dasar aplikasi Anda
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
         useMaterial3: true,
-        // Atur tema AppBar agar konsisten
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
-          elevation: 0, // Tanpa bayangan
-          foregroundColor: Colors.black87, // Warna teks dan ikon di AppBar
+          elevation: 0,
+          foregroundColor: Colors.black87,
         ),
       ),
-      // Langsung arahkan ke MainScreen sebagai halaman utama
-      home: const MainScreen(),
+      home: 
+      MainScreen(),
+      // OtherProfileScreen(),
     );
   }
 }

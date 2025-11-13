@@ -8,7 +8,6 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _MyEditProfileScreen extends State<EditProfileScreen> {
-  // --- Warna Konsisten (dari desain) ---
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _lightGreyText = Color(0xFF6C7B8A);
   static const Color _borderColor = Color(0xFFCBD2D9);
@@ -20,11 +19,9 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            // 4. Padding luar (margin) dari kode Anda
             padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 16.0),
             child: Container(
               width: double.infinity,
-              // 5. Dekorasi kartu putih (shadow, border radius) dari kode Anda
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(4.0),
@@ -38,19 +35,15 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                 ],
               ),
 
-              // 6. Padding di dalam kartu putih
+              // Padding di dalam kartu putih
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
-                  // 7. Rata kiri untuk label, rata tengah untuk sisanya
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     
-                    // --- Avatar (Sesuai permintaan Anda, kembali ke versi sederhana) ---
                     const CircleAvatar(
                       radius: 60,
-                      // Anda bisa tambahkan gambar di sini
-                      // backgroundImage: NetworkImage('...'),
                     ),
                     const SizedBox(height: 30),
 
@@ -114,7 +107,7 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                     // --- Status ---
                     _buildLabel('Status'),
                     const SizedBox(height: 8),
-                    _buildStatusField(), // Field khusus untuk Status
+                    _buildStatusField(),
                     const SizedBox(height: 40),
 
                     // --- Tombol Accept & Cancel ---
