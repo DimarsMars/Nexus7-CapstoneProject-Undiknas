@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pages/main_screen.dart';
 import 'pages/other_profile_screen.dart';
 
+
 void main() {
   runApp(const MyApp());
 }
@@ -24,8 +25,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: 
-      // MainScreen(),
-      OtherProfileScreen(),
+        MainScreen(),
+        // OtherProfileScreen(),
     );
   }
 }
