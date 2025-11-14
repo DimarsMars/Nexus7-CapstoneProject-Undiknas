@@ -24,8 +24,8 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: 
-      MainScreen(),
-      // OtherProfileScreen(),
+      // MainScreen(),
+      OtherProfileScreen(),
     );
   }
 }

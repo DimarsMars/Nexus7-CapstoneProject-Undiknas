@@ -86,7 +86,128 @@ class _OtherProfileScreenState extends State<OtherProfileScreen> {
                           ),
                       ),
 
-                      SizedBox(height: 40),
+                      SizedBox(height: 30),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+
+                          Column(
+                            children: [
+                              Text(
+                                'Followers',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.normal,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              ),
+                              Text(
+                                '100',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              )
+                            ],
+                          ),
+
+                          Column(
+                            children: [
+                              Text(
+                                'Reviews',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.normal,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              ),
+                              Text(
+                                '20',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              )
+                            ],
+                          ),
+
+                          Column(
+                            children: [
+                              Text(
+                                'Route\'s',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.normal,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              ),
+                              Text(
+                                '4',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF1C314A),
+                                ),
+                              )
+                            ],
+                          )
+                        ],
+                      ),
+
+                      SizedBox(height:20),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                        
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Color(0xFF1C314A),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Follow'
+                                ),
+                              ), 
+                            ),
+                            
+                            SizedBox(width:15),
+                        
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                        
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                ),
+                                child: Text(
+                                  'Report'
+                                ),
+                              ), 
+                            ),
+                          ],
+                        ),
+                      )
                     ]
                   ),
                 )
