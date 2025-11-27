@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'pages/main_screen.dart';
-import 'pages/other_profile_screen.dart';
 
 
 void main() {
