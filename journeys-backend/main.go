@@ -8,7 +8,12 @@ import (
 
 func main() {
 	config.ConnectDB()
+	config.InitFirebase()
+
 	r := routes.SetupRouter()
-	fmt.Println("🚀 BE Journeys berjalan di http://localhost:8080 🚀")
+
+	routes.AuthRoutes(r)
+
+	fmt.Println("Server running on :8080")
 	r.Run(":8080")
 }

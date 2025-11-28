@@ -18,7 +18,6 @@ func ConnectDB() {
 		log.Fatal("Error loading .env file")
 	}
 
-	// PostgreSQL DSN (FORMAT RESMI)
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Makassar",
 		os.Getenv("DB_HOST"),
