@@ -13,6 +13,7 @@ func main() {
 	r := routes.SetupRouter()
 
 	routes.AuthRoutes(r)
+	routes.UserRoutes(r)
 
 	fmt.Println("Server running on :8080")
 	r.Run(":8080")
