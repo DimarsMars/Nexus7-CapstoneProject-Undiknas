@@ -48,8 +48,23 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	profile := models.Profile{
+		UserID:      user.UserID,
+		Photo:       []byte{},
+		Location:    "",
+		BirthDate:   nil,
+		Description: "",
+		Languages:   "",
+		Status:      "",
+		Rank:        "Newbie",
+		Followers:   0,
+		Following:   0,
+	}
+	config.DB.Create(&profile)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Register success",
 		"user":    user,
+		"profile": profile,
 	})
 }
