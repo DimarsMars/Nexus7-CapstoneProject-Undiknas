@@ -6,7 +6,7 @@ function App() {
 
   return (
       <div className='w-full h-dvh'>
-        <Navbar/>
+        {/* <Navbar/> */}
 
         <LoginPage />
       </div>
