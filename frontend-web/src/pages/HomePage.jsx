@@ -1,8 +1,9 @@
 import CreatePlanSection from "../components/CreatePlanSection";
 import HeroSection from "../components/HeroSection";
+import PlansCategory from "../components/PlanCategorySection";
 import TripCard from "../components/TripCard"
 
-const HomePage = ({trips}) => {
+const HomePage = ({trips, categories}) => {
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-5">
 
@@ -35,6 +36,7 @@ const HomePage = ({trips}) => {
             </div>
 
             <CreatePlanSection />
+            <PlansCategory categories={categories}/>
 
         </div>
     );

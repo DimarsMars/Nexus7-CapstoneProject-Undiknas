@@ -34,6 +34,13 @@ const trips = [
     },
   ];
 
+const categories = [
+    { id: 1, title: "Fields", image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=1000&auto=format&fit=crop" },
+    { id: 2, title: "Beach", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1000&auto=format&fit=crop" },
+    { id: 3, title: "Mini Resto", image: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1000&auto=format&fit=crop" },
+    { id: 4, title: "Store's", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000&auto=format&fit=crop" },
+];
+
 function App() {
 
   return (
@@ -44,7 +51,7 @@ function App() {
           <Route path='/login' element={<LoginPage />} />
           <Route path='/register' element={<RegisterPage />} />
 
-          <Route path='/homepage' element={<HomePage trips={trips}/>} />
+          <Route path='/homepage' element={<HomePage trips={trips} categories={categories}/>} />
 
         </Routes>
 
