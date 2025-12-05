@@ -1,0 +1,37 @@
+import HeroSection from "../components/HeroSection";
+import TripCard from "../components/TripCard"
+
+const HomePage = ({trips}) => {
+    return (
+        <div className="min-h-screen bg-gray-100 py-5 px-5">
+            <HeroSection trips={trips} />
+            <div className="max-w-7xl mx-auto">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                {trips.map((trip, index) => (
+                    <TripCard
+                    key={trip.id}
+                    title={trip.title}
+                    author={trip.author}
+                    rating={trip.rating}
+                    image={trip.image}
+                    className={
+                        index === 0
+                        ? "md:col-span-2 h-64 md:h-80" // Kartu Besar
+                        : "h-64"                       // Kartu Kecil
+                    }
+                    />
+                ))}
+
+                </div>
+
+                <div className="text-right mt-4">
+                    <a href="#" className="text-gray-600 text-sm font-semibold hover:underline">See More</a>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default HomePage;
