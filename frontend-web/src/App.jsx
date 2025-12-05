@@ -41,6 +41,14 @@ const categories = [
     { id: 4, title: "Store's", image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1000&auto=format&fit=crop" },
 ];
 
+const travellers = [
+    { id: 1, name: "Jackson", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop" },
+    { id: 2, name: "Freddy", image: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?q=80&w=1000&auto=format&fit=crop" },
+    { id: 3, name: "Bob", image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop" },
+    { id: 4, name: "Clara", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop" },
+    { id: 5, name: "Jhon", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop" },
+];
+
 function App() {
 
   return (
@@ -51,7 +59,7 @@ function App() {
           <Route path='/login' element={<LoginPage />} />
           <Route path='/register' element={<RegisterPage />} />
 
-          <Route path='/homepage' element={<HomePage trips={trips} categories={categories}/>} />
+          <Route path='/homepage' element={<HomePage trips={trips} categories={categories} travellers={travellers}/>} />
 
         </Routes>
 

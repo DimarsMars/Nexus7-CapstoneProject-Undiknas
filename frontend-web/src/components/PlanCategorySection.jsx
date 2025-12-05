@@ -24,8 +24,8 @@ const PlansCategory = ({categories}) => {
           ))}
         </div>
 
-        <div className="text-right mt-8">
-             <a href="#" className="text-gray-900 text-sm font-semibold hover:text-gray-600 transition hover:underline">
+        <div className="text-right mt-5">
+             <a href="#" className="text-gray-600 text-sm font-semibold hover:text-gray-600 transition hover:underline">
                 See More
              </a>
         </div>
