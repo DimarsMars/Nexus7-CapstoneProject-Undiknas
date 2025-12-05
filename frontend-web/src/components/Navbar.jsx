@@ -4,7 +4,7 @@ import iconSearch from '../assets/icons/iconSearch.png'
 
 const Navbar = () => {
     return (
-        <header className='sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-sm transition-all duration-300'>
+        <header className='fixed left-0 w-full top-0 z-70 bg-white/80 backdrop-blur-md shadow-md transition-all duration-300'>
             <nav className='max-w-7xl mx-auto px-5 md:px-5 py-4 flex justify-between items-center'>
                 <Link smooth to="/#top">
                     <img src={logoJourneys} alt="Journeys Logo" className='h-8 md:h-10 w-auto hover:opacity-80 transition' />
