@@ -19,18 +19,18 @@ const Navbar = () => {
                         <img src={iconSearch} alt="Search" className='h-4 w-4 opacity-60'/>
                     </button>
                 </div>
-                
+
                 <div className='hidden md:flex flex-row gap-8 text-gray-500 font-medium text-md'>
-                    <Link smooth to="/homepage" className="hover:text-black hover:font-bold transition-all duration-200">
+                    <Link smooth to="/homepage" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         Home
                     </Link>
-                    <Link smooth to="/homepage#explore" className="hover:text-black hover:font-bold transition-all duration-200">
+                    <Link smooth to="/homepage#explore" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         Explore
                     </Link>
-                    <Link smooth to="/homepage#history" className="hover:text-black hover:font-bold transition-all duration-200">
+                    <Link smooth to="/homepage#history" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         History
                     </Link>
-                    <Link smooth to="/homepage#profile" className="hover:text-black hover:font-bold transition-all duration-200">
+                    <Link smooth to="/homepage#profile" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         Profile
                     </Link>
                 </div>
