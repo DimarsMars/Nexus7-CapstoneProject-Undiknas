@@ -24,7 +24,7 @@ const Navbar = () => {
                     <Link smooth to="/homepage" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         Home
                     </Link>
-                    <Link smooth to="/homepage#explore" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
+                    <Link smooth to="/explore" className="hover:text-slate-700 hover:font-bold transition-all duration-200">
                         Explore
                     </Link>
                     <Link smooth to="/homepage#history" className="hover:text-slate-700 hover:font-bold transition-all duration-200">

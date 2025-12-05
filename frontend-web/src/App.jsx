@@ -4,6 +4,7 @@ import Footer from './pages/Footer'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
+import ExplorePage from './pages/ExplorePage'
 import { Routes, Route } from 'react-router-dom'
 
 // Data dummy untuk TripCard
@@ -28,8 +29,10 @@ const trips = [
       author: "Thomas A.",
       rating: 5,
       image: "https://balipalms.com/wp-content/uploads/2021/07/bali-jungle-villa_nearby-attractions-waterfall.jpg",
-      layout: "small",
     },
+    { id: 4, title: "City Night", author: "Sarah C.", rating: 5, image: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2000&auto=format&fit=crop" },
+    { id: 5, title: "Bali Temple", author: "Made W.", rating: 4, image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1000&auto=format&fit=crop" },
+    { id: 6, title: "Mountain View", author: "John D.", rating: 5, image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" },
   ];
 
 const categories = [
@@ -47,6 +50,12 @@ const travellers = [
     { id: 5, name: "Clara", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop" },
 ];
 
+const exploreTrips = [
+  { id: 1, title: "Grand Culture Trip", author: "Horas B.", rating: 4, image: "https://images.unsplash.com/photo-1517260739337-6799d2ff04fe?q=80&w=2000&auto=format&fit=crop" },
+  { id: 2, title: "Old Store", author: "Thomas A.", rating: 5, image: "https://images.unsplash.com/photo-1520939817895-060bdaf4de1e?q=80&w=1000&auto=format&fit=crop" },
+  { id: 3, title: "Forest Mist", author: "Thomas A.", rating: 5, image: "https://images.unsplash.com/photo-1448375240586-dfd8f3793371?q=80&w=1000&auto=format&fit=crop" },
+];
+
 function App() {
 
   return (
@@ -58,6 +67,7 @@ function App() {
           <Route path='/register' element={<RegisterPage />} />
 
           <Route path='/homepage' element={<HomePage trips={trips} categories={categories} travellers={travellers}/>} />
+          <Route path='/explore' element={<ExplorePage trips={trips}/>} />
 
         </Routes>
 

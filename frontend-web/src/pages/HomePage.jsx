@@ -14,7 +14,7 @@ const HomePage = ({trips, categories, travellers}) => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
-                {trips.map((trip, index) => (
+                {trips && trips.slice(0, 3).map((trip, index) => (
                     <TripCard
                     key={trip.id}
                     title={trip.title}
