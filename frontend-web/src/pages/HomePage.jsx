@@ -1,11 +1,14 @@
+import CreatePlanSection from "../components/CreatePlanSection";
 import HeroSection from "../components/HeroSection";
 import TripCard from "../components/TripCard"
 
 const HomePage = ({trips}) => {
     return (
-        <div className="min-h-screen bg-gray-100 py-5 px-5">
+        <div className="min-h-screen bg-gray-100 py-10 px-5">
+
             <HeroSection trips={trips} />
-            <div className="max-w-7xl mx-auto">
+
+            <div className="max-w-7xl mx-auto pb-25">
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 
@@ -30,6 +33,9 @@ const HomePage = ({trips}) => {
                     <a href="#" className="text-gray-600 text-sm font-semibold hover:underline">See More</a>
                 </div>
             </div>
+
+            <CreatePlanSection />
+
         </div>
     );
 };
