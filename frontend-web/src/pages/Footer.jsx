@@ -22,30 +22,30 @@ const Footer = () => {
                     
                     {/* Kolom 1 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-400 transition">Home</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Create your plan</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Categories</Link>
+                        <Link to="/homepage" className="hover:text-blue-900 transition">Home</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Create your plan</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Categories</Link>
                     </div>
 
                     {/* Kolom 2 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-400 transition">Explore</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Culture</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Eatery</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Health</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Craft's</Link>
+                        <Link to="/explore" className="hover:text-blue-900 transition">Explore</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Culture</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Eatery</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Health</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Craft's</Link>
                     </div>
 
                     {/* Kolom 3 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-400 transition">History</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Past Trip</Link>
-                        <Link to="" className="hover:text-blue-400 transition">Favorite</Link>
+                        <Link to="" className="hover:text-blue-900 transition">History</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Past Trip</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Favorite</Link>
                     </div>
 
                     {/* Kolom 4 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-400 transition">Profile</Link>
+                        <Link to="" className="hover:text-blue-900 transition">Profile</Link>
                     </div>
 
                 </div>

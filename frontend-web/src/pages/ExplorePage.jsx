@@ -28,7 +28,7 @@ const ExplorePage = ({ trips }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-5">
+    <div className="min-h-screen bg-gray-100 py-10 pt-30 px-5">
       <div className="max-w-7xl mx-auto">
         
         <div className="bg-white rounded-xl shadow-sm p-2 mb-10 flex justify-between md:justify-around items-center overflow-x-auto">

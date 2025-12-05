@@ -16,7 +16,7 @@ const TravellerSection = ({ travellers }) => {
                             className="w-full h-full object-cover"
                         />
                     </div>
-                    <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                    <h3 className="mt-4 text-lg font-medium text-gray-900 group-hover:text-slate-800 transition-colors">
                         {person.name}
                     </h3>
                 </div>

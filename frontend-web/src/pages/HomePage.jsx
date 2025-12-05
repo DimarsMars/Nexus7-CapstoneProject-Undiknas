@@ -6,7 +6,7 @@ import TripCard from "../components/TripCard"
 
 const HomePage = ({trips, categories, travellers}) => {
     return (
-        <div className="min-h-screen bg-gray-100 py-10 px-5">
+        <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
 
             <HeroSection trips={trips} />
 
