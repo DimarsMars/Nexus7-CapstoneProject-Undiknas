@@ -10,7 +10,7 @@ const MyProfilePage = ({ user, trips, myReviews, othersReviews }) => {
       <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
         
         {/* BAGIAN ATAS: PROFIL & STATS */}
-        <div className="flex flex-col md:flex-row items-center px-30 justify-between md:items-start gap-6 md:gap-12">
+        <div className="flex flex-col md:flex-row items-center px-30 py-5 justify-between md:items-start gap-6 md:gap-12">
             <div className="shrink-0">
                 <div className="w-32 h-32 md:w-45 md:h-45 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg">
                     <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
