@@ -1,11 +1,13 @@
 import './App.css'
 import Navbar from './components/Navbar'
+import ScrollToTop from './components/ScrollToTop'
 import Footer from './pages/Footer'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
 import ExplorePage from './pages/ExplorePage'
 import { Routes, Route } from 'react-router-dom'
+import CategoriesPage from './pages/CategoriesPage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -50,10 +52,13 @@ const travellers = [
     { id: 5, name: "Clara", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop" },
 ];
 
-const exploreTrips = [
-  { id: 1, title: "Grand Culture Trip", author: "Horas B.", rating: 4, image: "https://images.unsplash.com/photo-1517260739337-6799d2ff04fe?q=80&w=2000&auto=format&fit=crop" },
-  { id: 2, title: "Old Store", author: "Thomas A.", rating: 5, image: "https://images.unsplash.com/photo-1520939817895-060bdaf4de1e?q=80&w=1000&auto=format&fit=crop" },
-  { id: 3, title: "Forest Mist", author: "Thomas A.", rating: 5, image: "https://images.unsplash.com/photo-1448375240586-dfd8f3793371?q=80&w=1000&auto=format&fit=crop" },
+const allCategories = [
+    { id: 1, title: "Waterfall", image: "https://sita.badungkab.go.id/images/post/air-terjun-nungnung-66c4302ac7678.webp" },
+    { id: 2, title: "Beaches", image: "https://www.water-sport-bali.com/wp-content/uploads/2024/05/Keindahan-Pantai-Nusa-Penida-Bali.webp" },
+    { id: 3, title: "Temple's & Shrine's", image: "https://kabardewata.com/uploads/image/web/pura-lempuyang.jpg" },
+    { id: 4, title: "Mountain & Hills", image: "https://ik.imagekit.io/tvlk/blog/2020/02/shutterstock_720312688gunungagung.jpg?tr=q-70,c-at_max,w-1000,h-600" },
+    { id: 5, title: "Villa's", image: "https://pramanaexperience.com/wp-content/uploads/2025/01/master.jpg" },
+    { id: 6, title: "Hidden Cafe", image: "https://cnc-magazine.oramiland.com/parenting/images/Wyah_Art__Creative_Space.width-800.format-webp.webp" },
 ];
 
 function App() {
@@ -61,13 +66,14 @@ function App() {
   return (
       <div className='w-full h-dvh'>
         <Navbar/>
-
+        <ScrollToTop />
         <Routes>
           <Route path='/login' element={<LoginPage />} />
           <Route path='/register' element={<RegisterPage />} />
 
           <Route path='/homepage' element={<HomePage trips={trips} categories={categories} travellers={travellers}/>} />
           <Route path='/explore' element={<ExplorePage trips={trips}/>} />
+          <Route path='/categories' element={<CategoriesPage allCategories={allCategories}/>} />
 
         </Routes>
 

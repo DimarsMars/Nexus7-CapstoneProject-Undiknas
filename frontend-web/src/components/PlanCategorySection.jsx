@@ -1,10 +1,10 @@
+import { Link } from 'react-router-dom';
+
 const PlansCategory = ({categories}) => {
   return (
     <section className="px-5 my-16">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center text-black mb-10">
-            Plan’s Category
-        </h2>
+        <h2 className="text-3xl font-bold text-center text-black mb-10">Plan’s Category</h2>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-6">
           {categories.map((item) => (
@@ -17,17 +17,15 @@ const PlansCategory = ({categories}) => {
                 />
               </div>
 
-              <p className="text-lg font-medium text-gray-800 group-hover:text-black">
-                {item.title}
-              </p>
+              <p className="text-md font-medium text-gray-800 group-hover:text-black">{item.title}</p>
             </div>
           ))}
         </div>
 
         <div className="text-right mt-5">
-             <a href="#" className="text-gray-600 text-sm font-semibold hover:text-gray-600 transition hover:underline">
+             <Link to="/categories" className="text-gray-600 text-sm font-semibold hover:text-gray-600 transition hover:underline">
                 See More
-             </a>
+             </Link>
         </div>
 
       </div>
