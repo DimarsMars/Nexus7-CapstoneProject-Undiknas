@@ -1,12 +1,14 @@
 import { FaCertificate } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 import TripCard from '../components/TripCard';
 import ReviewCard from '../components/ReviewCard';
 import UserReviewCard from '../components/UserReviewCard';
 
 const MyProfilePage = ({ user, trips, myReviews, othersReviews }) => {
+    const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gray-100 py-10 px-5 pt-28 flex justify-center items-start md:items-center">
+    <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
       <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
         
         {/* BAGIAN ATAS: PROFIL & STATS */}
@@ -84,7 +86,7 @@ const MyProfilePage = ({ user, trips, myReviews, othersReviews }) => {
 
         {/* BAGIAN BAWAH: TOMBOL ACTION */}
         <div className="flex flex-col gap-3">
-            <button className="w-full py-2.5 bg-[#1e293b] text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition shadow-sm tracking-wide">
+            <button onClick={() => navigate('/editprofile')} className="w-full py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition shadow-sm tracking-wide">
                 Edit Profile
             </button>
             <button className="w-full py-2.5 bg-[#ff0000] text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm tracking-wide">

@@ -11,6 +11,7 @@ import CategoriesPage from './pages/CategoriesPage'
 import TravellersPage from './pages/TravellersPage'
 import TravellerProfilePage from './pages/TravellerProfilePage'
 import MyProfilePage from './pages/MyProfilePage'
+import EditProfilePage from './pages/EditProfilePage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -84,14 +85,17 @@ const mostActiveData = [
 
 // Data Dummy User
 const user = {
-  name: "ELALALANG",
-  rank: "Adventurer",
-  rankLevel: 1,
-  image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop", // Placeholder image
-  stats: {
-      travelScore: { xp: 60, title: "Adventurer", level: 1 },
-      routeScore: { xp: 60, title: "Basic Planner", level: 1 }
-  }
+name: "ELALALANG",
+    rank: "Adventurer",
+    rankLevel: 1,
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
+    birthDate: "2000-12-20", 
+    description: "Adventure, Food, Health, Bike",
+    status: "Family (0) Child",
+    stats: {
+        travelScore: { xp: 60, title: "Adventurer", level: 1 },
+        routeScore: { xp: 60, title: "Basic Planner", level: 1 }
+    }
 };
 
 const myReviews = [
@@ -180,6 +184,7 @@ function App() {
           <Route path='/travellers' element={<TravellersPage recommendationData={recommendationData} mostActiveData={mostActiveData}/>} />
           <Route path='/profile/:id' element={<TravellerProfilePage recommendationData={recommendationData} trips={trips} />} />
           <Route path='/myprofile' element={<MyProfilePage user={user} trips={trips} myReviews={myReviews} othersReviews={othersReviews}/>} />
+          <Route path='/editprofile' element={<EditProfilePage user={user}/>} />
 
         </Routes>
 
