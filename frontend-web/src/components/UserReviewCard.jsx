@@ -6,7 +6,7 @@ const UserReviewCard = ({ image, name, role, review, rating, onDelete }) => {
       
       {/* BAGIAN KIRI: PROFIL PEREVIEW */}
       <div className="flex flex-col items-center shrink-0 w-full md:w-32">
-        <div className="w-24 h-24 mb-3 rounded-3xl overflow-hidden shadow-sm">
+        <div className="w-24 h-24 mb-3 rounded-full overflow-hidden shadow-sm">
           <img 
             src={image} 
             alt={name} 
@@ -15,7 +15,7 @@ const UserReviewCard = ({ image, name, role, review, rating, onDelete }) => {
         </div>
 
         <h3 className="text-gray-900 font-bold text-lg leading-tight">{name}</h3>
-        <p className="text-gray-900 font-bold text-sm mb-3">{role}</p>
+        <p className="text-gray-900 font-normal text-sm mb-3">{role}</p>
 
         <button className="bg-[#1e293b] text-white text-sm font-medium px-6 py-1.5 rounded-lg hover:bg-slate-700 transition-colors w-full md:w-auto">
           Follow
