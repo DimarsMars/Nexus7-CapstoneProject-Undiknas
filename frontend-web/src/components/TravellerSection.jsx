@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const TravellerSection = ({ travellers }) => {
   return (
     <section className="px-5 my-16">
@@ -24,11 +26,10 @@ const TravellerSection = ({ travellers }) => {
 
         </div>
 
-        {/* Tombol See More */}
         <div className="text-right mt-5">
-             <a href="#" className="text-gray-600 text-sm font-semibold hover:text-gray-600 transition hover:underline">
+             <Link to="/travellers" className="text-gray-600 text-sm font-semibold hover:text-gray-600 transition hover:underline">
                 See More
-             </a>
+             </Link>
         </div>
 
       </div>

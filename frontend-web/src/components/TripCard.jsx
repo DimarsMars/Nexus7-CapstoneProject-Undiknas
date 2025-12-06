@@ -10,7 +10,7 @@ const TripCard = ({ image, title, author, rating, className }) => {
         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent"></div>
 
       <div className="absolute bottom-0 left-0 p-5 w-full">
         <h3 className="text-white text-2xl font-bold mb-1">{title}</h3>
