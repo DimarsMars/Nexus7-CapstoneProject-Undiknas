@@ -10,6 +10,7 @@ import { Routes, Route } from 'react-router-dom'
 import CategoriesPage from './pages/CategoriesPage'
 import TravellersPage from './pages/TravellersPage'
 import TravellerProfilePage from './pages/TravellerProfilePage'
+import MyProfilePage from './pages/MyProfilePage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -81,6 +82,88 @@ const mostActiveData = [
     { id: 12, name: "Sophia", role: "Influencer", image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=1000&auto=format&fit=crop" },
 ];
 
+// Data Dummy User
+const user = {
+  name: "ELALALANG",
+  rank: "Adventurer",
+  rankLevel: 1,
+  image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop", // Placeholder image
+  stats: {
+      travelScore: { xp: 60, title: "Adventurer", level: 1 },
+      routeScore: { xp: 60, title: "Basic Planner", level: 1 }
+  }
+};
+
+const myReviews = [
+  {
+    id: 1,
+    title: "Waterfall Trip",
+    description: "My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...",
+    location: "Bedugul - Gianyar.",
+    rating: 5,
+    image: "https://balipalms.com/wp-content/uploads/2021/07/bali-jungle-villa_nearby-attractions-waterfall.jpg"
+  },
+  {
+    id: 2,
+    title: "Mountain Trip",
+    description: "My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...",
+    location: "Bedugul - Gianyar.",
+    rating: 5,
+    image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop"
+  },
+  {
+    id: 3,
+    title: "Culture Trip",
+    description: "My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...",
+    location: "Bedugul - Gianyar.",
+    rating: 5,
+    image: "https://saritabalitour.com/wp-content/uploads/elementor/thumbs/ismail-hamzah-2mCc2JV6oeQ-unsplash-qw9cvi8pcrwz5z3mvxglx7fstziupjvmufnzpcztkg.jpg"
+  }
+];
+
+const othersReviews = [
+  {
+      id: 1,
+      name: "Jackson",
+      role: "Traveller",
+      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1000&auto=format&fit=crop",
+      rating: 5,
+      text: "The Scenery is cute, the place is comfy, the people are very friendly. I came here with my family, and we feel very nice being here."
+  },
+  {
+      id: 2,
+      name: "Sarah M.",
+      role: "Vlogger",
+      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1000&auto=format&fit=crop",
+      rating: 4,
+      text: "Amazing hidden gem! The route was easy to follow and the view at the top was breathtaking. Definitely recommend for beginners."
+  },
+  {
+      id: 3,
+      name: "David K.",
+      role: "Hiker",
+      image: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=1000&auto=format&fit=crop",
+      rating: 5,
+      text: "One of the best trekking experiences I've had in Bali. The local guide was very helpful and the sunset was unforgettable."
+  },
+  {
+      id: 4,
+      name: "Emily Rose",
+      role: "Photographer",
+      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=1000&auto=format&fit=crop",
+      rating: 5,
+      text: "Every corner of this place is so photogenic! Great lighting during the golden hour. A must-visit for content creators."
+  },
+  {
+      id: 5,
+      name: "Michael T.",
+      role: "Foodie",
+      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1000&auto=format&fit=crop",
+      rating: 4,
+      text: "The trip was fun, but the best part was the local food stall nearby. Authentic taste and very cheap prices!"
+  },
+];
+
 function App() {
 
   return (
@@ -96,6 +179,7 @@ function App() {
           <Route path='/categories' element={<CategoriesPage allCategories={allCategories}/>} />
           <Route path='/travellers' element={<TravellersPage recommendationData={recommendationData} mostActiveData={mostActiveData}/>} />
           <Route path='/profile/:id' element={<TravellerProfilePage recommendationData={recommendationData} trips={trips} />} />
+          <Route path='/myprofile' element={<MyProfilePage user={user} trips={trips} myReviews={myReviews} othersReviews={othersReviews}/>} />
 
         </Routes>
 
