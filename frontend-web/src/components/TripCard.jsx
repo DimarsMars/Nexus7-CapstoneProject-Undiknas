@@ -1,8 +1,11 @@
 import { FaStar } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 
-const TripCard = ({ image, title, author, rating, className }) => {
+const TripCard = ({ id, image, title, author, rating, className }) => {
+  const navigate = useNavigate();
+
   return (
-    <div className={`relative rounded-2xl overflow-hidden shadow-lg group cursor-pointer ${className}`}>
+    <div onClick={() => navigate(`/trip/${id}`)} className={`relative rounded-xl overflow-hidden shadow-lg group cursor-pointer ${className}`}>
       
       <img 
         src={image} 

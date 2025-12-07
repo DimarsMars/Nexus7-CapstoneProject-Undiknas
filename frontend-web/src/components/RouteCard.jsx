@@ -1,0 +1,21 @@
+const RouteCard = ({ image, title, activity, location }) => {
+  return (
+    <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row gap-4 w-full shadow-sm hover:shadow-md transition-shadow">
+      <div className="w-full md:w-48 h-32 shrink-0 rounded-lg overflow-hidden">
+        <img 
+            src={image} 
+            alt={title} 
+            className="w-full h-full object-cover"
+        />
+      </div>
+
+      <div className="flex flex-col text-start justify-center">
+        <h3 className="text-xl font-bold text-[#1e293b]">{title}</h3>
+        <p className="text-gray-500 text-sm mt-1">{activity}</p>
+        <p className="text-gray-400 text-sm mt-1">{location}</p>
+      </div>
+    </div>
+  );
+};
+
+export default RouteCard;

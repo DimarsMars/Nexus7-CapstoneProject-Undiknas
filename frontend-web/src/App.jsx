@@ -13,6 +13,7 @@ import TravellerProfilePage from './pages/TravellerProfilePage'
 import MyProfilePage from './pages/MyProfilePage'
 import EditProfilePage from './pages/EditProfilePage'
 import BookmarkedPage from './pages/BookmarkedPage'
+import TripDetailPage from './pages/TripDetailPage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -22,6 +23,22 @@ const trips = [
       author: "Horas B.",
       rating: 5,
       image: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/72/08/fc/bali-tour-culture-travel.jpg?w=1200&h=-1&s=1",
+      description: "7 days exploring the island with my friends and we had the time of our lives. We started our adventure in Ubud, where we stayed at the beautiful Villa 'Serenity Oasis' and spent our days exploring the rice fields, temples, and local markets.",
+      tags: ["Adventure", "Culture", "Nature"],
+      route: [
+          { 
+            title: "Yoga Session", 
+            activity: "Riding, Eating at someplace", 
+            location: "Bedugul Yoga Centre", 
+            image: "https://images.unsplash.com/photo-1599447421405-0c1741427447?q=80&w=1000&auto=format&fit=crop" 
+          },
+          { 
+            title: "Morning Walk", 
+            activity: "Walking, Staying at some Villa", 
+            location: "Watumujur Walk", 
+            image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
     },
     {
       id: 2,
@@ -29,6 +46,22 @@ const trips = [
       author: "Thomas A.",
       rating: 4,
       image: "https://saritabalitour.com/wp-content/uploads/elementor/thumbs/ismail-hamzah-2mCc2JV6oeQ-unsplash-qw9cvi8pcrwz5z3mvxglx7fstziupjvmufnzpcztkg.jpg",
+      description: "Experience the authentic Balinese culture with visits to ancient temples and traditional villages. A perfect trip for history lovers.",
+      tags: ["History", "Culture", "Temple"],
+      route: [
+          { 
+            title: "Besakih Temple", 
+            activity: "Praying and Sightseeing", 
+            location: "Besakih, Karangasem", 
+            image: "https://kabardewata.com/uploads/image/web/pura-lempuyang.jpg" 
+          },
+          { 
+            title: "Penglipuran Village", 
+            activity: "Cultural Tour", 
+            location: "Bangli Regency", 
+            image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
     },
     {
       id: 3,
@@ -36,11 +69,93 @@ const trips = [
       author: "Thomas A.",
       rating: 5,
       image: "https://balipalms.com/wp-content/uploads/2021/07/bali-jungle-villa_nearby-attractions-waterfall.jpg",
+      description: "A refreshing journey through the lush forests of Bali. Visit hidden waterfalls and enjoy the sound of nature away from the city noise.",
+      tags: ["Nature", "Jungle", "Waterfall"],
+      route: [
+          { 
+            title: "Hidden Waterfall", 
+            activity: "Swimming & Trekking", 
+            location: "Gitgit Waterfall", 
+            image: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?q=80&w=1000&auto=format&fit=crop" 
+          },
+          { 
+            title: "Monkey Forest", 
+            activity: "Walking & Feeding", 
+            location: "Ubud Monkey Forest", 
+            image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
     },
-    { id: 4, title: "City Night", author: "Sarah C.", rating: 5, image: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2000&auto=format&fit=crop" },
-    { id: 5, title: "Bali Temple", author: "Made W.", rating: 4, image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1000&auto=format&fit=crop" },
-    { id: 6, title: "Mountain View", author: "John D.", rating: 5, image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop" },
-  ];
+    { 
+      id: 4, 
+      title: "City Night", 
+      author: "Sarah C.", 
+      rating: 5, 
+      image: "https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?q=80&w=2000&auto=format&fit=crop",
+      description: "Discover the vibrant nightlife of the city. From night markets to rooftop bars, experience the city lights like never before.",
+      tags: ["Nightlife", "City", "Party"],
+      route: [
+          { 
+            title: "Night Market", 
+            activity: "Street Food Hunting", 
+            location: "Gianyar Night Market", 
+            image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=1000&auto=format&fit=crop" 
+          },
+          { 
+            title: "Rooftop Lounge", 
+            activity: "Dinner & Music", 
+            location: "Seminyak Area", 
+            image: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
+    },
+    { 
+      id: 5, 
+      title: "Bali Temple", 
+      author: "Made W.", 
+      rating: 4, 
+      image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=1000&auto=format&fit=crop",
+      description: "A spiritual journey visiting the most iconic temples in Bali. Find peace and serenity in these sacred places.",
+      tags: ["Spiritual", "Temple", "Peace"],
+      route: [
+          { 
+            title: "Ulun Danu Beratan", 
+            activity: "Sightseeing", 
+            location: "Bedugul", 
+            image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=1000&auto=format&fit=crop" 
+          },
+          { 
+            title: "Tanah Lot", 
+            activity: "Sunset View", 
+            location: "Tabanan", 
+            image: "https://images.unsplash.com/photo-1604825966373-b26a57007722?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
+    },
+    { 
+      id: 6, 
+      title: "Mountain View", 
+      author: "John D.", 
+      rating: 5, 
+      image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1000&auto=format&fit=crop",
+      description: "Hiking adventure to the top of the mountain. Witness the breathtaking sunrise above the clouds.",
+      tags: ["Hiking", "Mountain", "Sunrise"],
+      route: [
+          { 
+            title: "Mount Batur", 
+            activity: "Sunrise Trekking", 
+            location: "Kintamani", 
+            image: "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=1000&auto=format&fit=crop" 
+          },
+          { 
+            title: "Hot Spring", 
+            activity: "Relaxing", 
+            location: "Toya Devasya", 
+            image: "https://images.unsplash.com/photo-1572331165267-854da2b00dc3?q=80&w=1000&auto=format&fit=crop" 
+          }
+      ]
+    },
+];
 
 const categories = [
     { id: 1, title: "Fields", image: "https://www.shutterstock.com/image-photo/beautiful-morning-view-indonesia-panorama-600nw-2657185455.jpg" },
@@ -212,6 +327,7 @@ function App() {
           <Route path='/myprofile' element={<MyProfilePage user={user} trips={trips} myReviews={myReviews} othersReviews={othersReviews}/>} />
           <Route path='/editprofile' element={<EditProfilePage user={user}/>} />
           <Route path='/bookmarked' element={<BookmarkedPage bookmarkedData={bookmarkedData}/>} />
+          <Route path='/trip/:id' element={<TripDetailPage trips={trips}/>} />
 
         </Routes>
 

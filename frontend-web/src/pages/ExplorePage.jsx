@@ -54,6 +54,7 @@ const ExplorePage = ({ trips }) => {
             return (
               <TripCard
                 key={trip.id}
+                id={trip.id}
                 title={trip.title}
                 author={trip.author}
                 rating={trip.rating}

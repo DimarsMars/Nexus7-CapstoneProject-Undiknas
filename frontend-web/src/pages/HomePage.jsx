@@ -17,6 +17,7 @@ const HomePage = ({trips, categories, travellers}) => {
                 {trips && trips.slice(0, 3).map((trip, index) => (
                     <TripCard
                     key={trip.id}
+                    id={trip.id}
                     title={trip.title}
                     author={trip.author}
                     rating={trip.rating}
