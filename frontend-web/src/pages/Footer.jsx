@@ -24,7 +24,7 @@ const Footer = () => {
                     <div className="flex flex-col space-y-4">
                         <Link to="/homepage" className="hover:text-blue-900 transition">Home</Link>
                         <Link to="" className="hover:text-blue-900 transition">Create your plan</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Categories</Link>
+                        <Link to="/categories" className="hover:text-blue-900 transition">Categories</Link>
                     </div>
 
                     {/* Kolom 2 */}
@@ -38,14 +38,14 @@ const Footer = () => {
 
                     {/* Kolom 3 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-900 transition">History</Link>
+                        <Link to="/bookmarked" className="hover:text-blue-900 transition">History</Link>
                         <Link to="" className="hover:text-blue-900 transition">Past Trip</Link>
                         <Link to="" className="hover:text-blue-900 transition">Favorite</Link>
                     </div>
 
                     {/* Kolom 4 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="" className="hover:text-blue-900 transition">Profile</Link>
+                        <Link to="/myprofile" className="hover:text-blue-900 transition">Profile</Link>
                     </div>
 
                 </div>
