@@ -32,7 +32,7 @@ const HomePage = ({trips, categories, travellers}) => {
                 </div>
 
                 <div className="text-right mt-4">
-                    <a href="#" className="text-gray-600 text-sm font-semibold hover:underline">See More</a>
+                    <a href="/explore" className="text-gray-600 text-sm font-semibold hover:underline">See More</a>
                 </div>
             </div>
 

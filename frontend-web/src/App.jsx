@@ -12,6 +12,7 @@ import TravellersPage from './pages/TravellersPage'
 import TravellerProfilePage from './pages/TravellerProfilePage'
 import MyProfilePage from './pages/MyProfilePage'
 import EditProfilePage from './pages/EditProfilePage'
+import BookmarkedPage from './pages/BookmarkedPage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -168,6 +169,31 @@ const othersReviews = [
   },
 ];
 
+  // 1. DATA DUMMY (Backend-ready structure)
+const bookmarkedData = [
+  {
+    id: 1,
+    title: "Serenity Oasis",
+    category: "Restaurant",
+    location: "Bedugul - Gianyar.",
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop"
+  },
+  {
+    id: 2,
+    title: "Dirty Diana",
+    category: "Restaurant",
+    location: "Bedugul - Gianyar.",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop"
+  },
+  {
+    id: 3,
+    title: "Bali Swing",
+    category: "Adventure",
+    location: "Ubud - Bali.",
+    image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop"
+  },
+];
+
 function App() {
 
   return (
@@ -185,6 +211,7 @@ function App() {
           <Route path='/profile/:id' element={<TravellerProfilePage recommendationData={recommendationData} trips={trips} />} />
           <Route path='/myprofile' element={<MyProfilePage user={user} trips={trips} myReviews={myReviews} othersReviews={othersReviews}/>} />
           <Route path='/editprofile' element={<EditProfilePage user={user}/>} />
+          <Route path='/bookmarked' element={<BookmarkedPage bookmarkedData={bookmarkedData}/>} />
 
         </Routes>
 
