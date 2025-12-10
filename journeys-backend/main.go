@@ -16,6 +16,7 @@ func main() {
 	routes.UserRoutes(r)
 	routes.ProfileRoutes(r)
 	routes.CategoryRoutes(r)
+	routes.PlanRoutes(r)
 
 	fmt.Println("Server running on :8080")
 	r.Run(":8080")
