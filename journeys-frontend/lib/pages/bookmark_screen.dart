@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class BookmarkPage extends StatefulWidget {
-  const BookmarkPage({super.key});
+class BookmarkScreen extends StatefulWidget {
+  const BookmarkScreen({super.key});
 
   @override
-  State<BookmarkPage> createState() => _BookmarkPageState();
+  State<BookmarkScreen> createState() => _BookmarkScreenState();
 }
 
-class _BookmarkPageState extends State<BookmarkPage> {
+class _BookmarkScreenState extends State<BookmarkScreen> {
   List<Map<String, String>> savedPlaces = [
     {
       'name': 'Serenity Oasis',
