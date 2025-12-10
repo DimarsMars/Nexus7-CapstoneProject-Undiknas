@@ -92,3 +92,37 @@ func GetPlanBanner(c *gin.Context) {
 
 	c.Data(http.StatusOK, "image/jpeg", plan.Banner)
 }
+
+func UpdatePlan(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	planID := c.Param("id")
+
+	var plan models.Plan
+	if err := config.DB.Where("plan_id = ? AND user_id = ?", planID, userID).First(&plan).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
+		return
+	}
+	if title := c.PostForm("title"); title != "" {
+		plan.Title = title
+	}
+	if desc := c.PostForm("description"); desc != "" {
+		plan.Description = desc
+	}
+	if tagsRaw := c.PostForm("tags"); tagsRaw != "" {
+		plan.Tags = strings.Split(tagsRaw, ",")
+	}
+
+	if file, err := c.FormFile("banner"); err == nil {
+		opened, _ := file.Open()
+		defer opened.Close()
+		fileBytes, _ := io.ReadAll(opened)
+		plan.Banner = fileBytes
+	}
+
+	if err := config.DB.Save(&plan).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update plan"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Plan berhasil diupdate", "data": plan})
+}
