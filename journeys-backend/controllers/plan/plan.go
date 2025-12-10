@@ -125,13 +125,19 @@ func UpdatePlan(c *gin.Context) {
 	}
 	if catIDsRaw := c.PostForm("category_ids"); catIDsRaw != "" {
 		catIDs := strings.Split(catIDsRaw, ",")
+
 		var categories []models.Category
 		if err := config.DB.Where("category_id IN ?", catIDs).Find(&categories).Error; err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Gagal mengambil kategori"})
 			return
 		}
-		plan.Categories = categories
+
+		if err := config.DB.Model(&plan).Association("Categories").Replace(categories); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update relasi kategori"})
+			return
+		}
 	}
+
 	if file, err := c.FormFile("banner"); err == nil {
 		opened, _ := file.Open()
 		defer opened.Close()
@@ -168,7 +174,7 @@ func DeletePlan(c *gin.Context) {
 }
 
 func GetPlansByCategory(c *gin.Context) {
-	catID := c.Param("id") 
+	catID := c.Param("id")
 
 	var plans []models.Plan
 	err := config.DB.
