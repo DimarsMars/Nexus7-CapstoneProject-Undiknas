@@ -15,5 +15,8 @@ func PlanRoutes(r *gin.Engine) {
 		planGroup.GET("/", plan.GetPlans)
 		planGroup.GET("/banner/:id", plan.GetPlanBanner)
 		planGroup.PUT("/update/:id", plan.UpdatePlan)
+		planGroup.DELETE("/delete/:id", plan.DeletePlan)
+		planGroup.GET("/category/:id", plan.GetPlansByCategory)
+
 	}
 }

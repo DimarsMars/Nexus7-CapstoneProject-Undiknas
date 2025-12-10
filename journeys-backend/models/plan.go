@@ -14,4 +14,5 @@ type Plan struct {
 	Banner      []byte         `gorm:"column:banner" json:"banner"`
 	Tags        pq.StringArray `gorm:"type:text[];column:tags" json:"tags"`
 	CreatedAt   time.Time      `gorm:"column:created_at" json:"created_at"`
+	Categories  []Category     `gorm:"many2many:plan_categories;joinForeignKey:PlanID;joinReferences:CategoryID" json:"categories"`
 }
