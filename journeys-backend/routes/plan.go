@@ -13,5 +13,6 @@ func PlanRoutes(r *gin.Engine) {
 	{
 		planGroup.POST("/create", plan.CreatePlan)
 		planGroup.GET("/", plan.GetPlans)
+		planGroup.GET("/banner/:id", plan.GetPlanBanner)
 	}
 }

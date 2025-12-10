@@ -75,3 +75,20 @@ func GetPlans(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
 }
+
+func GetPlanBanner(c *gin.Context) {
+	id := c.Param("id")
+
+	var plan models.Plan
+	if err := config.DB.First(&plan, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
+		return
+	}
+
+	if len(plan.Banner) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Banner kosong"})
+		return
+	}
+
+	c.Data(http.StatusOK, "image/jpeg", plan.Banner)
+}
