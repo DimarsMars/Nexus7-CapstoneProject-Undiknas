@@ -12,5 +12,6 @@ func PlanRoutes(r *gin.Engine) {
 	planGroup.Use(middleware.FirebaseAuth())
 	{
 		planGroup.POST("/create", plan.CreatePlan)
+		planGroup.GET("/", plan.GetPlans)
 	}
 }
