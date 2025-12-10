@@ -11,11 +11,12 @@ func PlanRoutes(r *gin.Engine) {
 	planGroup := r.Group("/plans")
 	planGroup.Use(middleware.FirebaseAuth())
 	{
-		planGroup.POST("/create", plan.CreatePlan)
+		planGroup.POST("/", plan.CreatePlan)
 		planGroup.GET("/", plan.GetPlans)
-		planGroup.GET("/banner/:id", plan.GetPlanBanner)
-		planGroup.PUT("/update/:id", plan.UpdatePlan)
-		planGroup.DELETE("/delete/:id", plan.DeletePlan)
+		planGroup.PUT("/:id", plan.UpdatePlan)
+		planGroup.DELETE("/:id", plan.DeletePlan)
+		planGroup.GET("/:id/banner", plan.GetPlanBanner)
+		planGroup.GET("/:id/detail", plan.GetPlanDetail)
 		planGroup.GET("/category/:id", plan.GetPlansByCategory)
 
 	}
