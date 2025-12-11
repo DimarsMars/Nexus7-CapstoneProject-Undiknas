@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -320,4 +321,124 @@ func GetPlansByCategory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
+}
+
+type VerifyLocationInput struct {
+	Latitude  float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	StepOrder int     `json:"step_order" binding:"required"`
+}
+
+func calculateDistance(lat1, lon1, lat2, lon2 float64) float64 {
+	const R = 6371
+
+	dLat := (lat2 - lat1) * math.Pi / 180.0
+	dLon := (lon2 - lon1) * math.Pi / 180.0
+
+	lat1 = lat1 * math.Pi / 180.0
+	lat2 = lat2 * math.Pi / 180.0
+
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Sin(dLon/2)*math.Sin(dLon/2)*math.Cos(lat1)*math.Cos(lat2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	d := R * c
+
+	return d
+}
+
+func VerifyUserLocation(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	planIDStr := c.Param("id")
+	planID, err := strconv.ParseUint(planIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
+		return
+	}
+
+	var input VerifyLocationInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input tidak valid"})
+		return
+	}
+
+	var route models.Route
+	if err := config.DB.
+		Where("plan_id = ? AND step_order = ?", planID, input.StepOrder).
+		First(&route).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Route tidak ditemukan"})
+		return
+	}
+
+	distance := calculateDistance(input.Latitude, input.Longitude, route.Latitude, route.Longitude)
+
+	if distance > 0.3 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":       "Kamu belum sampai di lokasi",
+			"distance_km": distance,
+		})
+		return
+	}
+
+	var progress models.PlanProgress
+	err = config.DB.
+		Where("user_id = ? AND plan_id = ? AND step_order = ?", userID, planID, input.StepOrder).
+		First(&progress).Error
+	if err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kamu sudah menyelesaikan lokasi ini"})
+		return
+	}
+
+	newProgress := models.PlanProgress{
+		UserID:    userID,
+		PlanID:    uint(planID),
+		StepOrder: input.StepOrder,
+	}
+	if err := config.DB.Create(&newProgress).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan progress"})
+		return
+	}
+
+	var maxStep int
+	config.DB.
+		Model(&models.Route{}).
+		Where("plan_id = ?", planID).
+		Select("MAX(step_order)").Scan(&maxStep)
+
+	if input.StepOrder == maxStep {
+		c.JSON(http.StatusOK, gin.H{
+			"message":  "Selamat, kamu telah menyelesaikan seluruh trip!",
+			"complete": true,
+		})
+		return
+	}
+
+	var next models.Route
+	if err := config.DB.
+		Where("plan_id = ? AND step_order = ?", planID, input.StepOrder+1).
+		First(&next).Error; err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Berhasil menyelesaikan lokasi ini, lanjut ke route selanjutnya",
+		})
+		return
+	}
+
+	nextImage := ""
+	if len(next.Image) > 0 {
+		nextImage = base64.StdEncoding.EncodeToString(next.Image)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil sampai lokasi, lanjut ke route berikutnya",
+		"next_route": map[string]interface{}{
+			"route_id":    next.RouteID,
+			"title":       next.Title,
+			"description": next.Description,
+			"address":     next.Address,
+			"latitude":    next.Latitude,
+			"longitude":   next.Longitude,
+			"step_order":  next.StepOrder,
+			"tags":        next.Tags,
+			"image":       nextImage,
+		},
+	})
 }
