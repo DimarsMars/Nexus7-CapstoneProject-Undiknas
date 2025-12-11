@@ -35,7 +35,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black ),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
