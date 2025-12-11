@@ -74,3 +74,54 @@ func UpdateUser(c *gin.Context) {
 		"data":    user,
 	})
 }
+
+func GetUserXPSummary(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var totalXP int64
+	if err := config.DB.
+		Model(&models.UserXP{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(SUM(xp_value), 0)").
+		Scan(&totalXP).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghitung XP"})
+		return
+	}
+
+	rank := calculateRank(int(totalXP))
+
+	config.DB.Model(&models.Profile{}).Where("user_id = ?", userID).Update("rank", rank)
+
+	c.JSON(http.StatusOK, gin.H{
+		"xp":   totalXP,
+		"rank": rank,
+	})
+}
+
+func GetUserXPHistory(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var xpHistory []models.UserXP
+	if err := config.DB.
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Find(&xpHistory).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil histori XP"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": xpHistory})
+}
+
+func calculateRank(xp int) string {
+	switch {
+	case xp >= 300:
+		return "Master"
+	case xp >= 200:
+		return "Pro"
+	case xp >= 100:
+		return "Adventurer"
+	default:
+		return "Newbie"
+	}
+}

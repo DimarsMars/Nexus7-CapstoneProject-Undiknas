@@ -5,7 +5,7 @@ import (
 )
 
 type PlanProgress struct {
-	ProgressID uint      `gorm:"primaryKey" json:"progress_id"`
+	ProgressID uint      `gorm:"primaryKey;column:progress_id" json:"progress_id"`
 	UserID     uint      `gorm:"column:user_id" json:"user_id"`
 	PlanID     uint      `gorm:"column:plan_id" json:"plan_id"`
 	StepOrder  int       `gorm:"column:step_order" json:"step_order"`

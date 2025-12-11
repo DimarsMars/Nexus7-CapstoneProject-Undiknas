@@ -398,6 +398,36 @@ func VerifyUserLocation(c *gin.Context) {
 		return
 	}
 
+	xp := models.UserXP{
+		UserID:      userID,
+		XPValue:     10,
+		Description: "Arrived at step " + strconv.Itoa(input.StepOrder),
+	}
+
+	if err := config.DB.Create(&xp).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan XP"})
+		return
+	}
+
+	
+	var totalXP int64
+	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
+
+	
+	var newRank string
+	switch {
+	case totalXP >= 100:
+		newRank = "Elite"
+	case totalXP >= 60:
+		newRank = "Adventurer"
+	default:
+		newRank = "Basic"
+	}
+
+	config.DB.Model(&models.Profile{}).
+		Where("user_id = ?", userID).
+		Update("rank", newRank)
+
 	var maxStep int
 	config.DB.
 		Model(&models.Route{}).
