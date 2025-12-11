@@ -100,13 +100,32 @@ func CreatePlan(c *gin.Context) {
 		}
 
 		if err := config.DB.Create(&route).Error; err != nil {
-
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan route"})
 			return
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Plan dan routes berhasil dibuat", "data": plan})
+	xp := models.UserXP{
+		UserID:      userID,
+		XPValue:     10,
+		Description: "Created a new plan",
+	}
+	if err := config.DB.Create(&xp).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan XP"})
+		return
+	}
+
+	var totalXP int64
+	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
+
+	newRank := calculateRank(int(totalXP))
+
+	config.DB.Model(&models.Profile{}).Where("user_id = ?", userID).Update("rank", newRank)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Plan dan routes berhasil dibuat",
+		"data":    plan,
+	})
 }
 
 func GetPlans(c *gin.Context) {
@@ -409,20 +428,10 @@ func VerifyUserLocation(c *gin.Context) {
 		return
 	}
 
-	
 	var totalXP int64
 	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
 
-	
-	var newRank string
-	switch {
-	case totalXP >= 100:
-		newRank = "Elite"
-	case totalXP >= 60:
-		newRank = "Adventurer"
-	default:
-		newRank = "Basic"
-	}
+	newRank := calculateRank(int(totalXP))
 
 	config.DB.Model(&models.Profile{}).
 		Where("user_id = ?", userID).
@@ -471,4 +480,17 @@ func VerifyUserLocation(c *gin.Context) {
 			"image":       nextImage,
 		},
 	})
+}
+
+func calculateRank(xp int) string {
+	switch {
+	case xp >= 300:
+		return "Master"
+	case xp >= 200:
+		return "Pro"
+	case xp >= 100:
+		return "Adventurer"
+	default:
+		return "Newbie"
+	}
 }
