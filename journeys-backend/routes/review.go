@@ -13,5 +13,7 @@ func ReviewRoutes(r *gin.Engine) {
 	{
 		reviewGroup.POST("/trip", review.CreateTripReview)
 		reviewGroup.GET("/trip/:plan_id", review.GetTripReviews)
+		reviewGroup.POST("/place", review.CreatePlaceReview)
+		reviewGroup.GET("/place/:route_id", review.GetPlaceReviews)
 	}
 }

@@ -3,7 +3,9 @@ package review
 import (
 	"be_journeys/config"
 	"be_journeys/models"
+	"encoding/base64"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -62,4 +64,85 @@ func GetTripReviews(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": reviews})
+}
+
+func CreatePlaceReview(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	routeID := c.PostForm("route_id")
+	rating := c.PostForm("rating")
+	comment := c.PostForm("comment")
+
+	var ratingInt int
+	if _, err := fmt.Sscanf(rating, "%d", &ratingInt); err != nil || ratingInt < 1 || ratingInt > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Rating harus berupa angka antara 1 sampai 5"})
+		return
+	}
+
+	routeUint := stringToUint(routeID)
+	var route models.Route
+	if err := config.DB.First(&route, routeUint).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Route tidak ditemukan"})
+		return
+	}
+
+	var imageBytes []byte
+	file, err := c.FormFile("image")
+	if err == nil {
+		src, _ := file.Open()
+		defer src.Close()
+		imageBytes, _ = io.ReadAll(src)
+	}
+
+	review := models.PlaceReview{
+		UserID:    userID,
+		RouteID:   routeUint,
+		Rating:    ratingInt,
+		Comment:   comment,
+		Image:     imageBytes,
+		CreatedAt: time.Now(),
+	}
+
+	if err := config.DB.Create(&review).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan place review"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Place review berhasil ditambahkan", "data": review})
+}
+
+func GetPlaceReviews(c *gin.Context) {
+	routeID := c.Param("route_id")
+
+	var reviews []models.PlaceReview
+	if err := config.DB.Where("route_id = ?", routeID).Order("created_at DESC").Find(&reviews).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil place reviews"})
+		return
+	}
+
+	var result []map[string]interface{}
+	for _, r := range reviews {
+		imageBase64 := ""
+		if len(r.Image) > 0 {
+			imageBase64 = base64.StdEncoding.EncodeToString(r.Image)
+		}
+
+		result = append(result, map[string]interface{}{
+			"review_id":  r.ReviewID,
+			"user_id":    r.UserID,
+			"route_id":   r.RouteID,
+			"rating":     r.Rating,
+			"comment":    r.Comment,
+			"image":      imageBase64,
+			"created_at": r.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func stringToUint(s string) uint {
+	var id uint
+	fmt.Sscanf(s, "%d", &id)
+	return id
 }
