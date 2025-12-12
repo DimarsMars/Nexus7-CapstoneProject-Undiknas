@@ -14,6 +14,7 @@ import MyProfilePage from './pages/MyProfilePage'
 import EditProfilePage from './pages/EditProfilePage'
 import BookmarkedPage from './pages/BookmarkedPage'
 import TripDetailPage from './pages/TripDetailPage'
+import MyTripReviewPage from './pages/MyTripReviewPage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -30,7 +31,13 @@ const trips = [
             title: "Yoga Session", 
             activity: "Riding, Eating at someplace", 
             location: "Bedugul Yoga Centre", 
-            image: "https://images.unsplash.com/photo-1599447421405-0c1741427447?q=80&w=1000&auto=format&fit=crop" 
+            image: "https://organium.id/wp-content/uploads/2024/10/Radiantly-Alive-Yoga-Studio-Ubud-Bali-1_11zon.webp" 
+          },
+          { 
+            title: "Besakih Temple", 
+            activity: "Praying and Sightseeing", 
+            location: "Besakih, Karangasem", 
+            image: "https://kabardewata.com/uploads/image/web/pura-lempuyang.jpg" 
           },
           { 
             title: "Morning Walk", 
@@ -284,7 +291,7 @@ const othersReviews = [
   },
 ];
 
-  // 1. DATA DUMMY (Backend-ready structure)
+// DATA DUMMY BOOKMARKED PAGE
 const bookmarkedData = [
   {
     id: 1,
@@ -309,6 +316,48 @@ const bookmarkedData = [
   },
 ];
 
+// Data Dummy Foto Slider (Gambar Tempat Wisata)
+const sliderImages = [
+  "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop",
+];
+
+// Data Dummy Review (Sesuai Gambar Referensi)
+const myreviewstrips = [
+  {
+    id: 1,
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop",
+    rating: 5,
+    text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
+    moreImages: [
+      "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/72/08/fc/bali-tour-culture-travel.jpg?w=1200&h=-1&s=1",
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop",
+    ]
+  },
+  {
+    id: 2,
+    image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop",
+    rating: 5,
+    text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
+    moreImages: [
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop",
+    ]
+  },
+  {
+    id: 3,
+    image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop",
+    rating: 5,
+    text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
+    moreImages: [
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop",
+    ]
+  },
+];
+
 function App() {
 
   return (
@@ -328,6 +377,7 @@ function App() {
           <Route path='/editprofile' element={<EditProfilePage user={user}/>} />
           <Route path='/bookmarked' element={<BookmarkedPage bookmarkedData={bookmarkedData}/>} />
           <Route path='/trip/:id' element={<TripDetailPage trips={trips}/>} />
+          <Route path='/mytripreview/:id' element={<MyTripReviewPage trips={trips} sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
 
         </Routes>
 

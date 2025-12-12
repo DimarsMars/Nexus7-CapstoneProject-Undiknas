@@ -103,18 +103,23 @@ const MyProfilePage = ({ user, trips, myReviews, othersReviews }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {trips && trips.slice(0, 3).map((trip, index) => (
-                    <TripCard
-                        key={trip.id}
-                        title={trip.title}
-                        author={trip.author}
-                        rating={trip.rating}
-                        image={trip.image}
-                        className={
-                            index === 0
-                            ? "md:col-span-2 h-56 md:h-72" // Kartu Besar
-                            : "h-56 md:h-60"               // Kartu Kecil
-                        }
-                    />
+                    <div key={trip.id} 
+                        onClick={() => navigate(`/mytripreview/${trip.id}`)}
+                        className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
+                    >
+                        <TripCard
+                            key={trip.id}
+                            title={trip.title}
+                            author={trip.author}
+                            rating={trip.rating}
+                            image={trip.image}
+                            className={
+                                index === 0
+                                ? "md:col-span-2 h-56 md:h-72" // Kartu Besar
+                                : "h-56 md:h-60"               // Kartu Kecil
+                            }
+                        />
+                    </div>
                 ))}
 
             </div>
