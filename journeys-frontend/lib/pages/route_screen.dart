@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart';
-import 'package:journeys/pages/bookmark_screen.dart'; // GANTI sesuai file kamu
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'package:journeys/pages/bookmark_screen.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -11,7 +13,10 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
-  GoogleMapController? mapController;
+  // OPENROUTESERVICE API KEY
+  static const String orsApiKey = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ1NmVlYzAzODhmMjQyYTU4YzNlYzFjNjcyZmJmOWNmIiwiaCI6Im11cm11cjY0In0=";
+
+  final MapController mapController = MapController();
 
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descController = TextEditingController();
@@ -19,32 +24,42 @@ class _RouteScreenState extends State<RouteScreen> {
   final TextEditingController doingController = TextEditingController();
   final TextEditingController tagsController = TextEditingController();
 
-  LatLng currentLocation = const LatLng(-8.436697, 115.279947); // Default Tegalalang
+  LatLng currentLocation = const LatLng(-8.436697, 115.279947);
   Marker? selectedMarker;
 
   String? selectedCategory;
 
+  // ===================== SEARCH LOCATION ======================
   Future<void> searchLocation() async {
     if (addressController.text.isEmpty) return;
 
-    try {
-      List<Location> locations = await locationFromAddress(addressController.text);
-      Location loc = locations.first;
+    final url = Uri.parse(
+      "https://api.openrouteservice.org/geocode/search?api_key=$orsApiKey&text=${addressController.text}",
+    );
 
-      LatLng newPos = LatLng(loc.latitude, loc.longitude);
+    try {
+      final response = await http.get(url);
+      final data = jsonDecode(response.body);
+
+      if (data["features"].isEmpty) {
+        throw Exception("Not found");
+      }
+
+      final coords = data["features"][0]["geometry"]["coordinates"];
+      final lat = coords[1];
+      final lon = coords[0];
 
       setState(() {
-        currentLocation = newPos;
+        currentLocation = LatLng(lat, lon);
         selectedMarker = Marker(
-          markerId: const MarkerId("selected"),
-          position: newPos,
-          infoWindow: InfoWindow(title: addressController.text),
+          point: currentLocation,
+          width: 40,
+          height: 40,
+          child: const Icon(Icons.location_on, size: 40, color: Colors.red),
         );
       });
 
-      mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(newPos, 15),
-      );
+      mapController.move(currentLocation, 15);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Lokasi tidak ditemukan")),
@@ -52,6 +67,7 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  // ========================== UI ==============================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +101,7 @@ class _RouteScreenState extends State<RouteScreen> {
             inputField(descController, "Add Description"),
             const SizedBox(height: 15),
 
-            // MAP SECTION
+            // =================== MAP SECTION ======================
             Container(
               height: 230,
               decoration: BoxDecoration(
@@ -97,20 +113,36 @@ class _RouteScreenState extends State<RouteScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(14),
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: currentLocation,
-                    zoom: 14,
+                child: FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    initialCenter: currentLocation,
+                    initialZoom: 14,
                   ),
-                  onMapCreated: (controller) => mapController = controller,
-                  markers: selectedMarker != null
-                      ? {selectedMarker!}
-                      : {
-                          Marker(
-                            markerId: const MarkerId("default"),
-                            position: currentLocation,
-                          )
-                        },
+                  children: [
+                    // OpenStreetMap Layer
+                    TileLayer(
+                      urlTemplate: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                      userAgentPackageName: "com.example.journeys",
+                    ),
+
+                    // Markers
+                    MarkerLayer(
+                      markers: [
+                        selectedMarker ??
+                            Marker(
+                              point: currentLocation,
+                              width: 40,
+                              height: 40,
+                              child: const Icon(
+                                Icons.location_on,
+                                size: 40,
+                                color: Colors.blue,
+                              ),
+                            ),
+                      ],
+                    )
+                  ],
                 ),
               ),
             ),
@@ -121,7 +153,7 @@ class _RouteScreenState extends State<RouteScreen> {
             inputField(addressController, "Alamat lokasi"),
             const SizedBox(height: 10),
 
-            // SEARCH ADDRESS BUTTON
+            // SEARCH BUTTON
             Align(
               alignment: Alignment.centerRight,
               child: InkWell(
@@ -155,7 +187,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 mainButton("Bookmark's", () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const BookmarkScreen())
+                    MaterialPageRoute(builder: (context) => const BookmarkScreen()),
                   );
                 }),
               ],
@@ -222,8 +254,7 @@ class _RouteScreenState extends State<RouteScreen> {
     );
   }
 
-  // ========================= WIDGET REUSABLE =========================
-
+  // ========================= REUSABLE WIDGETS =========================
   Widget inputField(TextEditingController c, String hint) {
     return TextField(
       controller: c,
