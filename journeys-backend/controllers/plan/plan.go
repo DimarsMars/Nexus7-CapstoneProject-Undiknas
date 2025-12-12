@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"be_journeys/config"
+	"be_journeys/controllers/helper"
 	"be_journeys/models"
 
 	"github.com/gin-gonic/gin"
@@ -118,7 +119,7 @@ func CreatePlan(c *gin.Context) {
 	var totalXP int64
 	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
 
-	newRank := calculateRank(int(totalXP))
+	newRank := helper.CalculateRank(int(totalXP))
 
 	config.DB.Model(&models.Profile{}).Where("user_id = ?", userID).Update("rank", newRank)
 
@@ -388,7 +389,7 @@ func VerifyUserLocation(c *gin.Context) {
 		return
 	}
 
-	distance := calculateDistance(input.Latitude, input.Longitude, route.Latitude, route.Longitude)
+	distance := helper.CalculateDistance(input.Latitude, input.Longitude, route.Latitude, route.Longitude)
 
 	if distance > 0.3 {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -431,7 +432,7 @@ func VerifyUserLocation(c *gin.Context) {
 	var totalXP int64
 	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
 
-	newRank := calculateRank(int(totalXP))
+	newRank := helper.CalculateRank(int(totalXP))
 
 	config.DB.Model(&models.Profile{}).
 		Where("user_id = ?", userID).
@@ -480,17 +481,4 @@ func VerifyUserLocation(c *gin.Context) {
 			"image":       nextImage,
 		},
 	})
-}
-
-func calculateRank(xp int) string {
-	switch {
-	case xp >= 300:
-		return "Master"
-	case xp >= 200:
-		return "Pro"
-	case xp >= 100:
-		return "Adventurer"
-	default:
-		return "Newbie"
-	}
 }

@@ -2,6 +2,7 @@ package user
 
 import (
 	"be_journeys/config"
+	"be_journeys/controllers/helper"
 	"be_journeys/models"
 	"context"
 	"net/http"
@@ -88,7 +89,7 @@ func GetUserXPSummary(c *gin.Context) {
 		return
 	}
 
-	rank := calculateRank(int(totalXP))
+	rank := helper.CalculateRank(int(totalXP))
 
 	config.DB.Model(&models.Profile{}).Where("user_id = ?", userID).Update("rank", rank)
 
@@ -111,17 +112,4 @@ func GetUserXPHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": xpHistory})
-}
-
-func calculateRank(xp int) string {
-	switch {
-	case xp >= 300:
-		return "Master"
-	case xp >= 200:
-		return "Pro"
-	case xp >= 100:
-		return "Adventurer"
-	default:
-		return "Newbie"
-	}
 }

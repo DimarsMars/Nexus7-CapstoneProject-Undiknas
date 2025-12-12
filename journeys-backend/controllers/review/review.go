@@ -2,6 +2,7 @@ package review
 
 import (
 	"be_journeys/config"
+	"be_journeys/controllers/helper"
 	"be_journeys/models"
 	"encoding/base64"
 	"fmt"
@@ -114,7 +115,7 @@ func CreatePlaceReview(c *gin.Context) {
 		return
 	}
 
-	routeUint := stringToUint(routeID)
+	routeUint := helper.StringToUint(routeID)
 	var route models.Route
 	if err := config.DB.First(&route, routeUint).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Route tidak ditemukan"})
@@ -174,10 +175,4 @@ func GetPlaceReviews(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
-}
-
-func stringToUint(s string) uint {
-	var id uint
-	fmt.Sscanf(s, "%d", &id)
-	return id
 }
