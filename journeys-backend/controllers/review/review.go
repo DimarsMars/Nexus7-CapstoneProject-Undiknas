@@ -46,7 +46,28 @@ func CreateTripReview(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Plan review berhasil ditambahkan", "data": review})
+	xp := models.UserXP{
+		UserID:      userID,
+		XPValue:     10,
+		Description: "Reviewed a trip",
+	}
+	config.DB.Create(&xp)
+
+	var totalXP int64
+	config.DB.Model(&models.UserXP{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(SUM(xp_value),0)").
+		Scan(&totalXP)
+
+	newRank := helper.CalculateRank(int(totalXP))
+	config.DB.Model(&models.Profile{}).
+		Where("user_id = ?", userID).
+		Update("rank", newRank)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Plan review berhasil ditambahkan",
+		"data":    review,
+	})
 }
 
 func GetTripReviews(c *gin.Context) {
@@ -59,7 +80,10 @@ func GetTripReviews(c *gin.Context) {
 	}
 
 	var reviews []models.TripReview
-	if err := config.DB.Where("plan_id = ?", planID).Order("created_at DESC").Find(&reviews).Error; err != nil {
+	if err := config.DB.
+		Where("plan_id = ?", planID).
+		Order("created_at DESC").
+		Find(&reviews).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil plan reviews"})
 		return
 	}
@@ -144,14 +168,38 @@ func CreatePlaceReview(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Place review berhasil ditambahkan", "data": review})
+	xp := models.UserXP{
+		UserID:      userID,
+		XPValue:     10,
+		Description: "Reviewed a place",
+	}
+	config.DB.Create(&xp)
+
+	var totalXP int64
+	config.DB.Model(&models.UserXP{}).
+		Where("user_id = ?", userID).
+		Select("COALESCE(SUM(xp_value),0)").
+		Scan(&totalXP)
+
+	newRank := helper.CalculateRank(int(totalXP))
+	config.DB.Model(&models.Profile{}).
+		Where("user_id = ?", userID).
+		Update("rank", newRank)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Place review berhasil ditambahkan",
+		"data":    review,
+	})
 }
 
 func GetPlaceReviews(c *gin.Context) {
 	routeID := c.Param("route_id")
 
 	var reviews []models.PlaceReview
-	if err := config.DB.Where("route_id = ?", routeID).Order("created_at DESC").Find(&reviews).Error; err != nil {
+	if err := config.DB.
+		Where("route_id = ?", routeID).
+		Order("created_at DESC").
+		Find(&reviews).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil place reviews"})
 		return
 	}
