@@ -33,8 +33,10 @@ dependencies:
   google_maps_flutter: ^2.2.5
   # google_maps_flutter_web: ^0.4.0
 
-  flutter_map: ^4.0.0
-  latlong2: ^0.8.0
+  flutter_map: ^8.1.0
+  flutter_map_location_marker: ^10.1.0
+  latlong2: ^0.9.1
+  http: ^1.6.0
 
   geocoding: ^2.0.5
 
