@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:journeys/pages/route_screen.dart';
 
 class BookmarkScreen extends StatefulWidget {
   const BookmarkScreen({super.key});
@@ -32,10 +33,10 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
       appBar: AppBar(
         title: const Text(
           "Bookmarked",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w600, color: Colors.black),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.black ),
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
@@ -54,25 +55,8 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                 children: [
                   ...savedPlaces.map((item) => _buildCard(item)),
                   const SizedBox(height: 20),
-                  Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF274664),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      onPressed: () {},
-                      child: const Text(
-                        "Add to route",
-                        style:
-                            TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ...savedPlaces.map((item) => _buildCard(item)),
+                  _buildAddToRouteButton(),
+                  const SizedBox(height: 10),
                 ],
               ),
             )
@@ -82,9 +66,9 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // --------------------------------------------
-  // Search Box
-  // --------------------------------------------
+  // -------------------------------------------------
+  // SEARCH BOX (Sesuai desain)
+  // -------------------------------------------------
 
   Widget _buildSearchBox() {
     return Column(
@@ -103,12 +87,12 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             filled: true,
             fillColor: Colors.white,
             hintText: "Restaurant...",
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            prefixIcon: const Icon(Icons.search),
             suffixIcon: IconButton(
-              icon: const Icon(Icons.autorenew),
+              icon: const Icon(Icons.refresh),
               onPressed: () {},
             ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -119,9 +103,9 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // --------------------------------------------
-  // Saved Header
-  // --------------------------------------------
+  // -------------------------------------------------
+  // SAVED HEADER
+  // -------------------------------------------------
 
   Widget _buildSavedHeader() {
     return Row(
@@ -147,17 +131,24 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // --------------------------------------------
-  // Card Item
-  // --------------------------------------------
+  // -------------------------------------------------
+  // CARD ITEM (Disesuaikan dengan gambar)
+  // -------------------------------------------------
 
   Widget _buildCard(Map<String, String> place) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            spreadRadius: 1,
+            blurRadius: 6,
+          )
+        ],
       ),
       child: Row(
         children: [
@@ -165,12 +156,14 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             borderRadius: BorderRadius.circular(12),
             child: Image.network(
               place['image']!,
-              width: 80,
-              height: 70,
+              width: 75,
+              height: 65,
               fit: BoxFit.cover,
             ),
           ),
           const SizedBox(width: 12),
+
+          // Text Section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,11 +171,11 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                 Text(
                   place['name']!,
                   style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.bold),
+                      fontSize: 15, fontWeight: FontWeight.w700),
                 ),
                 Text(
                   place['category']!,
-                  style: TextStyle(color: Colors.grey[700]),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -191,24 +184,68 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                     const SizedBox(width: 4),
                     Text(
                       place['location']!,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.black54),
+                      style: const TextStyle(
+                          fontSize: 12, color: Colors.black54),
                     ),
                   ],
                 )
               ],
             ),
           ),
+
+          // Bookmark & Icon Box
           Column(
             children: [
               IconButton(
-                icon: const Icon(Icons.bookmark_border),
+                icon: const Icon(Icons.bookmark, color: Colors.black87),
                 onPressed: () {},
               ),
-              const Icon(Icons.crop_square, size: 26)
+
+              // Kotak kecil (seperti gambar)
+              Container(
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black54, width: 1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(Icons.crop_square, size: 16),
+              )
             ],
           )
         ],
+      ),
+    );
+  }
+
+  // -------------------------------------------------
+  // ADD TO ROUTE BUTTON (Sesuaikan gambar)
+  // -------------------------------------------------
+
+  Widget _buildAddToRouteButton() {
+    return Center(
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF274664),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const RouteScreen()),
+        );
+      },
+        child: const Text(
+          "Add to route",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
