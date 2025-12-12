@@ -66,6 +66,41 @@ func GetTripReviews(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": reviews})
 }
 
+func DeleteTripReview(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	reviewIDParam := c.Param("review_id")
+
+	var reviewID uint
+	if _, err := fmt.Sscanf(reviewIDParam, "%d", &reviewID); err != nil || reviewID == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "review_id tidak valid"})
+		return
+	}
+
+	var review models.TripReview
+	if err := config.DB.First(&review, "review_id = ?", reviewID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Review tidak ditemukan"})
+		return
+	}
+
+	var plan models.Plan
+	if err := config.DB.First(&plan, "plan_id = ?", review.PlanID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data plan"})
+		return
+	}
+
+	if plan.UserID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Kamu tidak memiliki izin untuk menghapus review ini"})
+		return
+	}
+
+	if err := config.DB.Delete(&review).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus review"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Review berhasil dihapus"})
+}
+
 func CreatePlaceReview(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
