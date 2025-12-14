@@ -8,7 +8,7 @@ type Route struct {
 	Title       string         `gorm:"column:title" json:"title"`
 	Address     string         `gorm:"column:address" json:"address"`
 	Description string         `gorm:"column:description" json:"description"`
-	Image       []byte         `gorm:"column:image" json:"-"`
+	Image       []byte         `gorm:"column:image" json:"image"`
 	Latitude    float64        `gorm:"column:latitude" json:"latitude"`
 	Longitude   float64        `gorm:"column:longitude" json:"longitude"`
 	Tags        pq.StringArray `gorm:"type:text[];column:tags" json:"tags"`
