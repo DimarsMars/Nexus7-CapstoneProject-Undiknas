@@ -32,7 +32,7 @@ const RoutingMachine = ({ points }) => {
 
     const routingControl = L.Routing.control({
       waypoints: points.map(p => L.latLng(p.lat, p.lng)),
-      routeWhileDragging: false, // Matikan drag agar data konsisten
+      routeWhileDragging: false,
       show: false, 
       addWaypoints: false,
       draggableWaypoints: false,
