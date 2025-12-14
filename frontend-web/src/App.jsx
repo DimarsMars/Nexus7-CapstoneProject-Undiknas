@@ -15,6 +15,7 @@ import EditProfilePage from './pages/EditProfilePage'
 import BookmarkedPage from './pages/BookmarkedPage'
 import TripDetailPage from './pages/TripDetailPage'
 import MyTripReviewPage from './pages/MyTripReviewPage'
+import MapsComponents from './components/MapsComponents'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -378,6 +379,7 @@ function App() {
           <Route path='/bookmarked' element={<BookmarkedPage bookmarkedData={bookmarkedData}/>} />
           <Route path='/trip/:id' element={<TripDetailPage trips={trips}/>} />
           <Route path='/mytripreview/:id' element={<MyTripReviewPage trips={trips} sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
+          <Route path='/maps' element={<MapsComponents />} />
 
         </Routes>
 

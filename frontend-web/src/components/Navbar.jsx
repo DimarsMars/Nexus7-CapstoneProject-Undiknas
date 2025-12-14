@@ -16,7 +16,7 @@ const Navbar = () => {
     };
 
     return (
-        <header className='fixed left-0 w-full top-0 z-70 bg-white/80 backdrop-blur-md shadow-md transition-all duration-300'>
+        <header className='fixed left-0 w-full top-0 z-999 bg-white/80 backdrop-blur-md shadow-md transition-all duration-300'>
             <nav className='max-w-7xl mx-auto px-5 md:px-5 py-4 flex justify-between items-center'>
                 
                 {/* Logo */}
@@ -40,7 +40,7 @@ const Navbar = () => {
                 <div className='hidden md:flex flex-row gap-8 text-md'>
                     <Link smooth to="/homepage#" className={getLinkClass('/homepage', '')}>Home</Link>
                     <Link smooth to="/explore" className={getLinkClass('/explore')}>Explore</Link>
-                    <Link smooth to="/myprofile" className={getLinkClass('/myprofile')}>Maps</Link>
+                    <Link smooth to="/maps" className={getLinkClass('/maps')}>Maps</Link>
                     <Link smooth to="/homepage#history" className={getLinkClass('/homepage', '#history')}>History</Link>
                     <Link smooth to="/myprofile" className={getLinkClass('/myprofile')}>Profile</Link>
                 </div>
