@@ -1,9 +1,13 @@
+import { useNavigate } from 'react-router-dom';
+
 const CreatePlanSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="px-5 pb-10">
       <div className="max-w-7xl mx-auto">
         
-        <div className="relative w-full h-32 md:h-40 rounded-xl overflow-hidden cursor-pointer group shadow-lg">
+        <div onClick={() => navigate(`/maps`)} className="relative w-full h-32 md:h-40 rounded-xl overflow-hidden cursor-pointer group shadow-lg">
           <img
             src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=2000&auto=format&fit=crop" 
             alt="Nature Background"
