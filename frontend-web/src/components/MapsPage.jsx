@@ -264,6 +264,13 @@ const MapsPage = () => {
             ))}
         </div>
 
+        {/* TOMBOL POST ROUTE */}
+        <div className="flex justify-center">
+          <button className="bg-slate-800 text-white px-8 py-3 rounded-lg text-md font-medium shadow-lg hover:bg-slate-800 transition active:scale-95">
+            Post Route
+          </button>
+        </div>
+
       </div>
     </div>
   );
