@@ -84,7 +84,7 @@ const MyTripReviewPage = ({ trips, myreviewstrips }) => {
                             <div className="flex text-yellow-400 text-xs mb-1">
                                 {[...Array(item.rating)].map((_, i) => <FaStar key={i} />)}
                             </div>
-                            <h3 className="font-bold text-[#1e293b] mb-1">Review</h3>
+                            <h3 className="font-bold text-[#1e293b] mb-1">{item.name}</h3>
                             <p className="text-gray-500 text-[10px] leading-tight line-clamp-3">
                                 {item.text}
                             </p>

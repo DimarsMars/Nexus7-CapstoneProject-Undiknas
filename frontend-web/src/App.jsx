@@ -15,7 +15,7 @@ import EditProfilePage from './pages/EditProfilePage'
 import BookmarkedPage from './pages/BookmarkedPage'
 import TripDetailPage from './pages/TripDetailPage'
 import MyTripReviewPage from './pages/MyTripReviewPage'
-import MapsPage from './components/MapsPage'
+import MapsPage from './pages/MapsPage'
 
 // Data dummy untuk TripCard
 const trips = [
@@ -328,6 +328,7 @@ const sliderImages = [
 const myreviewstrips = [
   {
     id: 1,
+    name: "Sarah C.",
     image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop",
     rating: 5,
     text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
@@ -338,6 +339,7 @@ const myreviewstrips = [
   },
   {
     id: 2,
+    name: "Jaenap S.",
     image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop",
     rating: 5,
     text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
@@ -349,6 +351,7 @@ const myreviewstrips = [
   },
   {
     id: 3,
+    name: "Munaroh T.",
     image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop",
     rating: 5,
     text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.",
