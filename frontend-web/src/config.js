@@ -1,5 +1,3 @@
-// Your web app's Firebase configuration
-// This configuration is for client-side Firebase SDKs.
 const firebaseConfig = {
   apiKey: "AIzaSyAKowFpPDUTTgHrW0mIlUvFPKYbxtf0d3k",
   authDomain: "journeys-e31cb.firebaseapp.com",
@@ -21,5 +19,5 @@ export {
     API_BASE_URL,
     FIREBASE_AUTH_URL_SIGNIN,
     FIREBASE_AUTH_URL_SIGNUP,
-    firebaseConfig // Export the full config in case other Firebase services are needed later
+    firebaseConfig
 };
