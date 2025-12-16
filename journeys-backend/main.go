@@ -20,6 +20,7 @@ func main() {
 	routes.ReviewRoutes(r)
 	routes.BookmarkRoutes(r)
 	routes.FavoriteRoutes(r)
+	routes.FollowRoutes(r)
 
 	fmt.Println("Server running on :8080")
 	r.Run(":8080")
