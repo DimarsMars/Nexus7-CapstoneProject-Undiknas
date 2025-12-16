@@ -1,6 +1,16 @@
-// WARNING: Please replace "YOUR_FIREBASE_API_KEY" with your actual Firebase Web API Key.
-// You can find this in your Firebase project settings.
-const FIREBASE_API_KEY = "YOUR_FIREBASE_API_KEY";
+// Your web app's Firebase configuration
+// This configuration is for client-side Firebase SDKs.
+const firebaseConfig = {
+  apiKey: "AIzaSyAKowFpPDUTTgHrW0mIlUvFPKYbxtf0d3k",
+  authDomain: "journeys-e31cb.firebaseapp.com",
+  projectId: "journeys-e31cb",
+  storageBucket: "journeys-e31cb.firebasestorage.app",
+  messagingSenderId: "655822390436",
+  appId: "1:655822390436:web:5f42d13bf8f75c88bd5231",
+  measurementId: "G-N7CLE0K9K7"
+};
+
+const FIREBASE_API_KEY = firebaseConfig.apiKey;
 
 const API_BASE_URL = "http://localhost:8080";
 
@@ -10,5 +20,6 @@ const FIREBASE_AUTH_URL_SIGNUP = `https://identitytoolkit.googleapis.com/v1/acco
 export {
     API_BASE_URL,
     FIREBASE_AUTH_URL_SIGNIN,
-    FIREBASE_AUTH_URL_SIGNUP
+    FIREBASE_AUTH_URL_SIGNUP,
+    firebaseConfig // Export the full config in case other Firebase services are needed later
 };
