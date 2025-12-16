@@ -16,8 +16,12 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
   bool isPaused = false;
   bool isArrived = false;
 
-  final LatLng currentLocation = LatLng(-8.670458, 115.212629); // Denpasar
-  final LatLng destination = LatLng(-8.374090, 115.167118); // Bedugul
+  final LatLng currentLocation = LatLng(-8.670458, 115.212629);
+  final LatLng destination = LatLng(-8.374090, 115.167118);
+
+  static const primaryBlue = Color(0xff1A73E8);
+  static const darkBlue = Color(0xff174EA6);
+  static const softGrey = Color(0xff6B7280);
 
   void onArrived() {
     setState(() => isArrived = true);
@@ -46,11 +50,19 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xffF3F4F6),
       appBar: AppBar(
-        title: const Text("Trip Schedule"),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: const Text(
+          "Trip Schedule",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
       body: Stack(
         children: [
+          /// ================= MAP =================
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
@@ -72,8 +84,8 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
                     width: 40,
                     height: 40,
                     child: const Icon(
-                      Icons.my_location,
-                      color: Colors.blue,
+                      Icons.navigation,
+                      color: primaryBlue,
                       size: 30,
                     ),
                   ),
@@ -83,19 +95,18 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
                     height: 40,
                     child: const Icon(
                       Icons.location_on,
-                      color: Colors.red,
-                      size: 30,
+                      color: Colors.redAccent,
+                      size: 34,
                     ),
                   ),
                 ],
               ),
 
-              /// CURRENT LOCATION
               const CurrentLocationLayer(),
             ],
           ),
 
-          /// BOTTOM INFO
+          /// ================= BOTTOM PANEL =================
           Positioned(
             bottom: 0,
             left: 0,
@@ -105,9 +116,12 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(18)),
+                    BorderRadius.vertical(top: Radius.circular(22)),
                 boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 8)
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                  )
                 ],
               ),
               child: Column(
@@ -115,72 +129,116 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Current Location : Denpasar",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    "Current Location · Denpasar",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  const Text("Going to : Bedugul - Villa Oprek"),
+                  const Text(
+                    "Going to · Bedugul - Villa Oprek",
+                    style: TextStyle(color: softGrey),
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    isArrived ? "Status : Arrived" : "est ~50km left",
+                    isArrived ? "Arrived" : "est · ~50 km left",
                     style: TextStyle(
-                      color: isArrived ? Colors.green : Colors.grey,
+                      color:
+                          isArrived ? Colors.green : softGrey,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
 
+                  /// BUTTONS
                   Row(
                     children: [
                       Expanded(
                         child: ElevatedButton(
                           onPressed: isArrived ? null : onArrived,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: primaryBlue,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text("Arrived"),
+                          child: const Text(
+                            "Arrived",
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: onPause,
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                isPaused ? Colors.orange : Colors.blue,
+                                isPaused ? Colors.orange : darkBlue,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                            ),
                           ),
-                          child: Text(isPaused ? "Resume" : "Pause"),
+                          child: Text(
+                            isPaused ? "Resume" : "Pause",
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   const Text(
                     "Next Location",
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
 
-                  ListTile(
-                    leading: const Icon(Icons.place),
-                    title: const Text("Serenity Oasis Resort"),
-                    subtitle: const Text("Resort"),
-                    trailing: const Icon(Icons.bookmark_border),
-                    onTap: () =>
-                        onNextLocation("Serenity Oasis Resort"),
+                  const SizedBox(height: 8),
+
+                  /// NEXT LOCATION CARD
+                  buildNextLocation(
+                    "Serenity Oasis Resort",
+                    "Resort",
                   ),
-                  ListTile(
-                    leading: const Icon(Icons.place),
-                    title: const Text("Batur Spring"),
-                    subtitle: const Text("Tourist spot"),
-                    trailing: const Icon(Icons.bookmark_border),
-                    onTap: () => onNextLocation("Batur Spring"),
+                  buildNextLocation(
+                    "Batur Spring",
+                    "Tourist Spot",
                   ),
                 ],
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget buildNextLocation(String title, String subtitle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xffF9FAFB),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.place, color: primaryBlue),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing:
+            const Icon(Icons.bookmark_border, color: softGrey),
+        onTap: () => onNextLocation(title),
       ),
     );
   }
