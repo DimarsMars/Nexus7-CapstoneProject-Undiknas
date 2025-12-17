@@ -38,8 +38,11 @@ class _RouteScreenState extends State<RouteScreen> {
 
   final List<Map<String, dynamic>> routes = [];
 
-  /// 🔥 SEMUA TITIK ROUTE
+  /// 🔥 TITIK ROUTE (marker)
   final List<LatLng> routePoints = [];
+
+  /// 🔥 GARIS ROUTE (jalan asli ORS)
+  final List<LatLng> routeGeometry = [];
 
   // ================= SEARCH LOCATION =================
   Future<void> searchLocation() async {
@@ -66,6 +69,35 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
+  // ================= FETCH ROUTE ORS =================
+  Future<void> fetchRoute() async {
+    if (routePoints.length < 2) return;
+
+    final coords =
+        routePoints.map((p) => [p.longitude, p.latitude]).toList();
+
+    final response = await http.post(
+      Uri.parse(
+          "https://api.openrouteservice.org/v2/directions/driving-car/geojson"),
+      headers: {
+        "Authorization": orsApiKey,
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({"coordinates": coords}),
+    );
+
+    final data = jsonDecode(response.body);
+    final List geometry =
+        data["features"][0]["geometry"]["coordinates"];
+
+    setState(() {
+      routeGeometry.clear();
+      routeGeometry.addAll(
+        geometry.map((c) => LatLng(c[1], c[0])).toList(),
+      );
+    });
+  }
+
   // ================= ADD ROUTE =================
   void addRoute() {
     if (titleController.text.isEmpty ||
@@ -84,10 +116,12 @@ class _RouteScreenState extends State<RouteScreen> {
         "latlng": currentLocation,
       });
 
-      /// 🔥 SIMPAN TITIK & NYAMBUNG
+      /// 🔥 SIMPAN TITIK
       routePoints.add(currentLocation);
     });
 
+    /// 🔥 AMBIL JALUR JALAN
+    fetchRoute();
     clearForm();
   }
 
@@ -98,6 +132,7 @@ class _RouteScreenState extends State<RouteScreen> {
     setState(() {
       routes.clear();
       routePoints.clear();
+      routeGeometry.clear();
       currentLocation = const LatLng(-8.436697, 115.279947);
     });
 
@@ -159,8 +194,10 @@ class _RouteScreenState extends State<RouteScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: const BackButton(color: Colors.black),
-        title: const Text("Forge Your Route",
-            style: TextStyle(color: Colors.black)),
+        title: const Text(
+          "Forge Your Route",
+          style: TextStyle(color: Colors.black),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
@@ -241,6 +278,7 @@ class _RouteScreenState extends State<RouteScreen> {
                             setState(() {
                               routes.removeAt(index);
                               routePoints.removeAt(index);
+                              fetchRoute();
                             });
                           },
                         ),
@@ -296,19 +334,21 @@ class _RouteScreenState extends State<RouteScreen> {
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
           ),
 
-          /// 🔥 GARIS ROUTE
-          if (routePoints.length > 1)
+          /// 🔥 ROUTE JALAN (SEPERTI GAMBAR)
+          if (routeGeometry.length > 1)
             PolylineLayer(
               polylines: [
                 Polyline(
-                  points: routePoints,
-                  strokeWidth: 4,
-                  color: Colors.blue,
+                  points: routeGeometry,
+                  strokeWidth: 6,
+                  color: Colors.deepPurpleAccent,
+                  borderColor: Colors.deepPurple,
+                  borderStrokeWidth: 2,
                 ),
               ],
             ),
 
-          /// 🔥 SEMUA MARKER
+          /// 🔥 MARKER
           MarkerLayer(
             markers: routePoints
                 .map(
@@ -316,8 +356,11 @@ class _RouteScreenState extends State<RouteScreen> {
                     point: p,
                     width: 40,
                     height: 40,
-                    child: const Icon(Icons.location_on,
-                        color: Colors.red, size: 36),
+                    child: const Icon(
+                      Icons.location_on,
+                      color: Colors.red,
+                      size: 36,
+                    ),
                   ),
                 )
                 .toList(),
