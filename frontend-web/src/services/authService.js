@@ -3,7 +3,7 @@ import {
     API_BASE_URL,
     FIREBASE_AUTH_URL_SIGNIN,
     FIREBASE_AUTH_URL_SIGNUP
-} from '../config';
+} from '../../config';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
