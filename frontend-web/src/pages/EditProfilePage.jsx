@@ -1,34 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaCertificate, FaPen } from "react-icons/fa";
+import { useAuth } from '../context/AuthContext';
+import { updateUserProfile, getUserMe } from '../services/apiService';
 
 const EditProfilePage = ({ user }) => {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
 
-  // STATE FORM
+  // State for display-only data fetched from the backend
+  const [displayUser, setDisplayUser] = useState({
+    name: 'Loading...',
+    role: 'Loading...'
+  });
+
+  // State for the form data that can be edited and submitted
   const [formData, setFormData] = useState({
-    name: user.name,
     birthDate: user.birthDate || "",
     description: user.description || "",
     status: user.status || "",
     image: user.image
   });
 
-  // HANDLER INPUT
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (authUser && authUser.idToken) {
+        try {
+          const response = await getUserMe(authUser.idToken);
+          // Set the display-only user data
+          setDisplayUser({
+            name: response.data.username,
+            role: response.data.role
+          });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          // Update display with an error message
+          setDisplayUser({
+            name: 'Error',
+            role: 'Error'
+          });
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [authUser]);
+
+  // HANDLER INPUT for editable fields
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    setFormData(prevData => ({
+      ...prevData,
       [name]: value
-    });
+    }));
   };
 
-  // HANDLER SUBMIT
-  const handleSubmit = (e) => {
+  // HANDLER SUBMIT for editable fields
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Data siap dikirim ke Backend:", formData);
-    alert("Profile Updated! (Check Console)");
-    navigate('/my-profile');
+    
+    if (!authUser || !authUser.idToken) {
+      alert("User not authenticated. Please log in again.");
+      navigate('/login');
+      return;
+    }
+
+    const payload = {
+      birth_date: formData.birthDate,
+      description: formData.description,
+      status: formData.status,
+      photo: formData.image,
+      location: "Solo", //Default value as per response
+      languages: "ID" //Default value as per response
+    };
+
+    try {
+      const response = await updateUserProfile(authUser.idToken, payload);
+      console.log("Profile updated successfully:", response);
+      alert("Profile Updated!");
+      navigate('/myprofile');
+    } catch (error) {
+      console.error("Error updating profile:", error.response ? error.response.data : error.message);
+      alert("Failed to update profile. Please try again.");
+    }
   };
 
   return (
@@ -51,7 +105,7 @@ const EditProfilePage = ({ user }) => {
                 <div>
                     <label className="text-gray-600 text-lg mb-1 block">Name</label>
                     <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 uppercase tracking-wide">
-                        {formData.name}
+                        {displayUser.name}
                     </div>
                 </div>
 
@@ -62,7 +116,7 @@ const EditProfilePage = ({ user }) => {
                              <FaCertificate className="text-slate-900 text-4xl" /> 
                              <span className="absolute font-bold text-xs">{user.rankLevel}</span>
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900">{user.rank}</h2>
+                        <h2 className="text-xl font-bold text-slate-900">{displayUser.role}</h2>
                     </div>
                 </div>
             </div>
