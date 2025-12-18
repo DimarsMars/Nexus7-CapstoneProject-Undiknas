@@ -141,7 +141,7 @@ const EditProfilePage = ({ user }) => {
           <div className="flex flex-col gap-6 w-full md:w-1/2">
             <div>
               <label className="text-gray-600 text-lg mb-1 block">Name</label>
-              <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 uppercase tracking-wide">
+              <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 tracking-wide">
                 {displayUser.name}
               </div>
             </div>
