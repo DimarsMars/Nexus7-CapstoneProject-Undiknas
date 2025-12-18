@@ -1,6 +1,6 @@
 import { FaMapMarkerAlt, FaTrash } from "react-icons/fa";
 
-const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onAddPlace }) => {
+const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-start gap-4 transition hover:shadow-md">
       
@@ -19,8 +19,11 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onAddPl
         <h4 className="font-bold text-slate-800 text-md mb-1">
           Lokasi {index + 1} : {point.name}
         </h4>
-        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">
+        <p className="text-slate-500 px-3 text-xs leading-relaxed line-clamp-2">
           {point.address}
+        </p>
+        <p className="text-slate-700  text-sm leading-relaxed line-clamp-2">
+          {point.description}
         </p>
         
         {/* Tombol Aksi */}
@@ -37,12 +40,7 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onAddPl
           >
             Add Image
           </button>
-          <button 
-             onClick={() => onAddPlace && onAddPlace(point)}
-             className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
-          >
-            Add Specific Place
-          </button>
+
           <button 
             onClick={() => onDelete(index)}
             className="text-[10px] bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center gap-1"

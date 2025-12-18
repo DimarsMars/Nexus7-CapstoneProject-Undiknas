@@ -85,6 +85,7 @@ const MapsPage = () => {
   const [mapCenter, setMapCenter] = useState([-8.5069, 115.2625]);
   const [previewLocation, setPreviewLocation] = useState(null); 
   const [isSearching, setIsSearching] = useState(false);
+  const [whatAreYouDoing, setWhatAreYouDoing] = useState("");
 
   // --- STATE KATEGORI ---
   const [categories, setCategories] = useState([]);
@@ -193,11 +194,17 @@ const MapsPage = () => {
         return;
     }
 
-    const newWaypoints = [...waypoints, previewLocation];
+    const newRoutePoint = {
+        ...previewLocation,
+        description: whatAreYouDoing // Add the description here
+    };
+
+    const newWaypoints = [...waypoints, newRoutePoint];
     setWaypoints(newWaypoints);
 
     setPreviewLocation(null);
     setSearchQuery("");
+    setWhatAreYouDoing(""); // Clear the input after adding
     
     // Log Data
     console.log("Data Route:", JSON.stringify(newWaypoints, null, 2));
@@ -295,10 +302,16 @@ const MapsPage = () => {
             </button>
         </div>
 
-        {/* Input Tags */}
+        {/* Input Deskripsi */}
         <div className="flex flex-col gap-3">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
-            <input type="text" placeholder="What are you doing?" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+            <input 
+                type="text" 
+                placeholder="What are you doing?" 
+                className="flex-1 bg-transparent outline-none text-slate-700 font-medium" 
+                value={whatAreYouDoing}
+                onChange={(e) => setWhatAreYouDoing(e.target.value)}
+            />
           </div>
         </div>
 
