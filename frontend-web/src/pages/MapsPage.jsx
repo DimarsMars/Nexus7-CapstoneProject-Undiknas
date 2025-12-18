@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaMapMarkerAlt, FaTrash } from "react-icons/fa";
 import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
+import LocationRouteCard from '../components/LocationRouteCard';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
@@ -236,44 +237,16 @@ const MapsPage = () => {
             )}
 
             {waypoints.map((point, index) => (
-                // CARD ITEM
-                <div key={index} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-start gap-4 transition hover:shadow-md">
-                    
-                    {/* Gambar Placeholder (Bisa diganti image dari API kalau ada) */}
-                    <div className="w-20 h-20 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
-                        <FaMapMarkerAlt className="text-slate-400 text-2xl" />
-                    </div>
-
-                    {/* Konten Teks */}
-                    <div className="flex-1 text-left">
-                        <h4 className="font-bold text-slate-800 text-md mb-1">
-                            {/* Menampilkan Urutan Lokasi (Point 1, Point 2, dst) */}
-                            Lokasi {index + 1} : {point.name}
-                        </h4>
-                        <p className="text-slate-500 text-sm leading-relaxed">
-                            {point.address}
-                        </p>
-                        
-                        {/* Tombol Aksi Kecil di dalam Card */}
-                        <div className="flex gap-2 mt-3">
-                            <button className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700">
-                                Edit Route
-                            </button>
-                            <button className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700">
-                                Add Image
-                            </button>
-                            <button className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700">
-                                Add Specific Place
-                            </button>
-                            <button 
-                                onClick={() => handleDeletePoint(index)}
-                                className="text-[10px] bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center gap-1"
-                            >
-                                <FaTrash size={8} /> Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <LocationRouteCard 
+                    key={index} 
+                    point={point} 
+                    index={index} 
+                    onDelete={handleDeletePoint}
+                    // Kamu bisa menambahkan handler lain nanti:
+                    onEdit={() => console.log("Edit clicked", point)}
+                    onAddImage={() => console.log("Add Image clicked", point)}
+                    onAddPlace={() => console.log("Add Place clicked", point)}
+                />
             ))}
         </div>
 
