@@ -52,7 +52,7 @@ const MyProfilePage = () => {
                              <FaCertificate className="text-black text-3xl" /> 
                              <span className="absolute font-bold text-xs">1</span>
                         </div>
-                        <h2 className="text-xl font-bold text-[#1e293b]">Newbie</h2>
+                        <h2 className="text-xl font-bold text-[#1e293b]">{user.role}</h2>
                     </div>
                 </div>
             </div>
