@@ -12,10 +12,15 @@ const getProfileMe = () => {
   return apiClient.get('/profile/me');
 };
 
+const getCategories = () => {
+  return apiClient.get('/category/');
+};
+
 const apiService = {
   updateUserProfile,
   getUserMe,
   getProfileMe,
+  getCategories,
 };
 
 export default apiService;
