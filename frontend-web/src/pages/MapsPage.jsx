@@ -206,6 +206,16 @@ const MapsPage = () => {
             </button>
         </div>
 
+        {/* Input Tags dan Keterangan*/}
+        <div className="flex flex-col gap-3">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
+            <input type="text" placeholder="What are you doing?" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
+            <input type="text" placeholder="#Tags" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+          </div>
+        </div>
+
         {/* TOMBOL ADD ROUTE */}
         <div className="flex justify-center gap-4">
           <button 
@@ -251,6 +261,9 @@ const MapsPage = () => {
                             </button>
                             <button className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700">
                                 Add Image
+                            </button>
+                            <button className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700">
+                                Add Specific Place
                             </button>
                             <button 
                                 onClick={() => handleDeletePoint(index)}
