@@ -204,14 +204,14 @@ const EditProfilePage = ({ user }) => {
           <div className="flex flex-col gap-3">
             <button
               type="submit"
-              className="w-full py-2.5 bg-slate-900 text-white text-lg rounded-md"
+              className="w-full py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-md hover:bg-slate-700 transition shadow-sm tracking-wide"
             >
               Save
             </button>
             <button
               type="button"
               onClick={() => navigate('/myprofile')}
-              className="w-full py-2.5 bg-[#ff0000] text-white text-lg rounded-md"
+              className="w-full py-2.5 bg-red-600 text-white text-sm font-semibold rounded-md hover:bg-red-700 transition shadow-sm tracking-wide"
             >
               Cancel
             </button>

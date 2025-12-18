@@ -12,6 +12,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
     const { user: authUser, logout } = useAuth();
 
     const [profileImage, setProfileImage] = useState('');
+    const [profileRank, setProfileRank] = useState('');
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -19,6 +20,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
                 try {
                     const profileResponse = await apiService.getProfileMe();
                     setProfileImage(profileResponse.data.photo || '');
+                    setProfileRank(profileResponse.data.rank || '');
                 } catch (error) {
                     console.error("Error fetching profile data:", error);
                 }
@@ -55,7 +57,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
       <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
 
         {/* BAGIAN ATAS: PROFIL & STATS */}
-        <div className="flex flex-col md:flex-row items-center px-30 py-5 justify-between md:items-start gap-6 md:gap-12">
+        <div className="flex flex-col md:flex-row items-center px-30 py-5 justify-between md:items-center gap-6 md:gap-12">
             <div className="shrink-0">
                 <div className="w-32 h-32 md:w-45 md:h-45 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg bg-gray-300">
                     {profileImage ? (
@@ -68,22 +70,21 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
                 </div>
             </div>
 
-            <div className="flex flex-col justify-center text-center md:text-left gap-4 mt-1">
-
+            <div className="flex flex-col justify-center text-center md:text-left gap-4">
                 <div>
                     <h3 className="text-gray-400 text-sm font-normal mb-0.5">Name</h3>
                     <h1 className="text-xl md:text-2xl font-bold text-[#1e293b] tracking-wide">{user.username}</h1>
                 </div>
 
-                <div>
+                <div className="flex flex-col justify-center">
                     <h3 className="text-gray-400 text-sm font-normal mb-1">Rank’s</h3>
-                    <div className="flex items-center justify-center md:justify-start gap-2">
+                    <div className="flex flex-row items-center justify-center md:justify-start gap-2">
                         <div className="relative flex items-center justify-center text-white">
                              <FaCertificate className="text-black text-3xl" /> 
                              <span className="absolute font-bold text-xs">{userdummy.rankLevel}</span>
                              <span className="absolute font-bold text-xs">1</span>
                         </div>
-                        <h2 className="text-xl font-bold text-[#1e293b]">{userdummy.rank}</h2>
+                        <h2 className="text-xl font-bold text-[#1e293b]">{profileRank}</h2>
                     </div>
                 </div>
             </div>
@@ -138,7 +139,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
             <button onClick={() => navigate('/editprofile')} className="w-full py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition shadow-sm tracking-wide">
                 Edit Profile
             </button>
-            <button onClick={handleLogout} className="w-full py-2.5 bg-[#ff0000] text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm tracking-wide">
+            <button onClick={handleLogout} className="w-full py-2.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition shadow-sm tracking-wide">
                 Log Out
             </button>
         </div>
