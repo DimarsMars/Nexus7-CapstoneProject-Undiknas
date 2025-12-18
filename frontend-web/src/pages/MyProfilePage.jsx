@@ -1,21 +1,37 @@
 import { FaCertificate } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import TripCard from '../components/TripCard';
+import ReviewCard from '../components/ReviewCard';
+import UserReviewCard from '../components/UserReviewCard';
 import { useAuth } from '../context/AuthContext';
-// Dummy data sections are removed as they are not available from the API yet.
-// import TripCard from '../components/TripCard';
-// import ReviewCard from '../components/ReviewCard';
-// import UserReviewCard from '../components/UserReviewCard';
+import apiService from '../services/apiService';
 
-const MyProfilePage = () => {
+const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
     const navigate = useNavigate();
     const { user: authUser, logout } = useAuth();
+
+    const [profileImage, setProfileImage] = useState('');
+
+    useEffect(() => {
+        const fetchProfileData = async () => {
+            if (authUser && authUser.idToken) {
+                try {
+                    const profileResponse = await apiService.getProfileMe();
+                    setProfileImage(profileResponse.data.photo || '');
+                } catch (error) {
+                    console.error("Error fetching profile data:", error);
+                }
+            }
+        };
+        fetchProfileData();
+    }, [authUser]);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
-    // Render a loading state or a redirect if the user data isn't available yet
     if (!authUser || !authUser.user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -24,22 +40,36 @@ const MyProfilePage = () => {
         );
     }
 
-    const { user } = authUser; // The actual user object from the backend
+    // FIX FOTO 
+    const getImageSrc = () => {
+      if (!profileImage) return "";
+
+      // Base64 dari backend
+      return `data:image/jpeg;base64,${profileImage}`;
+    };
+
+    const { user } = authUser;
 
     return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
       <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
-        
+
         {/* BAGIAN ATAS: PROFIL & STATS */}
         <div className="flex flex-col md:flex-row items-center px-30 py-5 justify-between md:items-start gap-6 md:gap-12">
             <div className="shrink-0">
                 <div className="w-32 h-32 md:w-45 md:h-45 rounded-full overflow-hidden border-4 border-gray-200 shadow-lg bg-gray-300">
-                    {/* Placeholder for user image */}
+                    {profileImage ? (
+                        <img src={getImageSrc()} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            Profile
+                        </div>
+                    )}
                 </div>
             </div>
 
             <div className="flex flex-col justify-center text-center md:text-left gap-4 mt-1">
-                
+
                 <div>
                     <h3 className="text-gray-400 text-sm font-normal mb-0.5">Name</h3>
                     <h1 className="text-xl md:text-2xl font-bold text-[#1e293b] tracking-wide">{user.username}</h1>
@@ -50,15 +80,46 @@ const MyProfilePage = () => {
                     <div className="flex items-center justify-center md:justify-start gap-2">
                         <div className="relative flex items-center justify-center text-white">
                              <FaCertificate className="text-black text-3xl" /> 
+                             <span className="absolute font-bold text-xs">{userdummy.rankLevel}</span>
                              <span className="absolute font-bold text-xs">1</span>
                         </div>
-                        <h2 className="text-xl font-bold text-[#1e293b]">{user.role}</h2>
+                        <h2 className="text-xl font-bold text-[#1e293b]">{userdummy.rank}</h2>
                     </div>
                 </div>
             </div>
 
             <div className="flex flex-col gap-10 w-full md:w-auto mt-4 md:mt-0">
-                {/* Stats sections are removed as data is not available from API yet */}
+                <div className="flex gap-3 items-center">
+                    <div className="relative flex items-center justify-center text-white shrink-0">
+                        <FaCertificate className="text-[#0f172a] text-5xl drop-shadow-md" />
+                        <span className="absolute font-bold text-lg">{userdummy.stats.travelScore.level}</span>
+                    </div>
+                    <div className="w-full">
+                        <h4 className="font-bold text-[#1e293b] text-sm">Traveling Score’s</h4>
+                        <p className="text-[10px] text-gray-500 font-medium">XP {userdummy.stats.travelScore.xp}</p>
+                        <p className="font-bold text-xs text-[#1e293b] mt-0.5">{userdummy.stats.travelScore.title}</p>
+                        
+                        <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-[#1e293b] w-[60%] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-3 items-center">
+                    <div className="relative flex items-center justify-center text-white shrink-0">
+                        <FaCertificate className="text-[#0f172a] text-5xl drop-shadow-md" />
+                        <span className="absolute font-bold text-lg">{userdummy.stats.routeScore.level}</span>
+                    </div>
+                    <div className="w-full">
+                        <h4 className="font-bold text-[#1e293b] text-sm">Route Score</h4>
+                        <p className="text-[10px] text-gray-500 font-medium">XP {userdummy.stats.routeScore.xp}</p>
+                        <p className="font-bold text-xs text-[#1e293b] mt-0.5">{userdummy.stats.routeScore.title}</p>
+                        
+                        <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                            <div className="h-full bg-[#1e293b] w-[60%] rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -66,9 +127,8 @@ const MyProfilePage = () => {
         <div className="mt-8 mb-8">
             <div className="border-t-2 border-[#1e293b] mb-4"></div>
             <div className="flex flex-col gap-2 items-center text-[#1e293b] text-base font-medium">
-                {/* These links can be implemented later */}
-                {/* <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Location</a>
-                <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Languages</a> */}
+                <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Location</a>
+                <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Languages</a>
             </div>
             <div className="border-t-2 border-[#1e293b] mt-4"></div>
         </div>
@@ -83,7 +143,79 @@ const MyProfilePage = () => {
             </button>
         </div>
 
-        {/* Sections depending on dummy data are removed for now */}
+
+        {/* SECTION MY ROUTE */}
+        <div className="pt-15">
+            <div className="flex items-center gap-2 mb-4 cursor-pointer group">
+                <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-2">My Route</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {trips && trips.slice(0, 3).map((trip, index) => (
+                    <div key={trip.id} 
+                        onClick={() => navigate(`/mytripreview/${trip.id}`)}
+                        className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
+                    >
+                        <TripCard
+                            key={trip.id}
+                            title={trip.title}
+                            author={trip.author}
+                            rating={trip.rating}
+                            image={trip.image}
+                            className={
+                                index === 0
+                                ? "md:col-span-2 h-56 md:h-72"
+                                : "h-56 md:h-60"               
+                            }
+                        />
+                    </div>
+                ))}
+
+            </div>
+        </div>
+
+        {/* SECTION YOUR REVIEW */}
+        <div className="pt-15">
+            <h2 className="text-lg md:text-xl font-bold text-start text-slate-900 mb-2">
+                Your review
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {myReviews.map((review) => (
+                    <ReviewCard
+                        key={review.id}
+                        image={review.image}
+                        title={review.title}
+                        description={review.description}
+                        location={review.location}
+                        rating={review.rating}
+                        onDelete={() => alert(`Delete review ${review.title}?`)}
+                    />
+                ))}
+            </div>
+        </div>
+
+        {/* SECTION THOSE WHO REVIEW YOU */}
+        <div className="pt-15 text-start">
+            <div className="flex items-center gap-2 cursor-pointer group">
+                <h2 className="text-lg md:text-xl font-bold text-slate-900 mb-2">Those who review you</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {othersReviews.map((item) => (
+                    <UserReviewCard
+                        key={item.id}
+                        image={item.image}
+                        name={item.name}
+                        role={item.role}
+                        rating={item.rating}
+                        review={item.text}
+                        onDelete={() => alert("Delete user review?")}
+                    />
+                ))}
+            </div>
+        </div>    
+
       </div>
     </div>
   );
