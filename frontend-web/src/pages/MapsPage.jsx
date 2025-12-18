@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaMapMarkerAlt, FaTrash, FaPlus, FaChevronDown } from "react-icons/fa";
-import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
+import { FaSearch, FaMapMarkerAlt, FaTrash, FaPlus, FaChevronDown, FaTimes } from "react-icons/fa";
+// 1. Tambahkan useMapEvents di sini
+import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents } from 'react-leaflet';
 import LocationRouteCard from '../components/LocationRouteCard';
+import apiService from '../services/apiService';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
@@ -21,14 +23,12 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 // --- LOGIC MAP ---
 
-// Routing Machine (Hanya menggambar rute dari waypoints yang SUDAH DI-ADD)
 const RoutingMachine = ({ points }) => {
   const map = useMap();
   useEffect(() => {
     if (!map) return;
     if (map.routingControl) map.removeControl(map.routingControl);
     
-    // Hanya gambar rute jika ada minimal 2 titik
     if (points.length < 2) return;
 
     const routingControl = L.Routing.control({
@@ -49,7 +49,6 @@ const RoutingMachine = ({ points }) => {
   return null;
 };
 
-// Map Updater (Animasi Pindah Kamera)
 const MapUpdater = ({ center }) => {
   const map = useMap();
   useEffect(() => {
@@ -60,7 +59,16 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// Temporary Marker (Marker Merah untuk lokasi yang baru di-search tapi BELUM di-add)
+// 2. Component baru untuk menangkap Klik di Peta
+const MapClickHandler = ({ onMapClick }) => {
+    useMapEvents({
+        click: (e) => {
+            onMapClick(e.latlng);
+        },
+    });
+    return null;
+};
+
 const PreviewMarker = ({ position }) => {
     if (!position) return null;
     return <Marker position={[position.lat, position.lng]} />;
@@ -69,22 +77,43 @@ const PreviewMarker = ({ position }) => {
 
 // --- MAIN PAGE ---
 const MapsPage = () => {
-  const [waypoints, setWaypoints] = useState([]); // Data rute fix (Array of Objects)
+  const [waypoints, setWaypoints] = useState([]); 
   const navigate = useNavigate();
   
   // State Search & Preview
   const [searchQuery, setSearchQuery] = useState("");
   const [mapCenter, setMapCenter] = useState([-8.5069, 115.2625]);
-  const [previewLocation, setPreviewLocation] = useState(null); // Lokasi yang sedang dilihat tapi belum di-add
+  const [previewLocation, setPreviewLocation] = useState(null); 
   const [isSearching, setIsSearching] = useState(false);
 
-  // Fungsi Cari Lokasi (Hanya Preview)
+  // --- STATE KATEGORI ---
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]); 
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // --- FETCH KATEGORI ---
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiService.getCategories();        
+        if (Array.isArray(response.data)) {
+            setCategories(response.data);
+        } else {
+            console.error("Format data kategori tidak sesuai:", response.data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil kategori:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  // Fungsi Cari Lokasi (Search Bar)
   const handleSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
     
     try {
-      // API ArcGIS untuk alamat lengkap
       const response = await fetch(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&singleLine=${searchQuery}&outFields=Match_addr,Addr_type`);
       const data = await response.json();
       
@@ -92,7 +121,6 @@ const MapsPage = () => {
         const result = data.candidates[0];
         const location = result.location;
         
-        // Simpan data calon lokasi ke state 'previewLocation'
         const newPreview = {
             lat: location.y,
             lng: location.x,
@@ -101,7 +129,7 @@ const MapsPage = () => {
         };
 
         setPreviewLocation(newPreview);
-        setMapCenter([location.y, location.x]); // Pindah kamera map
+        setMapCenter([location.y, location.x]); 
       } else {
         alert("Lokasi tidak ditemukan!");
       }
@@ -113,30 +141,90 @@ const MapsPage = () => {
     }
   };
 
-  // Fungsi Add Route (Konfirmasi Lokasi)
+  // 3. Fungsi Handler saat Peta Diklik (Reverse Geocoding)
+  const handleMapClick = async (latlng) => {
+    const { lat, lng } = latlng;
+
+    // Set sementara (Visual Feedback langsung muncul marker)
+    setPreviewLocation({ 
+        lat, 
+        lng, 
+        name: "Fetching address...", 
+        address: "Loading..." 
+    });
+
+    try {
+        // Fetch alamat dari koordinat (Reverse Geocoding ArcGIS)
+        const response = await fetch(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${lng},${lat}`);
+        const data = await response.json();
+
+        if (data && data.address) {
+            setPreviewLocation({
+                lat,
+                lng,
+                name: data.address.Match_addr || "Selected Location",
+                address: data.address.LongLabel || data.address.Match_addr
+            });
+            // Update search query agar user tau apa yang diklik
+            setSearchQuery(data.address.Match_addr || "");
+        } else {
+            // Fallback jika alamat tidak ketemu (misal klik di tengah laut)
+            setPreviewLocation({
+                lat,
+                lng,
+                name: "Selected Location",
+                address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+            });
+        }
+    } catch (error) {
+        console.error("Reverse geocode error:", error);
+        setPreviewLocation({
+            lat,
+            lng,
+            name: "Selected Location",
+            address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+        });
+    }
+  };
+
   const handleAddRoute = () => {
     if (!previewLocation) {
-        alert("Silakan cari lokasi terlebih dahulu!");
+        alert("Silakan cari atau klik lokasi di peta terlebih dahulu!");
         return;
     }
 
-    // Masukkan lokasi preview ke daftar waypoints permanen
     const newWaypoints = [...waypoints, previewLocation];
     setWaypoints(newWaypoints);
 
-    // Reset preview
     setPreviewLocation(null);
     setSearchQuery("");
     
-    // Log Data untuk Backend
-    console.log("Data siap kirim ke Backend:", JSON.stringify(newWaypoints, null, 2));
+    // Log Data
+    console.log("Data Route:", JSON.stringify(newWaypoints, null, 2));
+    console.log("Selected Categories:", selectedCategories);
   };
 
-  // Fungsi Hapus Titik
   const handleDeletePoint = (index) => {
       const newPoints = waypoints.filter((_, i) => i !== index);
       setWaypoints(newPoints);
   };
+
+  // --- HANDLER MULTI SELECT KATEGORI ---
+  const handleSelectCategory = (category) => {
+      if (!selectedCategories.some(c => c.category_id === category.category_id)) {
+          setSelectedCategories([...selectedCategories, category]);
+      }
+      setIsDropdownOpen(false); 
+  };
+
+  const handleRemoveCategory = (categoryId) => {
+      const updated = selectedCategories.filter(c => c.category_id !== categoryId);
+      setSelectedCategories(updated);
+  };
+
+  const availableCategories = categories.filter(
+      c => !selectedCategories.some(selected => selected.category_id === c.category_id)
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-10 pt-30 px-4 font-sans">
@@ -167,23 +255,23 @@ const MapsPage = () => {
           >
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             
-            {/* Gambar Rute Fix */}
             <RoutingMachine points={waypoints} />
             
-            {/* Gambar Marker untuk Titik yang sudah Fix */}
             {waypoints.map((point, idx) => (
                 <Marker key={idx} position={[point.lat, point.lng]}>
                     <Popup>{point.name}</Popup>
                 </Marker>
             ))}
-
-            {/* Gambar Marker untuk PREVIEW */}
+            
             {previewLocation && (
                 <Marker position={[previewLocation.lat, previewLocation.lng]} opacity={0.6}>
                       <Popup>Click 'Add Route' to confirm this location.</Popup>
                 </Marker>
             )}
-
+            
+            {/* 4. Pasang Handler Klik di sini */}
+            <MapClickHandler onMapClick={handleMapClick} />
+            
             <MapUpdater center={mapCenter} />
           </MapContainer>
         </div>
@@ -192,7 +280,7 @@ const MapsPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-12 flex items-center px-4">
             <input 
                 type="text" 
-                placeholder="Cari lokasi (Misal: Aloha Ubud Swing)..." 
+                placeholder="Cari lokasi atau klik di peta..." 
                 className="flex-1 bg-transparent outline-none text-slate-700 font-medium"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -207,13 +295,10 @@ const MapsPage = () => {
             </button>
         </div>
 
-        {/* Input Tags dan Keterangan*/}
+        {/* Input Tags */}
         <div className="flex flex-col gap-3">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
             <input type="text" placeholder="What are you doing?" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
-            <input type="text" placeholder="#Tags" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
           </div>
         </div>
 
@@ -230,28 +315,63 @@ const MapsPage = () => {
           </button>
         </div>
 
-        {/* --- NEW CATEGORIES SECTION --- */}
-        <div className="flex flex-col gap-3">
-          {/* Select Categories Dropdown */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center relative">
-            <select className="w-full bg-transparent outline-none text-slate-700 font-medium appearance-none cursor-pointer px-4 z-10">
-              <option value="" disabled selected>Select Categories</option>
-              <option value="nature">Nature</option>
-              <option value="adventure">Adventure</option>
-              <option value="culture">Culture</option>
-              <option value="culinary">Culinary</option>
-            </select>
-            <FaChevronDown className="absolute right-4 text-slate-900 text-sm pointer-events-none" />
+        {/* --- MULTI SELECT CATEGORIES SECTION --- */}
+        <div className="flex flex-col gap-3 relative">
+          
+          {/* Container Input + Tags */}
+          <div 
+             className="bg-white rounded-lg shadow-sm border border-slate-200 min-h-11 flex flex-wrap items-center px-4 py-1 gap-2 cursor-pointer"
+             onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+          >
+             {/* Render Selected Categories as Tags */}
+             {selectedCategories.map((item) => (
+                 <div 
+                    key={item.category_id} 
+                    className="bg-slate-200 text-slate-800 px-2 py-1 rounded text-md font-medium flex items-center gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                 >
+                     {item.name}
+                     <FaTimes 
+                        className="cursor-pointer hover:text-red-500 ml-1" 
+                        onClick={() => handleRemoveCategory(item.category_id)}
+                     />
+                 </div>
+             ))}
+
+             {/* Placeholder / Trigger */}
+             <div className="flex-1 flex items-center justify-between min-w-[100px]">
+                 <span className={`${selectedCategories.length === 0 ? 'text-gray-400' : 'text-slate-700'} font-medium`}>
+                    {selectedCategories.length === 0 ? "Add Categories" : ""}
+                 </span>
+                 <FaPlus className={`text-slate-900 text-sm transition-transform ${isDropdownOpen ? 'rotate-45' : ''}`} />
+             </div>
           </div>
 
-          {/* Add more Categories Input */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
-             <input type="text" placeholder="Add more Categories" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
-             <FaPlus className="text-slate-900 cursor-pointer" />
-          </div>
+          {/* Dropdown List Items */}
+          {isDropdownOpen && (
+            <div className="absolute top-full mt-1 left-0 w-full bg-white rounded-lg shadow-lg border border-slate-200 z-50 overflow-hidden">
+                <div className="max-h-60 overflow-y-auto">
+                    {availableCategories.map((item) => (
+                        <div 
+                            key={item.category_id}
+                            onClick={() => handleSelectCategory(item)}
+                            className="px-4 py-2.5 hover:bg-slate-100 cursor-pointer text-slate-700 font-medium text-md border-b border-slate-50 last:border-0"
+                        >
+                            {item.name}
+                        </div>
+                    ))}
+
+                    {availableCategories.length === 0 && (
+                        <div className="px-4 py-3 text-gray-400 text-sm text-center">
+                            {categories.length === 0 ? "No categories loaded" : "All categories selected"}
+                        </div>
+                    )}
+                </div>
+            </div>
+          )}
         </div>
 
-        {/* LIST CARD LOKASI (Hasil Add Route) */}
+        {/* LIST CARD LOKASI */}
         <div className="flex flex-col gap-4 mt-2">
             {waypoints.length === 0 && (
                 <p className="text-center text-slate-400 text-sm">Belum ada lokasi yang ditambahkan.</p>
@@ -263,7 +383,6 @@ const MapsPage = () => {
                     point={point} 
                     index={index} 
                     onDelete={handleDeletePoint}
-                    // Kamu bisa menambahkan handler lain nanti:
                     onEdit={() => console.log("Edit clicked", point)}
                     onAddImage={() => console.log("Add Image clicked", point)}
                     onAddPlace={() => console.log("Add Place clicked", point)}
