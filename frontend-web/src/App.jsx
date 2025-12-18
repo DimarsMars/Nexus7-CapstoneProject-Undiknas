@@ -17,6 +17,7 @@ import TripDetailPage from './pages/TripDetailPage';
 import MyTripReviewPage from './pages/MyTripReviewPage';
 import MapsPage from './pages/MapsPage';
 import { useAuth } from './context/AuthContext';
+import HistoryPage from './pages/HistoryPage';
 
 const trips = [
     {
@@ -79,6 +80,19 @@ const bookmarkedData = [ { id: 1, title: "Serenity Oasis", category: "Restaurant
 const sliderImages = [ "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop", "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop",];
 const myreviewstrips = [ { id: 1, name: "Sarah C.", image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1000&auto=format&fit=crop", rating: 5, text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.", moreImages: [ "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/0b/72/08/fc/bali-tour-culture-travel.jpg?w=1200&h=-1&s=1", "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop", ] }, { id: 2, name: "Jaenap S.", image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1000&auto=format&fit=crop", rating: 5, text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.", moreImages: [ "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop", "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=200&auto=format&fit=crop", ] }, { id: 3, name: "Munaroh T.", image: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?q=80&w=1000&auto=format&fit=crop", rating: 5, text: "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here.", moreImages: [ "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop", "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=200&auto=format&fit=crop", ] },];
 
+//historyData
+export const activeTrips = [
+    { id: 1, title: "The Getaway", description: "My own schedule trip to get to somewhere full with guidance...", location: "Bedugul - Gianyar", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=300&q=80" },
+    { id: 2, title: "Ubud Monkey Forest", description: "Visiting the sacred monkey forest sanctuary and exploring...", location: "Ubud - Gianyar", image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=300&q=80" }
+];
+export const favouriteTrips = [
+    { id: 3, title: "Kintamani Sunrise", description: "Hiking mount Batur to see the beautiful sunrise with...", location: "Kintamani - Bangli", image: "https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=300&q=80" }
+];
+export const pastTrips = [
+    { id: 4, title: "Tanah Lot Sunset", description: "Beautiful sunset view at the temple by the sea.", location: "Tabanan", image: "https://images.unsplash.com/photo-1539367628448-4bc5c9d171c8?auto=format&fit=crop&w=300&q=80" },
+    { id: 5, title: "Ulun Danu Beratan", description: "A calm lake temple visit with cold atmosphere.", location: "Bedugul - Tabanan", image: "https://images.unsplash.com/photo-1555400038-63f5ba517a47?auto=format&fit=crop&w=300&q=80" },
+    { id: 6, title: "GwK Cultural Park", description: "Seeing the gigantic statue and traditional dance performance.", location: "Jimbaran - Badung", image: "https://images.unsplash.com/photo-1576675784201-0e142b423952?auto=format&fit=crop&w=300&q=80" }
+];
 
 const MainLayout = () => {
   return (
@@ -150,6 +164,7 @@ function App() {
         <Route path='trip/:id' element={<TripDetailPage trips={trips}/>} />
         <Route path='mytripreview/:id' element={<MyTripReviewPage trips={trips} sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
         <Route path='maps' element={<MapsPage />} />
+        <Route path='history' element={<HistoryPage activeTrips={activeTrips} favouriteTrips={favouriteTrips} pastTrips={pastTrips} />} />
       </Route>
 
       {/* Fallback route */}

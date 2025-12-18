@@ -53,7 +53,7 @@ const Navbar = () => {
                             <Link smooth to="/homepage#" className={getLinkClass('/homepage', '')}>Home</Link>
                             <Link smooth to="/explore" className={getLinkClass('/explore')}>Explore</Link>
                             <Link smooth to="/maps" className={getLinkClass('/maps')}>Maps</Link>
-                            <Link smooth to="/bookmarked" className={getLinkClass('/bookmarked')}>Bookmarked</Link>
+                            <Link smooth to="/history" className={getLinkClass('/history')}>History</Link>
                             <Link smooth to="/myprofile" className={getLinkClass('/myprofile')}>Profile</Link>
                         </>
                     ) : (
