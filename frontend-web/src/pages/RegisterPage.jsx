@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import backgroundLogin from '../assets/images/backgroundLogin.jpg';
 import logoJourneysPutih from '../assets/images/logoJourneysPutih.png';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const RegisterPage = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,8 @@ const RegisterPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const navigate = useNavigate();
   const { register } = useAuth();
@@ -82,29 +85,50 @@ const RegisterPage = () => {
                 />
               </div>
 
+{/* INPUT PASSWORD */}
               <div className="mb-4">
                 <label className="block mb-1">Password</label>
-                <input
-                  type="password"
-                  placeholder='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder='password'
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+                  >
+                    {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                  </button>
+                </div>
               </div>
 
+              {/* INPUT CONFIRM PASSWORD */}
               <div className="mb-4">
                 <label className="block mb-1">Confirm Password</label>
-                <input
-                  type="password"
-                  placeholder='confirm password'
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder='confirm password'
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+                  >
+                    {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                  </button>
+                </div>
               </div>
+
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             </div>
 

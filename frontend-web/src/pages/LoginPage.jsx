@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import backgroundLogin from '../assets/images/backgroundLogin.jpg';
 import logoJourneysPutih from '../assets/images/logoJourneysPutih.png';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -69,14 +71,27 @@ const LoginPage = () => {
 
               <div className="mb-4">
                 <label className="block mb-1">Password</label>
-                <input
-                  type="password"
-                  placeholder='password'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full border rounded-lg px-3 py-2"
-                />
+                  <div className="relative">
+                    <input
+                      // 4. Ubah tipe berdasarkan state
+                      type={showPassword ? "text" : "password"} 
+                      placeholder='password'
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      // Tambahkan padding right (pr-10) agar text tidak tertutup icon
+                      className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400"
+                    />
+                    
+                    {/* 5. Tombol Icon Mata */}
+                    <button
+                      type="button" // Penting: type button agar tidak submit form
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer"
+                    >
+                      {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                    </button>
+                  </div>
               </div>
               {error && <p className="text-red-500 text-sm text-center">{error}</p>}
             </div>
