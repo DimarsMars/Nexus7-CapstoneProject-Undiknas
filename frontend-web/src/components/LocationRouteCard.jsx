@@ -1,12 +1,39 @@
 import { FaMapMarkerAlt, FaTrash } from "react-icons/fa";
+import { useRef } from 'react';
 
 const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
+  const fileInputRef = useRef(null);
+
+  const handleAddImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        // The result includes the base64 prefix, e.g., "data:image/jpeg;base64,"
+        onAddImage(index, e.target.result); 
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-start gap-4 transition hover:shadow-md">
       
+      {/* Hidden file input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+        className="hidden"
+        accept="image/*"
+      />
+
       {/* Gambar Placeholder */}
       <div className="w-20 h-20 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
-        {/* Jika nanti ada image di point, bisa dipasang logika di sini */}
         {point.image ? (
             <img src={point.image} alt={point.name} className="w-full h-full object-cover rounded-md" />
         ) : (
@@ -35,7 +62,7 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
             Edit Route
           </button>
           <button 
-            onClick={() => onAddImage && onAddImage(point)}
+            onClick={handleAddImageClick}
             className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
           >
             Add Image

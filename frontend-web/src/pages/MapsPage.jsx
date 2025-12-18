@@ -86,6 +86,8 @@ const MapsPage = () => {
   const [previewLocation, setPreviewLocation] = useState(null); 
   const [isSearching, setIsSearching] = useState(false);
   const [whatAreYouDoing, setWhatAreYouDoing] = useState("");
+  const [title, setTitle] = useState("");
+  const [planDescription, setPlanDescription] = useState("");
 
   // --- STATE KATEGORI ---
   const [categories, setCategories] = useState([]);
@@ -229,6 +231,70 @@ const MapsPage = () => {
       setSelectedCategories(updated);
   };
 
+  const handleImageUpload = (index, imageBase64) => {
+    const updatedWaypoints = [...waypoints];
+    updatedWaypoints[index].image = imageBase64;
+    setWaypoints(updatedWaypoints);
+  };
+
+  const handlePostRoute = async () => {
+    // 1. Validasi
+    if (!title) {
+      alert("Please add a title for your plan.");
+      return;
+    }
+    if (waypoints.length === 0) {
+      alert("Please add at least one route point.");
+      return;
+    }
+
+    // 2. Siapkan payload sebagai FormData
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('description', planDescription);
+    
+    // Backend mengharapkan string ID kategori yang dipisahkan koma
+    const categoryIds = selectedCategories.map(c => c.category_id).join(',');
+    formData.append('category_ids', categoryIds);
+
+    // Backend mengharapkan array rute dalam format JSON string
+    const routesData = waypoints.map((point, index) => {
+      // Strip the base64 prefix if the image exists
+      const imageBase64 = point.image ? point.image.split(',')[1] : "";
+
+      return {
+        title: point.name,
+        description: point.description || "",
+        address: point.address,
+        latitude: point.lat,
+        longitude: point.lng,
+        step_order: index + 1,
+        image: imageBase64,
+      }
+    });
+    formData.append('routes', JSON.stringify(routesData));
+
+    // Log FormData entries for debugging
+    for (let [key, value] of formData.entries()) {
+      console.log(`FormData: ${key}: ${value}`);
+    }
+
+    try {
+      const response = await apiService.createPlan(formData);
+      console.log("Plan created successfully:", response);
+      alert("Your plan has been created successfully!");
+      
+      // Reset state & redirect
+      setTitle("");
+      setPlanDescription("");
+      setSelectedCategories([]);
+      setWaypoints([]);
+    } catch (error) {
+      console.error("Failed to create plan:", error.response ? error.response.data : error);
+      alert(`Failed to create plan. ${error.response?.data?.error || error.message}`);
+    }
+  };
+
   const availableCategories = categories.filter(
       c => !selectedCategories.some(selected => selected.category_id === c.category_id)
   );
@@ -245,10 +311,22 @@ const MapsPage = () => {
         {/* Input Judul & Deskripsi */}
         <div className="flex flex-col gap-3">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
-            <input type="text" placeholder="Add title" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+            <input 
+              type="text" 
+              placeholder="Add title" 
+              className="flex-1 bg-transparent outline-none text-slate-700 font-medium" 
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
-            <input type="text" placeholder="Add Description" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+            <input 
+              type="text" 
+              placeholder="Add Description" 
+              className="flex-1 bg-transparent outline-none text-slate-700 font-medium" 
+              value={planDescription}
+              onChange={(e) => setPlanDescription(e.target.value)}
+            />
           </div>
         </div>
 
@@ -397,7 +475,7 @@ const MapsPage = () => {
                     index={index} 
                     onDelete={handleDeletePoint}
                     onEdit={() => console.log("Edit clicked", point)}
-                    onAddImage={() => console.log("Add Image clicked", point)}
+                    onAddImage={handleImageUpload}
                     onAddPlace={() => console.log("Add Place clicked", point)}
                 />
             ))}
@@ -405,7 +483,10 @@ const MapsPage = () => {
 
         {/* TOMBOL POST ROUTE */}
         <div className="flex justify-center">
-          <button className="bg-slate-800 text-white px-8 py-3 rounded-lg text-md font-medium shadow-lg hover:bg-slate-800 transition active:scale-95">
+          <button 
+            onClick={handlePostRoute}
+            className="bg-slate-800 text-white px-8 py-3 rounded-lg text-md font-medium shadow-lg hover:bg-slate-800 transition active:scale-95"
+          >
             Post Route
           </button>
         </div>

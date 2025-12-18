@@ -16,11 +16,16 @@ const getCategories = () => {
   return apiClient.get('/category/');
 };
 
+const createPlan = (planData) => {
+  return apiClient.post('/plans/', planData);
+};
+
 const apiService = {
   updateUserProfile,
   getUserMe,
   getProfileMe,
   getCategories,
+  createPlan,
 };
 
 export default apiService;
