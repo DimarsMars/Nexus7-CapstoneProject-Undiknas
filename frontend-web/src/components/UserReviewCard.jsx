@@ -34,13 +34,6 @@ const UserReviewCard = ({ image, name, role, review, rating, onDelete }) => {
                 ))}
             </div>
 
-            <button 
-                onClick={onDelete}
-                className="text-slate-800 text-lg hover:text-red-600 transition p-1"
-                title="Delete Review"
-            >
-                <FaTrash />
-            </button>
         </div>
 
         <p className="text-gray-800 text-base leading-relaxed">
