@@ -48,7 +48,7 @@ const EditProfilePage = () => {
           birthDate: profileData.birth_date ? profileData.birth_date.split('T')[0] : "", // Format YYYY-MM-DD
           description: profileData.description || "",
           status: profileData.status || "",
-          location: profileData.location || "Solo",
+          location: profileData.location || " ",
           languages: profileData.languages || "ID",
           imageFile: null,
           previewUrl: profileData.photo || "" // Foto dari database
@@ -107,7 +107,6 @@ const EditProfilePage = () => {
       await apiService.updateUserProfile(dataToSend);
       
       alert("Profile Berhasil Diupdate!");
-      navigate('/myprofile');
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Gagal mengupdate profile. Silakan coba lagi.");
