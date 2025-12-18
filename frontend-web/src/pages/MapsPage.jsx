@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaMapMarkerAlt, FaTrash } from "react-icons/fa";
+import { FaSearch, FaMapMarkerAlt, FaTrash, FaPlus, FaChevronDown } from "react-icons/fa";
 import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import LocationRouteCard from '../components/LocationRouteCard';
 import L from 'leaflet';
@@ -180,7 +180,7 @@ const MapsPage = () => {
             {/* Gambar Marker untuk PREVIEW */}
             {previewLocation && (
                 <Marker position={[previewLocation.lat, previewLocation.lng]} opacity={0.6}>
-                     <Popup>Click 'Add Route' to confirm this location.</Popup>
+                      <Popup>Click 'Add Route' to confirm this location.</Popup>
                 </Marker>
             )}
 
@@ -228,6 +228,27 @@ const MapsPage = () => {
           <button onClick={() => navigate(`/bookmarked`)} className="bg-[#1F2937] text-white px-8 py-3 rounded-lg text-md font-medium shadow-lg hover:bg-slate-800 transition active:scale-95">
             Bookmark's
           </button>
+        </div>
+
+        {/* --- NEW CATEGORIES SECTION --- */}
+        <div className="flex flex-col gap-3">
+          {/* Select Categories Dropdown */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center relative">
+            <select className="w-full bg-transparent outline-none text-slate-700 font-medium appearance-none cursor-pointer px-4 z-10">
+              <option value="" disabled selected>Select Categories</option>
+              <option value="nature">Nature</option>
+              <option value="adventure">Adventure</option>
+              <option value="culture">Culture</option>
+              <option value="culinary">Culinary</option>
+            </select>
+            <FaChevronDown className="absolute right-4 text-slate-900 text-sm pointer-events-none" />
+          </div>
+
+          {/* Add more Categories Input */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
+             <input type="text" placeholder="Add more Categories" className="flex-1 bg-transparent outline-none text-slate-700 font-medium" />
+             <FaPlus className="text-slate-900 cursor-pointer" />
+          </div>
         </div>
 
         {/* LIST CARD LOKASI (Hasil Add Route) */}
