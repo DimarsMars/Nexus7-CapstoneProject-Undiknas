@@ -1,121 +1,106 @@
 import { useEffect, useState } from 'react';
 import { FaCertificate, FaPen } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
 
-const EditProfilePage = () => {
+const EditProfilePage = ({ user }) => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user: authUser } = useAuth();
 
-  // State untuk Data Tampilan (Nama & Role)
   const [displayUser, setDisplayUser] = useState({
-    name: '',
-    role: ''
+    name: 'Loading...',
+    rank: 'Loading...'
   });
 
-  // State untuk Form
   const [formData, setFormData] = useState({
     birthDate: '',
     description: '',
     status: '',
-    location: '',
-    languages: '',
-    imageFile: null,    // Untuk file baru yang diupload
-    previewUrl: ''      // Untuk menampilkan gambar (bisa URL lama atau preview baru)
+    image: ''
   });
 
-  // 1. FETCH DATA SAAT HALAMAN DIBUKA
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        // Panggil 2 API sekaligus (User & Profile)
-        const [userRes, profileRes] = await Promise.all([
-          apiService.getUserMe(),
-          apiService.getProfileMe()
-        ]);
+    const fetchUserData = async () => {
+      if (authUser && authUser.idToken) {
+        try {
+          const userResponse = await apiService.getUserMe();
+          const profileResponse = await apiService.getProfileMe();
 
-        const userData = userRes.data;
-        const profileData = profileRes.data;
+          setDisplayUser({
+            name: userResponse.data.username,
+            rank: profileResponse.data.rank
+          });
 
-        // Set Tampilan Header
-        setDisplayUser({
-          name: userData.username,
-          role: profileData.rank // Rank diambil dari profile response
-        });
+          const profile = profileResponse.data;
 
-        // Set Nilai Awal Form
-        setFormData({
-          birthDate: profileData.birth_date ? profileData.birth_date.split('T')[0] : "", // Format YYYY-MM-DD
-          description: profileData.description || "",
-          status: profileData.status || "",
-          location: profileData.location || " ",
-          languages: profileData.languages || "ID",
-          imageFile: null,
-          previewUrl: profileData.photo || "" // Foto dari database
-        });
-
-      } catch (error) {
-        console.error("Gagal mengambil data:", error);
-        alert("Gagal memuat data profile.");
-      } finally {
-        setIsLoading(false);
+          setFormData({
+            birthDate: profile.birth_date?.split('T')[0] || "",
+            description: profile.description || "",
+            status: profile.status || "",
+            image: profile.photo || ""
+          });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setDisplayUser({ name: 'Error', rank: 'Error' });
+        }
       }
     };
 
-    fetchInitialData();
-  }, []);
+    fetchUserData();
+  }, [authUser]);
 
-  // 2. HANDLE PERUBAHAN TEXT INPUT
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // 3. HANDLE PERUBAHAN GAMBAR (PREVIEW)
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
-        ...prev,
-        imageFile: file, // Simpan filenya untuk dikirim nanti
-        previewUrl: URL.createObjectURL(file) // Buat URL lokal untuk preview
-      }));
+      setFormData(prev => ({ ...prev, image: file }));
     }
   };
 
-  // 4. SUBMIT FORM
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Gunakan FormData karena kita mengirim File (Multipart)
-    const dataToSend = new FormData();
-    
-    // Append data text
-    dataToSend.append('birth_date', formData.birthDate); // Kirim format YYYY-MM-DD
-    dataToSend.append('description', formData.description);
-    dataToSend.append('status', formData.status);
-    dataToSend.append('location', formData.location);
-    dataToSend.append('languages', formData.languages);
-
-    // Append file HANYA JIKA user mengupload foto baru
-    if (formData.imageFile) {
-      dataToSend.append('photo', formData.imageFile);
+    if (!authUser || !authUser.idToken) {
+      alert("User not authenticated. Please log in again.");
+      navigate('/login');
+      return;
     }
 
+    const formDataToSend = new FormData();
+    formDataToSend.append('birth_date', formData.birthDate);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('status', formData.status);
+    formDataToSend.append('location', 'Solo');
+    formDataToSend.append('languages', 'ID');
+    formDataToSend.append('photo', formData.image);
+
     try {
-      // Panggil Service (Token sudah otomatis diurus ApiClient)
-      await apiService.updateUserProfile(dataToSend);
-      
-      alert("Profile Berhasil Diupdate!");
+      await apiService.updateUserProfile(formDataToSend);
+      alert("Profile Updated!");
+      navigate('/myprofile');
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert("Gagal mengupdate profile. Silakan coba lagi.");
+      alert("Failed to update profile. Please try again.");
     }
   };
 
-  if (isLoading) {
-    return <div className="min-h-screen flex justify-center items-center">Loading...</div>;
-  }
+  // ====== PENTING: FIX FOTO ======
+  const getImageSrc = () => {
+    if (!formData.image) return "";
+
+    // File upload (preview)
+    if (formData.image instanceof File) {
+      return URL.createObjectURL(formData.image);
+    }
+
+    // Base64 dari backend
+    return `data:image/jpeg;base64,${formData.image}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-28 flex justify-center items-center">
@@ -123,19 +108,17 @@ const EditProfilePage = () => {
 
         {/* HEADER */}
         <div className="flex flex-col md:flex-row items-center justify-between px-20 gap-8 md:gap-16 mb-8">
-          
-          {/* FOTO PROFIL */}
           <div className="relative">
-            <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-100 bg-gray-200">
-              {formData.previewUrl ? (
+            <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-100">
+              {formData.image ? (
                 <img
-                  src={formData.previewUrl}
+                  src={getImageSrc()}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-500 font-medium">
-                  No Photo
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  Profile
                 </div>
               )}
             </div>
@@ -155,27 +138,23 @@ const EditProfilePage = () => {
             </label>
           </div>
 
-          {/* INFO NAMA & RANK */}
-          <div className="flex flex-col gap-6 w-full md:w-1/2 text-center md:text-left">
+          <div className="flex flex-col gap-6 w-full md:w-1/2">
             <div>
               <label className="text-gray-600 text-lg mb-1 block">Name</label>
-              <div className="rounded font-bold text-2xl text-slate-900 uppercase tracking-wide">
+              <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 uppercase tracking-wide">
                 {displayUser.name}
               </div>
             </div>
 
             <div>
-              <label className="text-gray-600 text-lg mb-1 block">Rank</label>
-              <div className="flex items-center gap-3 justify-center md:justify-start">
+              <label className="text-gray-600 text-lg mb-1 block">Rank’s</label>
+              <div className="flex items-center gap-2 justify-center">
                 <div className="relative flex items-center justify-center text-white">
                   <FaCertificate className="text-slate-900 text-4xl" />
-                  {/* Ambil huruf pertama Rank untuk ikon */}
-                  <span className="absolute font-bold text-xs uppercase">
-                    {displayUser.role ? displayUser.role.charAt(0) : '-'}
-                  </span>
+                  <span className="absolute font-bold text-xs">{user.rankLevel}</span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">
-                  {displayUser.role || "Traveller"}
+                  {displayUser.rank}
                 </h2>
               </div>
             </div>
@@ -184,61 +163,55 @@ const EditProfilePage = () => {
 
         <hr className="border-t-2 border-[#1e293b] mb-8" />
 
-        {/* FORM INPUT */}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 max-w-3xl mx-auto">
+        {/* FORM */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
-          <div className='flex flex-col text-start'>
-            <label className="text-gray-600 text-base mb-2 font-medium">Birth Date</label>
+          <div className='text-start px-30'>
+            <label className="text-gray-600 text-base mb-2 block">Birth Date</label>
             <input
               type="date"
               name="birthDate"
               value={formData.birthDate}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              className="w-full border border-gray-300 rounded-md px-4 py-3"
             />
           </div>
 
-          <div className='flex flex-col text-start'>
-            <label className="text-gray-600 text-base mb-2 font-medium">Description</label>
-            <textarea
+          <div className='text-start px-30'>
+            <label className="text-gray-600 text-base mb-2 block">Description (likes)</label>
+            <input
+              type="text"
               name="description"
-              rows="3"
               value={formData.description}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-500"
-              placeholder="Ceritakan sedikit tentang dirimu..."
+              className="w-full border border-gray-300 rounded-md px-4 py-3"
             />
           </div>
 
-          <div className='flex flex-col text-start'>
-            <label className="text-gray-600 text-base mb-2 font-medium">Status (e.g., Family, Solo, Friends)</label>
+          <div className='text-start px-30'>
+            <label className="text-gray-600 text-base mb-2 block">Status</label>
             <input
               type="text"
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3 focus:outline-none focus:ring-2 focus:ring-slate-500"
+              className="w-full border border-gray-300 rounded-md px-4 py-3"
             />
           </div>
-          
-          {/* Input Location & Language (Hidden tapi dikirim, atau mau ditampilkan silakan un-comment) */}
-          {/* <input type="hidden" name="location" value={formData.location} />
-          <input type="hidden" name="languages" value={formData.languages} /> 
-          */}
 
           <hr className="border-t-2 border-[#1e293b] mt-4 mb-4" />
 
           <div className="flex flex-col gap-3">
             <button
               type="submit"
-              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white text-lg font-semibold rounded-md transition-colors"
+              className="w-full py-2.5 bg-slate-900 text-white text-lg rounded-md"
             >
-              Save Changes
+              Save
             </button>
             <button
               type="button"
               onClick={() => navigate('/myprofile')}
-              className="w-full py-3 bg-red-500 hover:bg-red-600 text-white text-lg font-semibold rounded-md transition-colors"
+              className="w-full py-2.5 bg-[#ff0000] text-white text-lg rounded-md"
             >
               Cancel
             </button>
