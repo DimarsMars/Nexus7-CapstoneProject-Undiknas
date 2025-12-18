@@ -12,10 +12,10 @@ const getProfileMe = () => {
   return apiClient.get('/profile/me');
 };
 
-const UserService = {
+const apiService = {
   updateUserProfile,
   getUserMe,
   getProfileMe,
 };
 
-export default UserService;
+export default apiService;
