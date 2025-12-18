@@ -35,6 +35,7 @@ func CreatePlan(c *gin.Context) {
 	tagsRaw := c.PostForm("tags")
 	catIDsRaw := c.PostForm("category_ids")
 	routesRaw := c.PostForm("routes")
+	status := c.PostForm("status")
 
 	var tags []string
 	if tagsRaw != "" {
@@ -72,6 +73,7 @@ func CreatePlan(c *gin.Context) {
 		Tags:        tags,
 		Banner:      banner,
 		Categories:  categories,
+		Status:      status,
 	}
 
 	if err := config.DB.Create(&plan).Error; err != nil {
@@ -152,6 +154,7 @@ func GetPlans(c *gin.Context) {
 			"banner":      bannerBase64,
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
+			"status":      p.Status,
 		})
 	}
 
@@ -207,6 +210,7 @@ func GetPlanDetail(c *gin.Context) {
 			"plan":   plan,
 			"banner": bannerBase64,
 			"routes": routeList,
+			"status": plan.Status,
 		},
 	})
 }
@@ -271,6 +275,10 @@ func UpdatePlan(c *gin.Context) {
 		defer opened.Close()
 		bannerBytes, _ := io.ReadAll(opened)
 		plan.Banner = bannerBytes
+	}
+
+	if status := c.PostForm("status"); status != "" {
+		plan.Status = status
 	}
 
 	if err := config.DB.Save(&plan).Error; err != nil {
