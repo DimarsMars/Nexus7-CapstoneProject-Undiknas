@@ -1,33 +1,21 @@
-import axios from 'axios';
+import apiClient from "./apiClient";
 
-const API_BASE_URL = 'http://localhost:8080'; // Sesuaikan dengan base URL API Anda
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
-
-export const updateUserProfile = async (idToken, payload) => {
-  try {
-    const response = await api.put('/profile/update', payload, {
-      headers: {
-        'Authorization': `Bearer ${idToken}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+const updateUserProfile = (payload) => {
+  return apiClient.put('/profile/update', payload);
 };
 
-export const getUserMe = async (idToken) => {
-  try {
-    const response = await api.get('/user/me', {
-      headers: {
-        'Authorization': `Bearer ${idToken}`
-      }
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+const getUserMe = () => {
+  return apiClient.get('/user/me');
 };
+
+const getProfileMe = () => {
+  return apiClient.get('/profile/me');
+};
+
+const UserService = {
+  updateUserProfile,
+  getUserMe,
+  getProfileMe,
+};
+
+export default UserService;
