@@ -109,7 +109,7 @@ func CreatePlan(c *gin.Context) {
 
 	xp := models.UserXP{
 		UserID:      userID,
-		XPValue:     10,
+		XPValue:     100,
 		Description: "Created a new plan",
 	}
 	if err := config.DB.Create(&xp).Error; err != nil {
@@ -435,6 +435,25 @@ func VerifyUserLocation(c *gin.Context) {
 		Select("MAX(step_order)").Scan(&maxStep)
 
 	if input.StepOrder == maxStep {
+
+		finalXP := models.UserXP{
+			UserID:      userID,
+			XPValue:     100,
+			Description: "Completed the trip",
+		}
+		if err := config.DB.Create(&finalXP).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan XP akhir trip"})
+			return
+		}
+
+		var updatedTotalXP int64
+		config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&updatedTotalXP)
+
+		finalRank := helper.CalculateRank(int(updatedTotalXP))
+		config.DB.Model(&models.Profile{}).
+			Where("user_id = ?", userID).
+			Update("rank", finalRank)
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":  "Selamat, kamu telah menyelesaikan seluruh trip!",
 			"complete": true,
