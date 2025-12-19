@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useData } from '../context/DataContext';
 import { FaSearch, FaMapMarkerAlt, FaTrash, FaPlus, FaChevronDown, FaTimes } from "react-icons/fa";
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents } from 'react-leaflet';
 import LocationRouteCard from '../components/LocationRouteCard';
@@ -78,7 +77,6 @@ const PreviewMarker = ({ position }) => {
 const MapsPage = () => {
   const [waypoints, setWaypoints] = useState([]); 
   const navigate = useNavigate();
-  const { fetchAllPlan } = useData();
   
   // State Search & Preview
   const [searchQuery, setSearchQuery] = useState("");
@@ -198,7 +196,7 @@ const MapsPage = () => {
 
     const newRoutePoint = {
         ...previewLocation,
-        description: whatAreYouDoing // Add the description here
+        description: whatAreYouDoing
     };
 
     const newWaypoints = [...waypoints, newRoutePoint];
@@ -206,7 +204,7 @@ const MapsPage = () => {
 
     setPreviewLocation(null);
     setSearchQuery("");
-    setWhatAreYouDoing(""); // Clear the input after adding
+    setWhatAreYouDoing("");
     
     // Log Data
     console.log("Data Route:", JSON.stringify(newWaypoints, null, 2));
@@ -216,6 +214,12 @@ const MapsPage = () => {
   const handleDeletePoint = (index) => {
       const newPoints = waypoints.filter((_, i) => i !== index);
       setWaypoints(newPoints);
+  };
+
+  const handleEditPoint = (index, updatedData) => {
+    const newWaypoints = [...waypoints];
+    newWaypoints[index] = { ...newWaypoints[index], ...updatedData };
+    setWaypoints(newWaypoints);
   };
 
   // --- HANDLER MULTI SELECT KATEGORI ---
@@ -282,7 +286,6 @@ const MapsPage = () => {
     try {
       const response = await apiService.createPlan(formData);
       console.log("Plan created successfully:", response);
-      await fetchAllPlan(true);
       alert("Your plan has been created successfully!");
       
       // Reset state
@@ -475,7 +478,7 @@ const MapsPage = () => {
                     point={point} 
                     index={index} 
                     onDelete={handleDeletePoint}
-                    onEdit={() => console.log("Edit clicked", point)}
+                    onEdit={handleEditPoint}
                     onAddImage={handleImageUpload}
                     onAddPlace={() => console.log("Add Place clicked", point)}
                 />
