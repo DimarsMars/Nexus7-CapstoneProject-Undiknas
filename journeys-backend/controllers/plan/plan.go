@@ -491,3 +491,43 @@ func VerifyUserLocation(c *gin.Context) {
 		},
 	})
 }
+
+func GetRecommendedPlans(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var profile models.Profile
+	if err := config.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profil tidak ditemukan"})
+		return
+	}
+
+	var recommendedPlans []models.Plan
+	if err := config.DB.
+		Joins("JOIN plan_categories pc ON pc.plan_id = plans.plan_id").
+		Joins("JOIN categories c ON c.category_id = pc.category_id").
+		Where("plans.status = ? OR c.name IN ?", profile.Status, strings.Split(profile.Description, ",")).
+		Preload("Categories").
+		Find(&recommendedPlans).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil rekomendasi plan"})
+		return
+	}
+
+	resp := []map[string]interface{}{}
+	for _, p := range recommendedPlans {
+		banner := ""
+		if len(p.Banner) > 0 {
+			banner = base64.StdEncoding.EncodeToString(p.Banner)
+		}
+
+		resp = append(resp, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"status":      p.Status,
+			"categories":  p.Categories,
+			"banner":      banner,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
