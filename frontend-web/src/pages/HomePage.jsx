@@ -3,24 +3,16 @@ import HeroSection from "../components/HeroSection";
 import PlansCategory from "../components/PlanCategorySection";
 import TravellerSection from "../components/TravellerSection";
 import TripCard from "../components/TripCard"
-import { useEffect, useState } from "react";
-import apiService from "../services/apiService";
+import { useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
 
 const HomePage = ({ travellers }) => {
-  const [plan, setPlan] = useState([]);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchAllPlan = async () => {
-      try {
-        const response = await apiService.getAllPlan();
-        setPlan(response.data || []);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
+  const { plans, fetchAllPlan } = useData();
 
+  useEffect(() => {
     if (user) {
       fetchAllPlan();
     }
@@ -28,10 +20,10 @@ const HomePage = ({ travellers }) => {
 
     return (
         <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
-            <HeroSection plan={plan} />
+            <HeroSection plans={plans} />
             <div className="max-w-7xl mx-auto pb-25">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {plan && plan.slice(0, 3).map((plan, index) => (
+                {plans && plans.slice(0, 3).map((plan, index) => (
                     <TripCard
                     key={plan.plan_id}
                     id={plan.plan_id}

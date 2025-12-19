@@ -3,7 +3,7 @@ import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import TripCard from './TripCard';
 import logoJourneys from '../assets/images/logoJourneys.png';
 
-const HeroSection = ({ plan = [] }) => {
+const HeroSection = ({ plans = [] }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Helper untuk membatasi Karakter
@@ -14,10 +14,10 @@ const HeroSection = ({ plan = [] }) => {
   };
 
   const nextSlide = () => {
-    setActiveIndex((current) => (current === plan.length - 1 ? 0 : current + 1));
+    setActiveIndex((current) => (current === plans.length - 1 ? 0 : current + 1));
   };
   const prevSlide = () => {
-    setActiveIndex((current) => (current === 0 ? plan.length - 1 : current - 1));
+    setActiveIndex((current) => (current === 0 ? plans.length - 1 : current - 1));
   };
 
   useEffect(() => {
@@ -25,11 +25,11 @@ const HeroSection = ({ plan = [] }) => {
       nextSlide();
     }, 4000); 
     return () => clearInterval(interval);
-  }, [activeIndex, plan.length]);
+  }, [activeIndex, plans.length]);
 
   // --- FUNGSI GAYA (STYLE) KARTU ---
   const getCardStyle = (index) => {
-    const len = plan.length;
+    const len = plans.length;
     const prevIndex = (activeIndex - 1 + len) % len;
     const nextIndex = (activeIndex + 1) % len;
 
@@ -54,7 +54,7 @@ const HeroSection = ({ plan = [] }) => {
     return style;
   };
 
-  if (!plan || plan.length === 0) {
+  if (!plans || plans.length === 0) {
       return <div className="text-center py-20">Loading Hero Section...</div>;
   }
 
@@ -88,7 +88,7 @@ const HeroSection = ({ plan = [] }) => {
 
             {/* MAPPING SEMUA KARTU */}
             <div className="relative w-full h-full flex items-center justify-center">
-              {plan.map((item, index) => (
+              {plans.map((item, index) => (
                   <div 
                     key={item.plan_id}
                     className={getCardStyle(index)}

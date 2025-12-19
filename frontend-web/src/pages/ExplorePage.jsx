@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import TripCard from '../components/TripCard';
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import apiService from '../services/apiService';
+import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 
 const ExplorePage = () => {
@@ -9,7 +9,7 @@ const ExplorePage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
 
-  const [plan, setPlan] = useState([]);
+  const { plans, fetchAllPlan } = useData();
   const { user } = useAuth();
 
   const categories = ["Culture", "Eatery", "Health", "Craft's"];
@@ -20,28 +20,17 @@ const ExplorePage = () => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  
-  const currentTrips = plan ? plan.slice(indexOfFirstItem, indexOfLastItem) : [];
-  const totalPages = plan ? Math.ceil(plan.length / itemsPerPage) : 0;
+  const currentTrips = plans ? plans.slice(indexOfFirstItem, indexOfLastItem) : [];
+  const totalPages = plans ? Math.ceil(plans.length / itemsPerPage) : 0;
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
   };
-
   const goToPrevPage = () => {
     if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
 
   useEffect(() => {
-    const fetchAllPlan = async () => {
-      try {
-        const response = await apiService.getAllPlan();
-        setPlan(response.data || []);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-
     if (user) {
       fetchAllPlan();
     }
@@ -68,7 +57,7 @@ const ExplorePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[500px]">
-          {plan.map((plan, index) => {
+          {plans.map((plan, index) => {
             const isBigCard = index % 3 === 0;
 
             return (
@@ -89,7 +78,7 @@ const ExplorePage = () => {
           })}
         </div>
 
-        {plan && plan.length > itemsPerPage && (
+        {plans && plans.length > itemsPerPage && (
             <div className="flex justify-center items-center gap-6 mt-12">
                 
                 <button 
