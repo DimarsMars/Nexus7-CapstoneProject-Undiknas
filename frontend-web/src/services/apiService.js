@@ -20,12 +20,17 @@ const createPlan = (planData) => {
   return apiClient.post('/plans/', planData);
 };
 
+const getAllPlan = () => {
+  return apiClient.get('/plans/');
+};
+
 const apiService = {
   updateUserProfile,
   getUserMe,
   getProfileMe,
   getCategories,
   createPlan,
+  getAllPlan,
 };
 
 export default apiService;

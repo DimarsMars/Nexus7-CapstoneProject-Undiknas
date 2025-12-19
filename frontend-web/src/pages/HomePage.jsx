@@ -3,33 +3,49 @@ import HeroSection from "../components/HeroSection";
 import PlansCategory from "../components/PlanCategorySection";
 import TravellerSection from "../components/TravellerSection";
 import TripCard from "../components/TripCard"
+import { useEffect, useState } from "react";
+import apiService from "../services/apiService";
+import { useAuth } from "../context/AuthContext";
 
-const HomePage = ({trips, travellers}) => {
+const HomePage = ({ trips, travellers }) => {
+  const [plan, setPlan] = useState([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchAllPlan = async () => {
+      try {
+        const response = await apiService.getAllPlan();
+        setPlan(response.data || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    if (user) {
+      fetchAllPlan();
+    }
+  }, [user]);
+
     return (
         <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
-
             <HeroSection trips={trips} />
-
             <div className="max-w-7xl mx-auto pb-25">
-                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                
-                {trips && trips.slice(0, 3).map((trip, index) => (
+                {plan && plan.slice(0, 3).map((plan, index) => (
                     <TripCard
-                    key={trip.id}
-                    id={trip.id}
-                    title={trip.title}
-                    author={trip.author}
-                    rating={trip.rating}
-                    image={trip.image}
+                    key={plan.plan_id}
+                    id={plan.plan_id}
+                    title={plan.title}
+                    author={plan.description}
+                    rating={plan.rating || 5} 
+                    image={`data:image/jpeg;base64,${plan.banner}`}
                     className={
                         index === 0
-                        ? "md:col-span-2 h-64 md:h-80" // Kartu Besar
-                        : "h-64"                       // Kartu Kecil
+                        ? "md:col-span-2 h-64 md:h-80" 
+                        : "h-64"                       
                     }
                     />
                 ))}
-
                 </div>
 
                 <div className="text-right mt-4">
