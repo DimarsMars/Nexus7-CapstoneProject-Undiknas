@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import TripCard from '../components/TripCard';
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
+import apiService from '../services/apiService';
+import { useAuth } from '../context/AuthContext';
 
-const ExplorePage = ({ trips }) => {
+const ExplorePage = () => {
   const [activeTab, setActiveTab] = useState("Culture");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 4;
+
+  const [plan, setPlan] = useState([]);
+  const { user } = useAuth();
 
   const categories = ["Culture", "Eatery", "Health", "Craft's"];
 
@@ -16,8 +21,8 @@ const ExplorePage = ({ trips }) => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   
-  const currentTrips = trips ? trips.slice(indexOfFirstItem, indexOfLastItem) : [];
-  const totalPages = trips ? Math.ceil(trips.length / itemsPerPage) : 0;
+  const currentTrips = plan ? plan.slice(indexOfFirstItem, indexOfLastItem) : [];
+  const totalPages = plan ? Math.ceil(plan.length / itemsPerPage) : 0;
 
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
@@ -26,6 +31,21 @@ const ExplorePage = ({ trips }) => {
   const goToPrevPage = () => {
     if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
+
+  useEffect(() => {
+    const fetchAllPlan = async () => {
+      try {
+        const response = await apiService.getAllPlan();
+        setPlan(response.data || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
+    if (user) {
+      fetchAllPlan();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 px-5">
@@ -48,17 +68,17 @@ const ExplorePage = ({ trips }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[500px]">
-          {currentTrips.map((trip, index) => {
+          {plan.map((plan, index) => {
             const isBigCard = index % 3 === 0;
 
             return (
               <TripCard
-                key={trip.id}
-                id={trip.id}
-                title={trip.title}
-                author={trip.author}
-                rating={trip.rating}
-                image={trip.image}
+                key={plan.plan_id}
+                id={plan.plan_id}
+                title={plan.title}
+                author={plan.description}
+                rating={plan.rating || 5}
+                image={`data:image/jpeg;base64,${plan.banner}`}
                 className={
                     isBigCard 
                         ? "md:col-span-2 h-64 md:h-80" // Kartu Besar
@@ -69,7 +89,7 @@ const ExplorePage = ({ trips }) => {
           })}
         </div>
 
-        {trips && trips.length > itemsPerPage && (
+        {plan && plan.length > itemsPerPage && (
             <div className="flex justify-center items-center gap-6 mt-12">
                 
                 <button 
