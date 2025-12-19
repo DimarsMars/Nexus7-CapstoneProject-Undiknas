@@ -284,7 +284,7 @@ const MapsPage = () => {
       console.log("Plan created successfully:", response);
       alert("Your plan has been created successfully!");
       
-      // Reset state & redirect
+      // Reset state
       setTitle("");
       setPlanDescription("");
       setSelectedCategories([]);

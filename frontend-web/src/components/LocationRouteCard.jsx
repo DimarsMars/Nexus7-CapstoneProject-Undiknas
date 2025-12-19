@@ -21,7 +21,7 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-start gap-4 transition hover:shadow-md">
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex items-start gap-5 transition hover:shadow-md">
       
       {/* Hidden file input */}
       <input 
@@ -33,7 +33,7 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
       />
 
       {/* Gambar Placeholder */}
-      <div className="w-20 h-20 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
+      <div className="w-40 h-26 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
         {point.image ? (
             <img src={point.image} alt={point.name} className="w-full h-full object-cover rounded-md" />
         ) : (
