@@ -24,6 +24,11 @@ apiClient.interceptors.response.use(
     return response.data;
   },
   (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('user');
+      localStorage.removeItem('idToken');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   }
 );
