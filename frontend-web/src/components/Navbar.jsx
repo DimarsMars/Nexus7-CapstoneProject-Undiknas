@@ -1,4 +1,4 @@
-import { NavHashLink as Link } from 'react-router-hash-link';
+import { HashLink as Link } from 'react-router-hash-link'; 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logoJourneys from '../assets/images/logoJourneys.png';
@@ -16,11 +16,6 @@ const Navbar = () => {
         return isActive 
             ? `text-black font-bold ${baseStyle}` 
             : `text-gray-500 font-medium ${baseStyle}`;
-    };
-
-    const handleLogout = () => {
-        logout();
-        navigate('/login');
     };
 
     return (
