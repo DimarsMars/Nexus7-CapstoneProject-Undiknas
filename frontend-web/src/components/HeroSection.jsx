@@ -1,17 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import TripCard from './TripCard';
 import logoJourneys from '../assets/images/logoJourneys.png';
 
-const HeroSection = ({ trips }) => {
+const HeroSection = ({ plan = [] }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const nextSlide = () => {
-    setActiveIndex((current) => (current === trips.length - 1 ? 0 : current + 1));
+  // Helper untuk membatasi Karakter
+  const truncateText = (text, maxLength) => {
+    if (!text) return "";
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + "...";
   };
 
+  const nextSlide = () => {
+    setActiveIndex((current) => (current === plan.length - 1 ? 0 : current + 1));
+  };
   const prevSlide = () => {
-    setActiveIndex((current) => (current === 0 ? trips.length - 1 : current - 1));
+    setActiveIndex((current) => (current === 0 ? plan.length - 1 : current - 1));
   };
 
   useEffect(() => {
@@ -19,40 +25,38 @@ const HeroSection = ({ trips }) => {
       nextSlide();
     }, 4000); 
     return () => clearInterval(interval);
-  }, [activeIndex]);
-
-  if (!trips || trips.length === 0) return null;
+  }, [activeIndex, plan.length]);
 
   // --- FUNGSI GAYA (STYLE) KARTU ---
   const getCardStyle = (index) => {
-    const len = trips.length;
-    
+    const len = plan.length;
     const prevIndex = (activeIndex - 1 + len) % len;
     const nextIndex = (activeIndex + 1) % len;
 
-    // Base style untuk SEMUA kartu:
     let style = "absolute top-0 w-72 h-96 transition-all duration-1000 ease-in-out shadow-xl rounded-2xl ";
 
     if (index === activeIndex) {
       // KARTU TENGAH (AKTIF)
       style += "z-20 scale-100 opacity-100 translate-x-0 border-2 border-white/50";
-
     } else if (index === prevIndex) {
+
       // KARTU KIRI
       style += "z-10 scale-[0.85] opacity-60 -translate-x-[50%] pointer-events-none";
-
     } else if (index === nextIndex) {
+      
       // KARTU KANAN
       style += "z-10 scale-[0.85] opacity-60 translate-x-[50%] pointer-events-none";
-
     } else {
+
       // KARTU LAINNYA (YANG TIDAK TERLIHAT)
       style += "z-0 scale-50 opacity-0 translate-x-0 pointer-events-none";
     }
-
     return style;
   };
 
+  if (!plan || plan.length === 0) {
+      return <div className="text-center py-20">Loading Hero Section...</div>;
+  }
 
   return (
     <section className="bg-gray-100 py-20 px-5 mb-15 overflow-hidden">
@@ -84,17 +88,17 @@ const HeroSection = ({ trips }) => {
 
             {/* MAPPING SEMUA KARTU */}
             <div className="relative w-full h-full flex items-center justify-center">
-              {trips.map((trip, index) => (
+              {plan.map((item, index) => (
                   <div 
-                    key={trip.id}
+                    key={item.plan_id}
                     className={getCardStyle(index)}
                   >
                      <div className="w-full h-full rounded-2xl overflow-hidden">
                         <TripCard 
-                            title={trip.title}
-                            author={trip.author}
-                            rating={trip.rating}
-                            image={trip.image}
+                            title={item.title}
+                            author={truncateText(item.description, 50)}
+                            rating={item.rating || 5}
+                            image={`data:image/jpeg;base64,${item.banner}`}
                             className="h-full shadow-none rounded-none" 
                         />
                      </div>

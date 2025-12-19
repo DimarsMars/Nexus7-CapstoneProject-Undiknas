@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import apiService from "../services/apiService";
 import { useAuth } from "../context/AuthContext";
 
-const HomePage = ({ trips, travellers }) => {
+const HomePage = ({ travellers }) => {
   const [plan, setPlan] = useState([]);
   const { user } = useAuth();
 
@@ -28,7 +28,7 @@ const HomePage = ({ trips, travellers }) => {
 
     return (
         <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
-            <HeroSection trips={trips} />
+            <HeroSection plan={plan} />
             <div className="max-w-7xl mx-auto pb-25">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {plan && plan.slice(0, 3).map((plan, index) => (
