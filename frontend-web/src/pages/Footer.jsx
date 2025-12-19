@@ -1,9 +1,8 @@
-import { NavHashLink as Link } from 'react-router-hash-link'
+import { HashLink as Link } from 'react-router-hash-link' 
 import logoJourneysPutih from '../assets/images/logoJourneysPutih.png'
 
 const Footer = () => {
     return (
-
         <section className="bg-slate-900 text-white py-15">
             <div className="container mx-auto px-30 flex flex-col lg:flex-row justify-between gap-10">
                 
@@ -22,30 +21,30 @@ const Footer = () => {
                     
                     {/* Kolom 1 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="/homepage" className="hover:text-blue-900 transition">Home</Link>
-                        <Link to="/maps" className="hover:text-blue-900 transition">Create your plan</Link>
-                        <Link to="/categories" className="hover:text-blue-900 transition">Categories</Link>
+                        <Link smooth to="/homepage#" className="hover:text-blue-900 transition">Home</Link>
+                        <Link smooth to="/maps#" className="hover:text-blue-900 transition">Create your plan</Link>
+                        <Link smooth to="/categories#" className="hover:text-blue-900 transition">Categories</Link>
                     </div>
 
                     {/* Kolom 2 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="/explore" className="hover:text-blue-900 transition">Explore</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Culture</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Eatery</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Health</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Craft's</Link>
+                        <Link smooth to="/explore#" className="hover:text-blue-900 transition">Explore</Link>
+                        <Link smooth to="#" className="hover:text-blue-900 transition">Culture</Link>
+                        <Link smooth to="#" className="hover:text-blue-900 transition">Eatery</Link>
+                        <Link smooth to="#" className="hover:text-blue-900 transition">Health</Link>
+                        <Link smooth to="#" className="hover:text-blue-900 transition">Craft's</Link>
                     </div>
 
                     {/* Kolom 3 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="/bookmarked" className="hover:text-blue-900 transition">History</Link>
-                        <Link to="" className="hover:text-blue-900 transition">Past Trip</Link>
-                        <Link to="/bookmarked" className="hover:text-blue-900 transition">Favorite</Link>
+                        <Link smooth to="/bookmarked#" className="hover:text-blue-900 transition">History</Link>
+                        <Link smooth to="#" className="hover:text-blue-900 transition">Past Trip</Link>
+                        <Link smooth to="/bookmarked#" className="hover:text-blue-900 transition">Favorite</Link>
                     </div>
 
                     {/* Kolom 4 */}
                     <div className="flex flex-col space-y-4">
-                        <Link to="/myprofile" className="hover:text-blue-900 transition">Profile</Link>
+                        <Link smooth to="/myprofile#" className="hover:text-blue-900 transition">Profile</Link>
                     </div>
 
                 </div>
