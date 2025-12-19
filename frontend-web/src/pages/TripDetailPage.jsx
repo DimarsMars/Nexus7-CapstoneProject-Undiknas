@@ -1,15 +1,19 @@
-import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaStar, FaBookmark, FaChevronLeft } from "react-icons/fa";
+import { useState } from 'react';
+import { FaStar, FaHeart, FaRegHeart, FaChevronLeft } from "react-icons/fa";
 import RouteCard from '../components/RouteCard';
 
 const TripDetailPage = ({ trips }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isLiked, setIsLiked] = useState(false);
 
   const trip = trips.find(t => t.id === parseInt(id));
-
   if (!trip) return <div className="min-h-screen text-gray-400 flex items-center justify-center text-md font-bold">Trip not found</div>;
+
+  const handleLike = () => {
+        setIsLiked(!isLiked);
+    };
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center">
@@ -55,14 +59,19 @@ const TripDetailPage = ({ trips }) => {
                 </div>
                 
                 <div className="flex gap-2 items-center w-full md:w-auto justify-between md:justify-end">
-                    <div className="flex flex-wrap gap-2">
-                        {trip.tags?.map((tag, idx) => (
-                            <span key={idx} className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">
-                                #{tag}
-                            </span>
-                        ))}
-                    </div>
-                    <FaBookmark className="text-2xl text-[#1e293b] cursor-pointer ml-4 hover:text-blue-600 transition" title="Save Trip" />
+                    {isLiked ? (
+                        <FaHeart 
+                            onClick={handleLike}
+                            className="text-2xl text-red-600 cursor-pointer ml-4 transition transform active:scale-90" 
+                            title="Unsave Trip"
+                        />
+                    ) : (
+                        <FaRegHeart 
+                            onClick={handleLike}
+                            className="text-2xl text-slate-800 cursor-pointer ml-4 transition transform active:scale-90" 
+                            title="Save Trip"
+                        />
+                    )}
                 </div>
             </div>
 
