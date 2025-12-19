@@ -10,14 +10,15 @@ const TripCard = ({ id, image, title, author, rating, className }) => {
       <img 
         src={image} 
         alt={title} 
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+        className="w-full h-full object-top transition-transform duration-300 group-hover:scale-110" 
       />
 
-      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent"></div>
+      <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent"></div>
+      <div className="absolute inset-0 group-hover:bg-black/20 transition-colors duration-300"></div>
 
-      <div className="absolute bottom-0 left-0 p-5 w-full">
+      <div className="absolute bottom-0 left-0 p-5 w-full text-left">
         <h3 className="text-white text-2xl font-bold mb-1">{title}</h3>
-        <p className="text-gray-300 text-sm mb-3">{author}</p>
+        <p className="text-gray-300 text-xs px-2 mb-3">{author}</p>
         
         <div className="flex items-center space-x-1">
           {[...Array(5)].map((_, index) => (
