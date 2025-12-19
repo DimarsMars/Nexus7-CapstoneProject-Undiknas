@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useData } from '../context/DataContext';
 import { FaSearch, FaMapMarkerAlt, FaTrash, FaPlus, FaChevronDown, FaTimes } from "react-icons/fa";
-// 1. Tambahkan useMapEvents di sini
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents } from 'react-leaflet';
 import LocationRouteCard from '../components/LocationRouteCard';
 import apiService from '../services/apiService';
@@ -9,7 +9,6 @@ import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
@@ -79,6 +78,7 @@ const PreviewMarker = ({ position }) => {
 const MapsPage = () => {
   const [waypoints, setWaypoints] = useState([]); 
   const navigate = useNavigate();
+  const { fetchAllPlan } = useData();
   
   // State Search & Preview
   const [searchQuery, setSearchQuery] = useState("");
@@ -282,6 +282,7 @@ const MapsPage = () => {
     try {
       const response = await apiService.createPlan(formData);
       console.log("Plan created successfully:", response);
+      await fetchAllPlan(true);
       alert("Your plan has been created successfully!");
       
       // Reset state
