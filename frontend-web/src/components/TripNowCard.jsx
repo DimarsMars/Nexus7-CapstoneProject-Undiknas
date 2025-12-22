@@ -1,17 +1,16 @@
 import { FaMapMarkerAlt } from "react-icons/fa";
 
-const HistoryCard = ({ 
+const TripNowCard = ({ 
     image, 
     title, 
     description, 
     location, 
     actionIcon, 
     onAction, 
-    isDanger = false // Defaultnya false (tidak merah)
+    isDanger = false
 }) => {
     return (
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-row gap-4 items-center hover:shadow-md transition-shadow duration-300">
-            {/* Bagian Gambar */}
             <div className="w-24 h-24 md:w-32 md:h-28 shrink-0 rounded-lg overflow-hidden bg-gray-200">
                 <img 
                     src={image} 
@@ -20,7 +19,6 @@ const HistoryCard = ({
                 />
             </div>
 
-            {/* Bagian Text */}
             <div className="flex-1 flex flex-col justify-between h-full py-1">
                 <div>
                     <h3 className="font-bold text-slate-900 text-lg line-clamp-1">{title}</h3>
@@ -34,7 +32,6 @@ const HistoryCard = ({
                 </div>
             </div>
 
-            {/* Bagian Tombol Action (Kanan) */}
             <button 
                 onClick={onAction}
                 className={`p-3 rounded-full transition-colors ${
@@ -43,11 +40,10 @@ const HistoryCard = ({
                     : "text-slate-900 hover:bg-slate-100"
                 }`}
             >
-                {/* Icon dirender dari props agar fleksibel */}
                 {actionIcon}
             </button>
         </div>
     );
 };
 
-export default HistoryCard;
+export default TripNowCard;

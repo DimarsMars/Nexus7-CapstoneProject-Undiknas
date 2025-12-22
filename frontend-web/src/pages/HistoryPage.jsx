@@ -1,8 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { FaArrowRight, FaTrash, FaHeart } from "react-icons/fa";
-import HistoryCard from '../components/HistoryCard';
-import FavoriteCard from '../components/FavoriteCard';
 import { useData } from '../context/DataContext';
+import FavoriteCard from '../components/FavoriteCard';
+import TripNowCard from '../components/TripNowCard';
+import PastTripCard from '../components/PastTripCard';
 
 const HistoryPage = ({ activeTrips, pastTrips }) => {
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                     </div>
                     <div className="flex flex-col gap-4">
                         {activeTrips && activeTrips.map((trip) => (
-                            <HistoryCard 
+                            <TripNowCard 
                                 key={trip.id}
                                 image={trip.image}
                                 title={trip.title}
@@ -45,7 +46,7 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                         <h2 className="text-xl font-bold text-slate-900">Favourites</h2>
                         <button 
                             onClick={handleRemoveAllFavorites}
-                            className="px-4 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition"
+                            className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition"
                         >
                             Remove all
                         </button>
@@ -81,7 +82,7 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                     </div>
                     <div className="flex flex-col gap-4">
                         {pastTrips && pastTrips.map((trip) => (
-                            <HistoryCard 
+                            <PastTripCard 
                                 key={trip.id}
                                 image={trip.image}
                                 title={trip.title}
