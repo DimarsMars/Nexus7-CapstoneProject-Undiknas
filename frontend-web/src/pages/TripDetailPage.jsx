@@ -3,12 +3,12 @@ import { useState, useEffect } from 'react';
 import { FaStar, FaHeart, FaRegHeart, FaChevronLeft } from "react-icons/fa";
 import RouteCard from '../components/RouteCard';
 import apiClient from '../services/apiClient';
-import { useData } from '../context/DataContext'; // Import useData
+import { useData } from '../context/DataContext';
 
 const TripDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { favoriteTrips, addFavorite, removeFavorite } = useData(); // Get favorite state and functions
+  const { favoriteTrips, addFavorite, removeFavorite } = useData();
   
   const [tripData, setTripData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +16,12 @@ const TripDetailPage = () => {
 
   // isLiked is now derived from the global context
   const isLiked = tripData ? favoriteTrips.some(trip => trip.plan_id === tripData.plan.plan_id) : false;
+
+  // STATE REVIEW MODAL
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [userRating, setUserRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
 
   useEffect(() => {
     const fetchTripDetail = async () => {
@@ -37,22 +43,38 @@ const TripDetailPage = () => {
   }, [id]);
 
   const handleLike = () => {
-    if (!tripData) return; // Guard against no trip data
+    if (!tripData) return;
 
     if (isLiked) {
         removeFavorite(tripData.plan.plan_id);
     } else {
-        // We need to store a consistent object. Let's create one.
         const favoriteData = {
             plan_id: tripData.plan.plan_id,
             title: tripData.plan.title,
             description: tripData.plan.description,
             banner: tripData.plan.banner,
-            // Assuming we might need a location. Let's find one from the routes if possible.
             location: tripData.routes?.[0]?.address || 'Multiple locations'
         };
         addFavorite(favoriteData);
     }
+  };
+
+const handleSubmitReview = async () => {
+      if (userRating === 0) {
+          alert("Please select a star rating.");
+          return;
+      }
+      
+      console.log("Submitting Review:", {
+          plan_id: id,
+          rating: userRating,
+          comment: reviewText
+      });
+
+      alert("Review submitted! (Simulation)");
+      setIsReviewModalOpen(false);
+      setUserRating(0);
+      setReviewText("");
   };
 
   if (isLoading) {
@@ -105,7 +127,7 @@ const TripDetailPage = () => {
             <div className="mb-4">
                 <div className="flex justify-between items-start">
                     <h1 className="text-3xl font-bold text-[#1e293b]">{plan.title}</h1>
-                    <div className="hidden md:block bg-[#5e6c7c] text-white px-4 py-1 rounded text-sm font-medium cursor-pointer hover:bg-[#4a5568]">Rate trip</div>
+                    <div onClick={() => setIsReviewModalOpen(true)} className="hidden md:block bg-[#5e6c7c] text-white px-4 py-1 rounded text-sm font-medium cursor-pointer hover:bg-[#4a5568]">Rate trip</div>
                 </div>
                 
                 <div className="flex gap-1 mt-2 text-yellow-400 text-xl">
@@ -169,6 +191,58 @@ const TripDetailPage = () => {
 
         </div>
       </div>
+      
+      {/* --- REVIEW MODAL (POPUP) --- */}
+      {isReviewModalOpen && (
+        <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4"
+            onClick={() => setIsReviewModalOpen(false)}
+        >
+            <div 
+                className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl transform transition-all"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Text Area */}
+                <div className="mb-4">
+                    <textarea 
+                        className="w-full border border-slate-300 rounded-lg p-4 text-gray-700 focus:outline-none focus:border-slate-800 resize-none h-40 placeholder-gray-400"
+                        placeholder="Write a Review..."
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                    ></textarea>
+                </div>
+
+                {/* Footer: Stars & Button */}
+                <div className="flex items-center justify-between">
+                    <div className="flex gap-1">
+                        {[...Array(5)].map((_, index) => {
+                            const starValue = index + 1;
+                            return (
+                                <FaStar 
+                                    key={index}
+                                    className={`text-2xl cursor-pointer transition-colors ${
+                                        starValue <= (hoverRating || userRating) 
+                                        ? "text-yellow-400" 
+                                        : "text-gray-200"
+                                    }`}
+                                    onMouseEnter={() => setHoverRating(starValue)}
+                                    onMouseLeave={() => setHoverRating(0)}
+                                    onClick={() => setUserRating(starValue)}
+                                />
+                            );
+                        })}
+                    </div>
+
+                    <button 
+                        onClick={handleSubmitReview}
+                        className="bg-[#1e293b] text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition"
+                    >
+                        Add review
+                    </button>
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
