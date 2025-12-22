@@ -153,16 +153,16 @@ function App() {
         }
       >
         <Route index element={<Navigate to="/homepage" replace />} />
-        <Route path='homepage' element={<HomePage trips={trips} categories={categories} travellers={travellers}/>} />
+        <Route path='homepage' element={<HomePage categories={categories} travellers={travellers}/>} />
         <Route path='explore' element={<ExplorePage trips={trips}/>} />
         <Route path='categories' element={<CategoriesPage allCategories={allCategories}/>} />
         <Route path='travellers' element={<TravellersPage recommendationData={recommendationData} mostActiveData={mostActiveData}/>} />
-        <Route path='profile/:id' element={<TravellerProfilePage recommendationData={recommendationData} trips={trips} />} />
+        <Route path='profile/:id' element={<TravellerProfilePage recommendationData={recommendationData} />} />
         <Route path='myprofile' element={<MyProfilePage userdummy={userdummy} trips={trips} myReviews={myReviews} othersReviews={othersReviews}/>} />
         <Route path='editprofile' element={<EditProfilePage user={userdummy}/>} />
         <Route path='bookmarked' element={<BookmarkedPage bookmarkedData={bookmarkedData}/>} />
         <Route path='trip/:id' element={<TripDetailPage trips={trips}/>} />
-        <Route path='mytripreview/:id' element={<MyTripReviewPage trips={trips} sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
+        <Route path='mytripreview/:id' element={<MyTripReviewPage sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
         <Route path='maps' element={<MapsPage />} />
         <Route path='history' element={<HistoryPage activeTrips={activeTrips} favouriteTrips={favouriteTrips} pastTrips={pastTrips} />} />
       </Route>
