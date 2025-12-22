@@ -1,14 +1,16 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
 import CreatePlanSection from "../components/CreatePlanSection";
 import HeroSection from "../components/HeroSection";
 import PlansCategory from "../components/PlanCategorySection";
 import TravellerSection from "../components/TravellerSection";
-import TripCard from "../components/TripCard"
-import { useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useData } from "../context/DataContext";
+import TripCard from "../components/TripCard";
 
 const HomePage = ({ travellers }) => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const { plans, fetchAllPlan } = useData();
 
@@ -17,6 +19,10 @@ const HomePage = ({ travellers }) => {
       fetchAllPlan();
     }
   }, [user]);
+
+  const handleCardClick = (id) => {
+    navigate(`/trip/${id}`);
+  };
 
     return (
         <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
@@ -36,6 +42,7 @@ const HomePage = ({ travellers }) => {
                         ? "md:col-span-2 h-64 md:h-80" 
                         : "h-64"                       
                     }
+                    onClick={() => handleCardClick(plan.plan_id)}
                     />
                 ))}
                 </div>

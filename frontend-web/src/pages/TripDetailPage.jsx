@@ -1,26 +1,93 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaStar, FaHeart, FaRegHeart, FaChevronLeft } from "react-icons/fa";
 import RouteCard from '../components/RouteCard';
+import apiClient from '../services/apiClient';
+import { useData } from '../context/DataContext'; // Import useData
 
-const TripDetailPage = ({ trips }) => {
+const TripDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isLiked, setIsLiked] = useState(false);
+  const { favoriteTrips, addFavorite, removeFavorite } = useData(); // Get favorite state and functions
+  
+  const [tripData, setTripData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const trip = trips.find(t => t.id === parseInt(id));
-  if (!trip) return <div className="min-h-screen text-gray-400 flex items-center justify-center text-md font-bold">Trip not found</div>;
+  // isLiked is now derived from the global context
+  const isLiked = tripData ? favoriteTrips.some(trip => trip.plan_id === tripData.plan.plan_id) : false;
+
+  useEffect(() => {
+    const fetchTripDetail = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiClient.get(`/plans/${id}/detail`);
+        setTripData(response.data);
+      } catch (err) {
+        setError("Failed to fetch trip details. Please try again.");
+        console.error("Error fetching trip details:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchTripDetail();
+    }
+  }, [id]);
 
   const handleLike = () => {
-        setIsLiked(!isLiked);
-    };
+    if (!tripData) return; // Guard against no trip data
+
+    if (isLiked) {
+        removeFavorite(tripData.plan.plan_id);
+    } else {
+        // We need to store a consistent object. Let's create one.
+        const favoriteData = {
+            plan_id: tripData.plan.plan_id,
+            title: tripData.plan.title,
+            description: tripData.plan.description,
+            banner: tripData.plan.banner,
+            // Assuming we might need a location. Let's find one from the routes if possible.
+            location: tripData.routes?.[0]?.address || 'Multiple locations'
+        };
+        addFavorite(favoriteData);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-400 text-md font-bold">Loading trip details...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-red-500 text-md font-bold">{error}</div>
+      </div>
+    );
+  }
+
+  if (!tripData) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-gray-400 text-md font-bold">Trip not found</div>
+      </div>
+    );
+  }
+
+  const { plan, routes } = tripData;
+  const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : 'placeholder-image-url';
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center">
       <div className="w-full max-w-7xl">
         <div className="flex items-center gap-4 mb-5">
             <button 
-                onClick={() => navigate(-1)} // Kembali ke halaman sebelumnya
+                onClick={() => navigate(-1)}
                 className="p-2 hover:bg-gray-200 rounded-full transition"
             >
                 <FaChevronLeft className="text-xl text-black" />
@@ -32,18 +99,18 @@ const TripDetailPage = ({ trips }) => {
 
         <div className="bg-white w-full p-6 md:p-8 rounded-xl shadow-sm border border-gray-100">
             <div className="w-full h-64 md:h-96 rounded-xl overflow-hidden mb-6 shadow-sm">
-                <img src={trip.image} alt={trip.title} className="w-full h-full object-cover" />
+                <img src={tripImage} alt={plan.title} className="w-full h-full object-cover" />
             </div>
 
             <div className="mb-4">
                 <div className="flex justify-between items-start">
-                    <h1 className="text-3xl font-bold text-[#1e293b]">{trip.title}</h1>
+                    <h1 className="text-3xl font-bold text-[#1e293b]">{plan.title}</h1>
                     <div className="hidden md:block bg-[#5e6c7c] text-white px-4 py-1 rounded text-sm font-medium cursor-pointer hover:bg-[#4a5568]">Rate trip</div>
                 </div>
                 
                 <div className="flex gap-1 mt-2 text-yellow-400 text-xl">
                     {[...Array(5)].map((_, i) => (
-                        <FaStar key={i} className={i < trip.rating ? "text-yellow-400" : "text-gray-200"} />
+                        <FaStar key={i} className={i < (plan.rating || 5) ? "text-yellow-400" : "text-gray-200"} />
                     ))}
                 </div>
             </div>
@@ -77,20 +144,20 @@ const TripDetailPage = ({ trips }) => {
 
             <div className="mb-8">
                 <p className="text-gray-600 text-base leading-relaxed text-justify">
-                    {trip.description || "No description available for this trip."}
+                    {plan.description || "No description available for this trip."}
                 </p>
             </div>
 
             <div className="flex flex-col gap-4">
                 <h3 className="text-xl font-bold text-[#1e293b] mb-2">Trip Route</h3>
-                {trip.route && trip.route.length > 0 ? (
-                    trip.route.map((item, index) => (
+                {routes && routes.length > 0 ? (
+                    routes.map((item, index) => (
                         <RouteCard 
-                            key={index}
-                            image={item.image}
+                            key={item.route_id || index}
+                            image={item.image ? `data:image/jpeg;base64,${item.image}` : 'placeholder-route-image-url'}
                             title={item.title}
-                            activity={item.activity || "Sightseeing"}
-                            location={item.location}
+                            activity={item.description || "Sightseeing"}
+                            location={item.address}
                         />
                     ))
                 ) : (

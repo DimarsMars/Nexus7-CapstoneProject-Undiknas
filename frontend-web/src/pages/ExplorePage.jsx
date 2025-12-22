@@ -36,6 +36,10 @@ const ExplorePage = () => {
     }
   }, [user]);
 
+    const handleCardClick = (id) => {
+    navigate(`/trip/${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 px-5">
       <div className="max-w-7xl mx-auto">
@@ -73,6 +77,7 @@ const ExplorePage = () => {
                         ? "md:col-span-2 h-64 md:h-80" // Kartu Besar
                         : "h-64"                       // Kartu Kecil
                 }
+                onClick={() => handleCardClick(plan.plan_id)}
               />
             );
           })}
