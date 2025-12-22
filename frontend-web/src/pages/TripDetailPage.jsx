@@ -61,20 +61,31 @@ const TripDetailPage = () => {
 
 const handleSubmitReview = async () => {
       if (userRating === 0) {
-          alert("Please select a star rating.");
+          alert("Please provide a star rating before submitting.");
           return;
       }
-      
-      console.log("Submitting Review:", {
-          plan_id: id,
-          rating: userRating,
-          comment: reviewText
-      });
 
-      alert("Review submitted! (Simulation)");
-      setIsReviewModalOpen(false);
-      setUserRating(0);
-      setReviewText("");
+      try {
+          const reviewData = {
+              plan_id: parseInt(id, 10), // Ensure plan_id is a number
+              rating: userRating,
+              comment: reviewText
+          };
+
+          const response = await apiClient.post('/reviews/trip', reviewData);
+          
+          alert(response.message || "Review submitted successfully!");
+
+          // Reset and close the modal
+          setIsReviewModalOpen(false);
+          setUserRating(0);
+          setHoverRating(0);
+          setReviewText("");
+
+      } catch (error) {
+          console.error("Error submitting review:", error);
+          alert("Failed to submit review. Please try again.");
+      }
   };
 
   if (isLoading) {
