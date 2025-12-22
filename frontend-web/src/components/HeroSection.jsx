@@ -99,7 +99,8 @@ const HeroSection = ({ plans = [] }) => {
                             author={truncateText(item.description, 50)}
                             rating={item.rating || 5}
                             image={`data:image/jpeg;base64,${item.banner}`}
-                            className="h-full shadow-none rounded-none" 
+                            className="h-full shadow-none rounded-none"
+                            isClickable={false}
                         />
                      </div>
                   </div>
