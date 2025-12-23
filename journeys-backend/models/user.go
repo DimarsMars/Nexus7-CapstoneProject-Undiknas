@@ -6,4 +6,6 @@ type User struct {
 	Email       string `gorm:"column:email" json:"email"`
 	FirebaseUID string `gorm:"column:firebase_uid" json:"firebase_uid"`
 	Role        string `gorm:"column:role" json:"role"`
+
+	Profile Profile `gorm:"foreignKey:UserID;references:UserID" json:"profile"`
 }

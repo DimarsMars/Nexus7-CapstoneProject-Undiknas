@@ -5,6 +5,7 @@ import (
 	"be_journeys/controllers/helper"
 	"be_journeys/models"
 	"context"
+	"encoding/base64"
 	"net/http"
 
 	"firebase.google.com/go/v4/auth"
@@ -112,4 +113,50 @@ func GetUserXPHistory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": xpHistory})
+}
+
+func GetMostActiveTravellers(c *gin.Context) {
+	type TravellerInfo struct {
+		UserID   uint   `json:"user_id"`
+		Username string `json:"username"`
+		Role     string `json:"role"`
+		Rank     string `json:"rank"`
+		XP       int64  `json:"xp"`
+		Photo    string `json:"photo"` // base64 image
+	}
+
+	var results []TravellerInfo
+
+	rows, err := config.DB.Raw(`
+		SELECT u.user_id, u.username, u.role, p.rank,
+			COALESCE(SUM(x.xp_value), 0) as xp,
+			p.photo
+		FROM users u
+		LEFT JOIN profiles p ON u.user_id = p.user_id
+		LEFT JOIN user_xps x ON u.user_id = x.user_id
+		GROUP BY u.user_id, u.username, u.role, p.rank, p.photo
+		ORDER BY xp DESC
+		LIMIT 10
+	`).Rows()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data user"})
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var t TravellerInfo
+		var photoBytes []byte
+
+		if err := rows.Scan(&t.UserID, &t.Username, &t.Role, &t.Rank, &t.XP, &photoBytes); err == nil {
+			if len(photoBytes) > 0 {
+				t.Photo = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(photoBytes)
+			}
+			results = append(results, t)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": results,
+	})
 }
