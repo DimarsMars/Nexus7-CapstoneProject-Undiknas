@@ -575,3 +575,33 @@ func GetMyRoutes(c *gin.Context) {
 		"data": response,
 	})
 }
+
+func GetAllPlans(c *gin.Context) {
+	var plans []models.Plan
+
+	if err := config.DB.Preload("Categories").Find(&plans).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil semua plans"})
+		return
+	}
+
+	var response []map[string]interface{}
+	for _, p := range plans {
+		var bannerBase64 string
+		if len(p.Banner) > 0 {
+			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
+		}
+
+		response = append(response, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"tags":        p.Tags,
+			"banner":      bannerBase64,
+			"categories":  p.Categories,
+			"created_at":  p.CreatedAt,
+			"status":      p.Status,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": response})
+}
