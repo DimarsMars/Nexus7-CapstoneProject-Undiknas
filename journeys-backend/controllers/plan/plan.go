@@ -531,3 +531,47 @@ func GetRecommendedPlans(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": resp})
 }
+
+func GetMyRoutes(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var routes []models.Route
+
+	if err := config.DB.
+		Joins("JOIN plans ON plans.plan_id = routes.plan_id").
+		Where("plans.user_id = ?", userID).
+		Order("routes.created_at DESC").
+		Find(&routes).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal mengambil route user",
+		})
+		return
+	}
+
+	var response []map[string]interface{}
+
+	for _, r := range routes {
+		imageBase64 := ""
+		if len(r.Image) > 0 {
+			imageBase64 = base64.StdEncoding.EncodeToString(r.Image)
+		}
+
+		response = append(response, map[string]interface{}{
+			"route_id":    r.RouteID,
+			"title":       r.Title,
+			"address":     r.Address,
+			"description": r.Description,
+			"latitude":    r.Latitude,
+			"longitude":   r.Longitude,
+			"step_order":  r.StepOrder,
+			"tags":        r.Tags,
+			"image":       imageBase64,
+			"plan_id":     r.PlanID,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": response,
+	})
+}
