@@ -36,6 +36,45 @@ class _RouteScreenState extends State<RouteScreen> {
 
   final List<Map<String, dynamic>> routes = [];
 
+  String? selectedValue;
+  final List<String> dropdownItems = [
+  "Family",
+  "Friends",
+  "Solo Trip",
+  "Couple",
+  "Adventure",
+];
+
+Widget buildDropdown() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: Colors.grey.shade300),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        hint: const Text("Select Category"),
+        value: selectedValue,
+        isExpanded: true,
+        icon: const Icon(Icons.keyboard_arrow_down),
+        items: dropdownItems.map((item) {
+          return DropdownMenuItem<String>(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            selectedValue = value;
+          });
+        },
+      ),
+    ),
+  );
+}
+
   String? selectedCategory;
   final List<String> categories = [
     "Food",
@@ -44,6 +83,93 @@ class _RouteScreenState extends State<RouteScreen> {
     "Culture",
     "Shopping",
   ];
+
+void showEditRouteDialog(int index) {
+  final titleEdit = TextEditingController(text: routes[index]["title"]);
+  final addressEdit = TextEditingController(text: routes[index]["address"]);
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Edit Route"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: titleEdit,
+            decoration: const InputDecoration(labelText: "Title"),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: addressEdit,
+            decoration: const InputDecoration(labelText: "Address"),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            setState(() {
+              routes[index]["title"] = titleEdit.text;
+              routes[index]["address"] = addressEdit.text;
+            });
+            Navigator.pop(context);
+          },
+          child: const Text("Save"),
+        ),
+      ],
+    ),
+  );
+}
+
+void showAddImageDialog() {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Add Image"),
+      content: const Text("Feature add image coming soon 📸"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Close"),
+        ),
+      ],
+    ),
+  );
+}
+
+void showDeleteConfirmDialog(int index) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Delete Route"),
+      content: const Text("Are you sure you want to delete this route?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () {
+            setState(() {
+              routes.removeAt(index);
+              routePoints.removeAt(index);
+            });
+            fetchRoute();
+            Navigator.pop(context);
+          },
+          child: const Text("Delete"),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _actionButton({
   required String text,
@@ -282,6 +408,7 @@ void clearRouteForm() {
           children: [
             inputField(titleController, "Add title"),
             inputField(descController, "Add Description"),
+            buildDropdown(),
             buildMap(),
             inputField(addressController, "Cari lokasi atau klik peta",
                 isRefresh: false),
@@ -388,36 +515,21 @@ void clearRouteForm() {
                       text: "Edit Route",
                       color: Colors.grey.shade200,
                       textColor: Colors.black,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const TripScheduleScreen(),
-                          ),
-                        );
-                      },
+                      onTap: () => showEditRouteDialog(index),
                     ),
                     const SizedBox(width: 8),
                     _actionButton(
                       text: "Add Image",
                       color: const Color(0xffE8F0FE),
                       textColor: const Color(0xff4B6CB7),
-                      onTap: () {
-                        // TODO: add image
-                      },
+                     onTap: showAddImageDialog,
                     ),
                     const SizedBox(width: 8),
                     _actionButton(
                       text: "Delete",
                       color: Colors.red,
                       textColor: Colors.white,
-                      onTap: () {
-                        setState(() {
-                          routes.removeAt(index);
-                          routePoints.removeAt(index);
-                        });
-                        fetchRoute();
-                      },
+                      onTap: () => showDeleteConfirmDialog(index),
                     ),
                   ],
                 ),
