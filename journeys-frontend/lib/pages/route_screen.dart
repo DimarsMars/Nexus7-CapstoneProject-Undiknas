@@ -14,18 +14,27 @@ class RouteScreen extends StatefulWidget {
 }
 
 class _RouteScreenState extends State<RouteScreen> {
+  // ================= CONFIG =================
   static const String orsApiKey =
       "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ1NmVlYzAzODhmMjQyYTU4YzNlYzFjNjcyZmJmOWNmIiwiaCI6Im11cm11cjY0In0=";
 
   final MapController mapController = MapController();
 
+  // ================= CONTROLLERS =================
   final titleController = TextEditingController();
   final descController = TextEditingController();
   final addressController = TextEditingController();
   final doingController = TextEditingController();
   final tagsController = TextEditingController();
 
-  LatLng currentLocation = const LatLng(-8.436697, 115.279947);
+  // ================= STATE =================
+  LatLng mapCenter = const LatLng(-8.436697, 115.279947);
+
+  LatLng? previewPoint; // 🔵 preview marker
+  final List<LatLng> routePoints = []; // 🔴 marker fix
+  final List<LatLng> routeGeometry = []; // 🟣 polyline jalan
+
+  final List<Map<String, dynamic>> routes = [];
 
   String? selectedCategory;
   final List<String> categories = [
@@ -36,32 +45,65 @@ class _RouteScreenState extends State<RouteScreen> {
     "Shopping",
   ];
 
-  final List<Map<String, dynamic>> routes = [];
+  Widget _actionButton({
+  required String text,
+  required Color color,
+  required Color textColor,
+  required VoidCallback onTap,
+  IconData? icon,
+}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(10),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: textColor),
+            const SizedBox(width: 4),
+          ],
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11.5,
+              color: textColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
 
-  /// 🔥 TITIK ROUTE (marker)
-  final List<LatLng> routePoints = [];
-
-  /// 🔥 GARIS ROUTE (jalan asli ORS)
-  final List<LatLng> routeGeometry = [];
 
   // ================= SEARCH LOCATION =================
   Future<void> searchLocation() async {
     if (addressController.text.isEmpty) return;
 
     final url = Uri.parse(
-      "https://api.openrouteservice.org/geocode/search?api_key=$orsApiKey&text=${addressController.text}",
+      "https://api.openrouteservice.org/geocode/search"
+      "?api_key=$orsApiKey"
+      "&text=${addressController.text}",
     );
 
     try {
-      final response = await http.get(url);
-      final data = jsonDecode(response.body);
+      final res = await http.get(url);
+      final data = jsonDecode(res.body);
       final coords = data["features"][0]["geometry"]["coordinates"];
 
       setState(() {
-        currentLocation = LatLng(coords[1], coords[0]);
+        previewPoint = LatLng(coords[1], coords[0]);
+        mapCenter = previewPoint!;
       });
 
-      mapController.move(currentLocation, 15);
+      mapController.move(mapCenter, 15);
     } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Lokasi tidak ditemukan")),
@@ -69,7 +111,27 @@ class _RouteScreenState extends State<RouteScreen> {
     }
   }
 
-  // ================= FETCH ROUTE ORS =================
+  // ================= REVERSE GEOCODE =================
+  Future<void> reverseGeocode(LatLng latlng) async {
+    final url =
+        "https://api.openrouteservice.org/geocode/reverse"
+        "?api_key=$orsApiKey"
+        "&point.lon=${latlng.longitude}"
+        "&point.lat=${latlng.latitude}";
+
+    try {
+      final res = await http.get(Uri.parse(url));
+      final data = jsonDecode(res.body);
+      final props = data["features"][0]["properties"];
+
+      setState(() {
+        addressController.text = props["label"] ??
+            "${latlng.latitude.toStringAsFixed(5)}, ${latlng.longitude.toStringAsFixed(5)}";
+      });
+    } catch (_) {}
+  }
+
+  // ================= FETCH ROUTE =================
   Future<void> fetchRoute() async {
     if (routePoints.length < 2) return;
 
@@ -91,39 +153,53 @@ class _RouteScreenState extends State<RouteScreen> {
         data["features"][0]["geometry"]["coordinates"];
 
     setState(() {
-      routeGeometry.clear();
-      routeGeometry.addAll(
-        geometry.map((c) => LatLng(c[1], c[0])).toList(),
-      );
+      routeGeometry
+        ..clear()
+        ..addAll(geometry.map((c) => LatLng(c[1], c[0])));
     });
   }
 
   // ================= ADD ROUTE =================
   void addRoute() {
-    if (titleController.text.isEmpty ||
-        descController.text.isEmpty ||
-        selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lengkapi data route")),
-      );
-      return;
-    }
+  if (previewPoint == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Klik peta atau cari lokasi dulu")),
+    );
+    return;
+  }
 
-    setState(() {
-      routes.add({
-        "title": titleController.text,
-        "address": addressController.text,
-        "latlng": currentLocation,
-      });
+  if (titleController.text.isEmpty ||
+      descController.text.isEmpty ||
+      selectedCategory == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Lengkapi data route")),
+    );
+    return;
+  }
 
-      /// 🔥 SIMPAN TITIK
-      routePoints.add(currentLocation);
+  setState(() {
+    routes.add({
+      "title": titleController.text,
+      "address": addressController.text,
+      "latlng": previewPoint!,
     });
 
-    /// 🔥 AMBIL JALUR JALAN
-    fetchRoute();
-    clearForm();
-  }
+    routePoints.add(previewPoint!);
+    mapCenter = previewPoint!;
+    previewPoint = null;
+  });
+
+  // 🔥 LETAKKAN DI SINI
+  fetchRoute();
+  clearRouteForm(); // ✅ title & description TIDAK KEHAPUS
+}
+void clearRouteForm() {
+  addressController.clear();
+  doingController.clear();
+  tagsController.clear();
+  selectedCategory = null;
+}
+
 
   // ================= POST ROUTE =================
   void postRoute() {
@@ -133,10 +209,11 @@ class _RouteScreenState extends State<RouteScreen> {
       routes.clear();
       routePoints.clear();
       routeGeometry.clear();
-      currentLocation = const LatLng(-8.436697, 115.279947);
+      previewPoint = null;
+      mapCenter = const LatLng(-8.436697, 115.279947);
     });
 
-    mapController.move(currentLocation, 14);
+    mapController.move(mapCenter, 14);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Route berhasil di-post")),
@@ -152,7 +229,7 @@ class _RouteScreenState extends State<RouteScreen> {
     selectedCategory = null;
   }
 
-  // ================= ADD CATEGORY POPUP =================
+  // ================= ADD CATEGORY =================
   void addMoreCategory() {
     final controller = TextEditingController();
 
@@ -206,7 +283,7 @@ class _RouteScreenState extends State<RouteScreen> {
             inputField(titleController, "Add title"),
             inputField(descController, "Add Description"),
             buildMap(),
-            inputField(addressController, "Alamat lokasi",
+            inputField(addressController, "Cari lokasi atau klik peta",
                 isRefresh: false),
 
             Align(
@@ -236,60 +313,124 @@ class _RouteScreenState extends State<RouteScreen> {
 
             const SizedBox(height: 16),
 
-            /// ===== ROUTE LIST =====
+            /// ROUTE LIST
             ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: routes.length,
-              itemBuilder: (context, index) {
-                final r = routes[index];
-                return InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const TripScheduleScreen(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.location_on,
-                            color: Colors.blue),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            r["address"] ?? "-",
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete,
-                              color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              routes.removeAt(index);
-                              routePoints.removeAt(index);
-                              fetchRoute();
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+  shrinkWrap: true,
+  physics: const NeverScrollableScrollPhysics(),
+  itemCount: routes.length,
+  itemBuilder: (context, index) {
+    final r = routes[index];
 
-            const SizedBox(height: 10),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// ICON KIRI
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xffE8F0FE),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.location_on_outlined,
+              color: Color(0xff4B6CB7),
+            ),
+          ),
+
+          const SizedBox(width: 12),
+
+          /// CONTENT
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                /// TITLE
+                Text(
+                  "Lokasi ${index + 1} : ${r["title"] ?? "Lokasi"}",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                /// SUBTITLE
+                Text(
+                  r["address"] ?? "-",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                /// ACTION BUTTONS
+                Row(
+                  children: [
+                    _actionButton(
+                      text: "Edit Route",
+                      color: Colors.grey.shade200,
+                      textColor: Colors.black,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const TripScheduleScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _actionButton(
+                      text: "Add Image",
+                      color: const Color(0xffE8F0FE),
+                      textColor: const Color(0xff4B6CB7),
+                      onTap: () {
+                        // TODO: add image
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _actionButton(
+                      text: "Delete",
+                      color: Colors.red,
+                      textColor: Colors.white,
+                      onTap: () {
+                        setState(() {
+                          routes.removeAt(index);
+                          routePoints.removeAt(index);
+                        });
+                        fetchRoute();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  },
+),
+
+            const SizedBox(height: 12),
             buildCategoryDropdown(),
 
             const SizedBox(height: 12),
@@ -320,13 +461,20 @@ class _RouteScreenState extends State<RouteScreen> {
   // ================= MAP =================
   Widget buildMap() {
     return Container(
-      height: 230,
+      height: 240,
       margin: const EdgeInsets.symmetric(vertical: 10),
       child: FlutterMap(
         mapController: mapController,
         options: MapOptions(
-          initialCenter: currentLocation,
+          initialCenter: mapCenter,
           initialZoom: 14,
+          onTap: (tapPosition, latlng) async {
+            setState(() {
+              previewPoint = latlng;
+              mapCenter = latlng;
+            });
+            await reverseGeocode(latlng);
+          },
         ),
         children: [
           TileLayer(
@@ -334,7 +482,7 @@ class _RouteScreenState extends State<RouteScreen> {
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
           ),
 
-          /// 🔥 ROUTE JALAN (SEPERTI GAMBAR)
+          /// ROUTE LINE
           if (routeGeometry.length > 1)
             PolylineLayer(
               polylines: [
@@ -342,35 +490,44 @@ class _RouteScreenState extends State<RouteScreen> {
                   points: routeGeometry,
                   strokeWidth: 6,
                   color: Colors.deepPurpleAccent,
-                  borderColor: Colors.deepPurple,
-                  borderStrokeWidth: 2,
                 ),
               ],
             ),
 
-          /// 🔥 MARKER
+          /// MARKERS
           MarkerLayer(
-            markers: routePoints
-                .map(
-                  (p) => Marker(
-                    point: p,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 36,
-                    ),
+            markers: [
+              ...routePoints.map(
+                (p) => Marker(
+                  point: p,
+                  width: 40,
+                  height: 40,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.red,
+                    size: 36,
                   ),
-                )
-                .toList(),
+                ),
+              ),
+              if (previewPoint != null)
+                Marker(
+                  point: previewPoint!,
+                  width: 40,
+                  height: 40,
+                  child: const Icon(
+                    Icons.location_on,
+                    color: Colors.blue,
+                    size: 36,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // ================= WIDGET =================
+  // ================= WIDGETS =================
   Widget buildCategoryDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
