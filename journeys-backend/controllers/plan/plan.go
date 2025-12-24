@@ -35,6 +35,7 @@ func CreatePlan(c *gin.Context) {
 	tagsRaw := c.PostForm("tags")
 	catIDsRaw := c.PostForm("category_ids")
 	routesRaw := c.PostForm("routes")
+	status := c.PostForm("status")
 
 	var tags []string
 	if tagsRaw != "" {
@@ -72,6 +73,7 @@ func CreatePlan(c *gin.Context) {
 		Tags:        tags,
 		Banner:      banner,
 		Categories:  categories,
+		Status:      status,
 	}
 
 	if err := config.DB.Create(&plan).Error; err != nil {
@@ -107,7 +109,7 @@ func CreatePlan(c *gin.Context) {
 
 	xp := models.UserXP{
 		UserID:      userID,
-		XPValue:     10,
+		XPValue:     100,
 		Description: "Created a new plan",
 	}
 	if err := config.DB.Create(&xp).Error; err != nil {
@@ -152,6 +154,7 @@ func GetPlans(c *gin.Context) {
 			"banner":      bannerBase64,
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
+			"status":      p.Status,
 		})
 	}
 
@@ -207,6 +210,7 @@ func GetPlanDetail(c *gin.Context) {
 			"plan":   plan,
 			"banner": bannerBase64,
 			"routes": routeList,
+			"status": plan.Status,
 		},
 	})
 }
@@ -271,6 +275,10 @@ func UpdatePlan(c *gin.Context) {
 		defer opened.Close()
 		bannerBytes, _ := io.ReadAll(opened)
 		plan.Banner = bannerBytes
+	}
+
+	if status := c.PostForm("status"); status != "" {
+		plan.Status = status
 	}
 
 	if err := config.DB.Save(&plan).Error; err != nil {
@@ -427,6 +435,25 @@ func VerifyUserLocation(c *gin.Context) {
 		Select("MAX(step_order)").Scan(&maxStep)
 
 	if input.StepOrder == maxStep {
+
+		finalXP := models.UserXP{
+			UserID:      userID,
+			XPValue:     100,
+			Description: "Completed the trip",
+		}
+		if err := config.DB.Create(&finalXP).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan XP akhir trip"})
+			return
+		}
+
+		var updatedTotalXP int64
+		config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&updatedTotalXP)
+
+		finalRank := helper.CalculateRank(int(updatedTotalXP))
+		config.DB.Model(&models.Profile{}).
+			Where("user_id = ?", userID).
+			Update("rank", finalRank)
+
 		c.JSON(http.StatusOK, gin.H{
 			"message":  "Selamat, kamu telah menyelesaikan seluruh trip!",
 			"complete": true,
@@ -463,4 +490,118 @@ func VerifyUserLocation(c *gin.Context) {
 			"image":       nextImage,
 		},
 	})
+}
+
+func GetRecommendedPlans(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var profile models.Profile
+	if err := config.DB.First(&profile, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Profil tidak ditemukan"})
+		return
+	}
+
+	var recommendedPlans []models.Plan
+	if err := config.DB.
+		Joins("JOIN plan_categories pc ON pc.plan_id = plans.plan_id").
+		Joins("JOIN categories c ON c.category_id = pc.category_id").
+		Where("plans.status = ? OR c.name IN ?", profile.Status, strings.Split(profile.Description, ",")).
+		Preload("Categories").
+		Find(&recommendedPlans).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil rekomendasi plan"})
+		return
+	}
+
+	resp := []map[string]interface{}{}
+	for _, p := range recommendedPlans {
+		banner := ""
+		if len(p.Banner) > 0 {
+			banner = base64.StdEncoding.EncodeToString(p.Banner)
+		}
+
+		resp = append(resp, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"status":      p.Status,
+			"categories":  p.Categories,
+			"banner":      banner,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func GetMyRoutes(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var routes []models.Route
+
+	if err := config.DB.
+		Joins("JOIN plans ON plans.plan_id = routes.plan_id").
+		Where("plans.user_id = ?", userID).
+		Order("routes.created_at DESC").
+		Find(&routes).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal mengambil route user",
+		})
+		return
+	}
+
+	var response []map[string]interface{}
+
+	for _, r := range routes {
+		imageBase64 := ""
+		if len(r.Image) > 0 {
+			imageBase64 = base64.StdEncoding.EncodeToString(r.Image)
+		}
+
+		response = append(response, map[string]interface{}{
+			"route_id":    r.RouteID,
+			"title":       r.Title,
+			"address":     r.Address,
+			"description": r.Description,
+			"latitude":    r.Latitude,
+			"longitude":   r.Longitude,
+			"step_order":  r.StepOrder,
+			"tags":        r.Tags,
+			"image":       imageBase64,
+			"plan_id":     r.PlanID,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": response,
+	})
+}
+
+func GetAllPlans(c *gin.Context) {
+	var plans []models.Plan
+
+	if err := config.DB.Preload("Categories").Find(&plans).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil semua plans"})
+		return
+	}
+
+	var response []map[string]interface{}
+	for _, p := range plans {
+		var bannerBase64 string
+		if len(p.Banner) > 0 {
+			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
+		}
+
+		response = append(response, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"tags":        p.Tags,
+			"banner":      bannerBase64,
+			"categories":  p.Categories,
+			"created_at":  p.CreatedAt,
+			"status":      p.Status,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": response})
 }

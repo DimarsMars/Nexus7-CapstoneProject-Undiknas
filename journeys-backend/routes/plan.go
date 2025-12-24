@@ -19,6 +19,9 @@ func PlanRoutes(r *gin.Engine) {
 		planGroup.GET("/:id/detail", plan.GetPlanDetail)
 		planGroup.GET("/category/:id", plan.GetPlansByCategory)
 		planGroup.POST("/:id/verify-location", plan.VerifyUserLocation)
+		planGroup.GET("/recommendations", plan.GetRecommendedPlans)
+		planGroup.GET("/routes/me", plan.GetMyRoutes)
+		planGroup.GET("/all", plan.GetAllPlans)
 
 	}
 }
