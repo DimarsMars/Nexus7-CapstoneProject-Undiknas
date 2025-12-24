@@ -1,3 +1,5 @@
+import { FaMapMarkerAlt } from "react-icons/fa";
+
 const RouteCard = ({ image, title, activity, location }) => {
   return (
     <div className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row gap-4 w-full shadow-sm hover:shadow-md transition-shadow">
@@ -12,7 +14,10 @@ const RouteCard = ({ image, title, activity, location }) => {
       <div className="flex flex-col text-start justify-center">
         <h3 className="text-xl font-bold text-[#1e293b]">{title}</h3>
         <p className="text-gray-500 text-sm mt-1">{activity}</p>
-        <p className="text-gray-400 text-sm mt-1">{location}</p>
+        <div className="flex items-center gap-1.5 text-gray-400 text-xs mt-2">
+            <FaMapMarkerAlt />
+            <span>{location}</span>
+        </div>
       </div>
     </div>
   );
