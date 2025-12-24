@@ -18,6 +18,7 @@ import MyTripReviewPage from './pages/MyTripReviewPage';
 import MapsPage from './pages/MapsPage';
 import { useAuth } from './context/AuthContext';
 import HistoryPage from './pages/HistoryPage';
+import RunTripPage from './pages/RunTripPage';
 
 const trips = [
     {
@@ -164,6 +165,7 @@ function App() {
         <Route path='trip/:id' element={<TripDetailPage trips={trips}/>} />
         <Route path='mytripreview/:id' element={<MyTripReviewPage sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
         <Route path='maps' element={<MapsPage />} />
+        <Route path='runtrip' element={<RunTripPage />} />
         <Route path='history' element={<HistoryPage activeTrips={activeTrips} favouriteTrips={favouriteTrips} pastTrips={pastTrips} />} />
       </Route>
 
