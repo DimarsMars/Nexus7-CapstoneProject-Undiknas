@@ -220,12 +220,10 @@ func GetCategoryTravellers(c *gin.Context) {
 				"user_id":  selected.UserID,
 				"username": selected.Username,
 				"role":     selected.Role,
-				"profile": map[string]interface{}{
-					"rank":   selected.Profile.Rank,
-					"photo":  photoBase64,
-					"status": selected.Profile.Status,
-				},
-				"plans": plans,
+				"rank":     selected.Profile.Rank,
+				"photo":    photoBase64,
+				"status":   selected.Profile.Status,
+				"plans":    plans,
 			},
 		})
 	}
