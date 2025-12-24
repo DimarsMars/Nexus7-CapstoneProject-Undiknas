@@ -285,16 +285,14 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	resp := map[string]interface{}{
-		"user_id":  user.UserID,
-		"username": user.Username,
-		"email":    user.Email,
-		"role":     user.Role,
-		"profile": map[string]interface{}{
-			"photo":     photoBase64,
-			"rank":      user.Profile.Rank,
-			"followers": user.Profile.Followers,
-			"following": user.Profile.Following,
-		},
+		"user_id":   user.UserID,
+		"username":  user.Username,
+		"email":     user.Email,
+		"role":      user.Role,
+		"photo":     photoBase64,
+		"rank":      user.Profile.Rank,
+		"followers": user.Profile.Followers,
+		"following": user.Profile.Following,
 		"stats": map[string]interface{}{
 			"reviews": totalReviews,
 			"routes":  totalRoutes,
