@@ -285,16 +285,14 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	resp := map[string]interface{}{
-		"user_id":  user.UserID,
-		"username": user.Username,
-		"email":    user.Email,
-		"role":     user.Role,
-		"profile": map[string]interface{}{
-			"photo":     photoBase64,
-			"rank":      user.Profile.Rank,
-			"followers": user.Profile.Followers,
-			"following": user.Profile.Following,
-		},
+		"user_id":   user.UserID,
+		"username":  user.Username,
+		"email":     user.Email,
+		"role":      user.Role,
+		"photo":     photoBase64,
+		"rank":      user.Profile.Rank,
+		"followers": user.Profile.Followers,
+		"following": user.Profile.Following,
 		"stats": map[string]interface{}{
 			"reviews": totalReviews,
 			"routes":  totalRoutes,
@@ -303,4 +301,36 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": resp})
+}
+
+func GetAllTravellerProfiles(c *gin.Context) {
+	var users []models.User
+
+	err := config.DB.
+		Preload("Profile").
+		Where("role = ?", "traveller").
+		Find(&users).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data pengguna"})
+		return
+	}
+
+	var result []map[string]interface{}
+	for _, u := range users {
+		photoBase64 := ""
+		if len(u.Profile.Photo) > 0 {
+			photoBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(u.Profile.Photo)
+		}
+
+		result = append(result, map[string]interface{}{
+			"user_id":  u.UserID,
+			"username": u.Username,
+			"rank":     u.Profile.Rank,
+			"photo":    photoBase64,
+			"role":     u.Role,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
