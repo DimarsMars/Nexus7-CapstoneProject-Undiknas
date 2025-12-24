@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FaCertificate, FaPen } from "react-icons/fa";
+import { FaCertificate, FaPen, FaTimes, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
@@ -7,6 +7,10 @@ import apiService from '../services/apiService';
 const EditProfilePage = ({ user }) => {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
+  const [categories, setCategories] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [profileDescription, setProfileDescription] = useState(null);
 
   const [displayUser, setDisplayUser] = useState({
     name: 'Loading...',
@@ -15,7 +19,6 @@ const EditProfilePage = ({ user }) => {
 
   const [formData, setFormData] = useState({
     birthDate: '',
-    description: '',
     status: '',
     image: ''
   });
@@ -36,10 +39,10 @@ const EditProfilePage = ({ user }) => {
 
           setFormData({
             birthDate: profile.birth_date?.split('T')[0] || "",
-            description: profile.description || "",
             status: profile.status || "",
             image: profile.photo || ""
           });
+          setProfileDescription(profile.description || "");
         } catch (error) {
           console.error("Error fetching user data:", error);
           setDisplayUser({ name: 'Error', rank: 'Error' });
@@ -49,6 +52,44 @@ const EditProfilePage = ({ user }) => {
 
     fetchUserData();
   }, [authUser]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await apiService.getCategories();        
+        if (Array.isArray(response.data)) {
+            setCategories(response.data);
+        } else {
+            console.error("Format data kategori tidak sesuai:", response.data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil kategori:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    if (profileDescription !== null && categories.length > 0) {
+      const categoryNames = profileDescription.split(',').map(name => name.trim()).filter(name => name);
+      if (categoryNames.length > 0) {
+        const selected = categories.filter(cat => categoryNames.includes(cat.name.trim()));
+        setSelectedCategories(selected);
+      }
+    }
+  }, [profileDescription, categories]);
+
+  const handleSelectCategory = (category) => {
+    if (!selectedCategories.some(c => c.category_id === category.category_id)) {
+        setSelectedCategories([...selectedCategories, category]);
+    }
+    setIsDropdownOpen(false); 
+  };
+
+  const handleRemoveCategory = (categoryId) => {
+      const updated = selectedCategories.filter(c => c.category_id !== categoryId);
+      setSelectedCategories(updated);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,9 +112,10 @@ const EditProfilePage = ({ user }) => {
       return;
     }
 
+    const descriptionString = selectedCategories.map(c => c.name.trim()).join(', ');
     const formDataToSend = new FormData();
     formDataToSend.append('birth_date', formData.birthDate);
-    formDataToSend.append('description', formData.description);
+    formDataToSend.append('description', descriptionString);
     formDataToSend.append('status', formData.status);
     formDataToSend.append('location', 'Solo');
     formDataToSend.append('languages', 'ID');
@@ -82,7 +124,7 @@ const EditProfilePage = ({ user }) => {
     try {
       await apiService.updateUserProfile(formDataToSend);
       alert("Profile Updated!");
-      navigate('/myprofile');
+      setProfileDescription(descriptionString);
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile. Please try again.");
@@ -101,6 +143,10 @@ const EditProfilePage = ({ user }) => {
     // Base64 dari backend
     return `data:image/jpeg;base64,${formData.image}`;
   };
+
+  const availableCategories = categories.filter(
+    c => !selectedCategories.some(selected => selected.category_id === c.category_id)
+  );
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-28 flex justify-center items-center">
@@ -179,24 +225,71 @@ const EditProfilePage = ({ user }) => {
 
           <div className='text-start px-30'>
             <label className="text-gray-600 text-base mb-2 block">Description (likes)</label>
-            <input
-              type="text"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3"
-            />
+            <div className="relative">
+              <div 
+                className="w-full border border-gray-300 rounded-md px-4 py-2 bg-white min-h-[46px] flex flex-wrap items-center gap-2 cursor-pointer"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+              >
+                {selectedCategories.map((item) => (
+                    <div 
+                      key={item.category_id} 
+                      className="bg-slate-200 text-slate-800 px-2 py-1 rounded text-sm font-medium flex items-center gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                        {item.name.trim()}
+                        <FaTimes 
+                          className="cursor-pointer hover:text-red-500 ml-1" 
+                          onClick={() => handleRemoveCategory(item.category_id)}
+                        />
+                    </div>
+                ))}
+                <div className="flex-1 flex items-center justify-between min-w-[100px]">
+                    <span className={`${selectedCategories.length === 0 ? 'text-gray-400' : 'text-transparent'}`}>
+                      {selectedCategories.length === 0 ? "Select Preference" : ""}
+                    </span>
+                    <FaChevronDown className={`text-gray-400 text-sm transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </div>
+
+              {isDropdownOpen && (
+                <div className="absolute top-full mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 z-10 overflow-hidden">
+                    <div className="max-h-60 overflow-y-auto">
+                        {availableCategories.map((item) => (
+                            <div 
+                                key={item.category_id}
+                                onClick={() => handleSelectCategory(item)}
+                                className="px-4 py-3 hover:bg-gray-100 cursor-pointer text-gray-700 text-sm border-b border-gray-50 last:border-0"
+                            >
+                                {item.name.trim()}
+                            </div>
+                        ))}
+
+                        {availableCategories.length === 0 && (
+                            <div className="px-4 py-3 text-gray-400 text-sm text-center">
+                                {categories.length === 0 ? "No categories loaded" : "All categories selected"}
+                            </div>
+                        )}
+                    </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className='text-start px-30'>
             <label className="text-gray-600 text-base mb-2 block">Status</label>
-            <input
-              type="text"
+            <select
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-3"
-            />
+              className="w-full border border-gray-300 rounded-md px-4 py-3 bg-white appearance-none cursor-pointer"
+            >
+              <option value="" disabled>Select Status</option>
+              <option value="Married">Married</option>
+              <option value="Single">Single</option>
+              <option value="In Relationship">In Relationship</option>
+              <option value="Adult">Adult</option>
+              <option value="Family Friendly">Family Friendly</option>
+            </select>
           </div>
 
           <hr className="border-t-2 border-[#1e293b] mt-4 mb-4" />
