@@ -8,4 +8,5 @@ type User struct {
 	Role        string `gorm:"column:role" json:"role"`
 
 	Profile Profile `gorm:"foreignKey:UserID;references:UserID" json:"profile"`
+	Plans   []Plan  `gorm:"foreignKey:UserID;references:UserID" json:"plans"`
 }
