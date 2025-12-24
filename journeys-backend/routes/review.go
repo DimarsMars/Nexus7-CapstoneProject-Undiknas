@@ -16,6 +16,8 @@ func ReviewRoutes(r *gin.Engine) {
 		reviewGroup.POST("/place", review.CreatePlaceReview)
 		reviewGroup.GET("/place/:route_id", review.GetPlaceReviews)
 		reviewGroup.DELETE("/trip/:review_id", review.DeleteTripReview)
+		reviewGroup.GET("/trip/me", review.GetTripReviewsByUser)
+		reviewGroup.GET("/trip/my-plans", review.GetTripReviewsOnMyPlansWithProfile)
 
 	}
 }

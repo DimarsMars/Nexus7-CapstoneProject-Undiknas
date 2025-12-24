@@ -22,17 +22,35 @@ func CreateTripReview(c *gin.Context) {
 		Comment string `json:"comment"`
 	}
 
+	// Validasi input JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Format input tidak valid"})
 		return
 	}
 
+	// Cari plan
 	var plan models.Plan
 	if err := config.DB.First(&plan, input.PlanID).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Plan tidak ditemukan"})
 		return
 	}
 
+	// Cegah review plan milik sendiri
+	if plan.UserID == userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kamu tidak bisa mereview plan milik sendiri"})
+		return
+	}
+
+	// Cegah duplikat review (user sudah pernah review plan ini)
+	var existing models.TripReview
+	if err := config.DB.
+		Where("user_id = ? AND plan_id = ?", userID, input.PlanID).
+		First(&existing).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kamu sudah mereview plan ini"})
+		return
+	}
+
+	// Buat review
 	review := models.TripReview{
 		UserID:    userID,
 		PlanID:    input.PlanID,
@@ -42,7 +60,7 @@ func CreateTripReview(c *gin.Context) {
 	}
 
 	if err := config.DB.Create(&review).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan plan review"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan review"})
 		return
 	}
 
@@ -56,7 +74,7 @@ func CreateTripReview(c *gin.Context) {
 	var totalXP int64
 	config.DB.Model(&models.UserXP{}).
 		Where("user_id = ?", userID).
-		Select("COALESCE(SUM(xp_value),0)").
+		Select("COALESCE(SUM(xp_value), 0)").
 		Scan(&totalXP)
 
 	newRank := helper.CalculateRank(int(totalXP))
@@ -65,8 +83,15 @@ func CreateTripReview(c *gin.Context) {
 		Update("rank", newRank)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Plan review berhasil ditambahkan",
-		"data":    review,
+		"message": "Review berhasil ditambahkan",
+		"data": map[string]interface{}{
+			"review_id":  review.ReviewID,
+			"user_id":    review.UserID,
+			"plan_id":    review.PlanID,
+			"rating":     review.Rating,
+			"comment":    review.Comment,
+			"created_at": review.CreatedAt,
+		},
 	})
 }
 
@@ -219,6 +244,87 @@ func GetPlaceReviews(c *gin.Context) {
 			"comment":    r.Comment,
 			"image":      imageBase64,
 			"created_at": r.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func GetTripReviewsByUser(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var reviews []models.TripReview
+	if err := config.DB.
+		Where("user_id = ?", userID).
+		Order("created_at DESC").
+		Find(&reviews).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil review kamu"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": reviews})
+}
+
+func GetTripReviewsOnMyPlansWithProfile(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var myPlans []models.Plan
+	config.DB.Where("user_id = ?", userID).Find(&myPlans)
+
+	var planIDs []uint
+	for _, p := range myPlans {
+		planIDs = append(planIDs, p.PlanID)
+	}
+
+	if len(planIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"data": []interface{}{}})
+		return
+	}
+
+	type Result struct {
+		ReviewID  uint
+		PlanID    uint
+		Rating    int
+		Comment   string
+		CreatedAt time.Time
+		UserID    uint
+		Username  string
+		Photo     []byte
+		Rank      string
+		Role      string
+	}
+
+	var rows []Result
+	config.DB.Raw(`
+		SELECT tr.review_id, tr.plan_id, tr.rating, tr.comment, tr.created_at,
+		u.user_id, u.username, u.role, p.photo, p.rank
+		FROM trip_reviews tr
+		JOIN users u ON u.user_id = tr.user_id
+		JOIN profiles p ON p.user_id = u.user_id
+		WHERE tr.plan_id IN (?) AND tr.user_id != ?
+		ORDER BY tr.created_at DESC
+	`, planIDs, userID).Scan(&rows)
+
+	var result []map[string]interface{}
+	for _, r := range rows {
+		photoBase64 := ""
+		if len(r.Photo) > 0 {
+			photoBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(r.Photo)
+		}
+
+		result = append(result, map[string]interface{}{
+			"review_id":  r.ReviewID,
+			"plan_id":    r.PlanID,
+			"rating":     r.Rating,
+			"comment":    r.Comment,
+			"created_at": r.CreatedAt,
+			"user": map[string]interface{}{
+				"user_id":  r.UserID,
+				"username": r.Username,
+				"rank":     r.Rank,
+				"role":     r.Role,
+				"photo":    photoBase64,
+			},
 		})
 	}
 
