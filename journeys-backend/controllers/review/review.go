@@ -253,16 +253,58 @@ func GetPlaceReviews(c *gin.Context) {
 func GetTripReviewsByUser(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	var reviews []models.TripReview
-	if err := config.DB.
-		Where("user_id = ?", userID).
-		Order("created_at DESC").
-		Find(&reviews).Error; err != nil {
+	type Result struct {
+		ReviewID    uint
+		UserID      uint
+		Rating      int
+		Comment     string
+		CreatedAt   time.Time
+		PlanID      uint
+		Title       string
+		Description string
+		Tags        string
+		Banner      []byte
+	}
+
+	var reviews []Result
+	err := config.DB.Raw(`
+		SELECT tr.review_id, tr.user_id, tr.rating, tr.comment, tr.created_at,
+		       p.plan_id, p.title, p.description, p.tags, p.banner
+		FROM trip_reviews tr
+		JOIN plans p ON tr.plan_id = p.plan_id
+		WHERE tr.user_id = ?
+		ORDER BY tr.created_at DESC
+	`, userID).Scan(&reviews).Error
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil review kamu"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": reviews})
+	var response []map[string]interface{}
+	for _, r := range reviews {
+		bannerBase64 := ""
+		if len(r.Banner) > 0 {
+			bannerBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(r.Banner)
+		}
+
+		response = append(response, map[string]interface{}{
+			"review_id":  r.ReviewID,
+			"user_id":    r.UserID,
+			"rating":     r.Rating,
+			"comment":    r.Comment,
+			"created_at": r.CreatedAt,
+			"plan": map[string]interface{}{
+				"plan_id":     r.PlanID,
+				"title":       r.Title,
+				"description": r.Description,
+				"tags":        r.Tags,
+				"banner":      bannerBase64,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": response})
 }
 
 func GetTripReviewsOnMyPlansWithProfile(c *gin.Context) {
