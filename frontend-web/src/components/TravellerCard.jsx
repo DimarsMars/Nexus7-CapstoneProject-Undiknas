@@ -9,7 +9,7 @@ const TravellerCard = ({ id, image, name, role }) => {
         className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center border border-gray-100">
             <div className="w-24 h-24 mb-3 rounded-full overflow-hidden">
                 <img 
-                    src={image} 
+                    src={image || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"} 
                     alt={name} 
                     className="w-full h-full object-cover"
                 />
