@@ -7,10 +7,11 @@ import UserReviewCard from '../components/UserReviewCard';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
 
-const MyProfilePage = ({ myReviews, othersReviews }) => {
+const MyProfilePage = ({ othersReviews }) => {
     const navigate = useNavigate();
     const { user: authUser, logout } = useAuth();
     const [myPlans, setMyPlans] = useState([]);
+    const [myReviews, setMyReviews] = useState([]);
 
     const [profileImage, setProfileImage] = useState('');
     const [profileRank, setProfileRank] = useState('');
@@ -72,6 +73,28 @@ const MyProfilePage = ({ myReviews, othersReviews }) => {
 
     fetchPlanByUserLogin();
   }, [authUser]);
+
+    useEffect(() => {
+        const fetchMyReviews = async () => {
+            if (!authUser) {
+                setMyReviews([]);
+                return;
+            }
+            try {
+                const response = await apiService.getMyTripReviews();
+                if (response.data && Array.isArray(response.data.data)) {
+                    setMyReviews(response.data.data);
+                } else {
+                    setMyReviews([]);
+                }
+            } catch (error) {
+                console.error("Error fetching my reviews:", error);
+                setMyReviews([]);
+            }
+        };
+
+        fetchMyReviews();
+    }, [authUser]);
 
     return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
@@ -197,17 +220,20 @@ const MyProfilePage = ({ myReviews, othersReviews }) => {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {myReviews.map((review) => (
-                    <ReviewCard
-                        key={review.id}
-                        image={review.image}
-                        title={review.title}
-                        description={review.description}
-                        location={review.location}
-                        rating={review.rating}
-                        onDelete={() => alert(`Delete review ${review.title}?`)}
-                    />
-                ))}
+                {myReviews.map((review) => {
+                    const plan = myPlans.find(p => p.plan_id === review.plan_id);
+                    return (
+                        <ReviewCard
+                            key={review.review_id}
+                            image={plan ? `data:image/jpeg;base64,${plan.banner}` : ''}
+                            title={plan ? plan.title : 'Trip not found'}
+                            description={review.comment}
+                            location={plan ? plan.description : 'Location not found'}
+                            rating={review.rating}
+                            onDelete={() => alert(`Delete review for plan ${plan ? plan.title : review.plan_id}?`)}
+                        />
+                    );
+                })}
             </div>
         </div>
 

@@ -52,6 +52,10 @@ const unfollowUser = (id) => {
   return apiClient.delete(`/follow/${id}`);
 }
 
+const getMyTripReviews = () => {
+  return apiClient.get('/reviews/trip/me');
+}
+
 const apiService = {
   updateUserProfile,
   getUserMe,
@@ -65,7 +69,8 @@ const apiService = {
   getUserXP,
   getUserProfileById,
   followUser,
-  unfollowUser
+  unfollowUser,
+  getMyTripReviews,
 };
 
 export default apiService;
