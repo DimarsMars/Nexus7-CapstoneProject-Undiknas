@@ -16,5 +16,6 @@ func UserRoutes(r *gin.Engine) {
 		u.GET("/xp", user.GetUserXPSummary)
 		u.GET("/xp/history", user.GetUserXPHistory)
 		u.GET("/mostactive", user.GetMostActiveTravellers)
+		u.GET("/recomendations/category", user.GetCategoryTravellers)
 	}
 }

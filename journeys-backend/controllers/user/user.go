@@ -6,6 +6,7 @@ import (
 	"be_journeys/models"
 	"context"
 	"encoding/base64"
+	"math/rand"
 	"net/http"
 
 	"firebase.google.com/go/v4/auth"
@@ -159,4 +160,75 @@ func GetMostActiveTravellers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": results,
 	})
+}
+
+func GetCategoryTravellers(c *gin.Context) {
+	var categories []models.Category
+	if err := config.DB.Find(&categories).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil kategori"})
+		return
+	}
+
+	result := []map[string]interface{}{}
+
+	for _, cat := range categories {
+		var users []models.User
+
+		err := config.DB.
+			Joins("JOIN plans ON plans.user_id = users.user_id").
+			Joins("JOIN plan_categories pc ON pc.plan_id = plans.plan_id").
+			Where("pc.category_id = ?", cat.CategoryID).
+			Preload("Profile").
+			Preload("Plans", "plan_id IN (SELECT plan_id FROM plan_categories WHERE category_id = ?)", cat.CategoryID).
+			Preload("Plans.Categories").
+			Find(&users).Error
+
+		if err != nil || len(users) == 0 {
+			continue
+		}
+
+
+		selected := users[rand.Intn(len(users))]
+
+		var photoBase64 string
+		if len(selected.Profile.Photo) > 0 {
+			photoBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(selected.Profile.Photo)
+		}
+
+		plans := []map[string]interface{}{}
+		for _, p := range selected.Plans {
+			banner := ""
+			if len(p.Banner) > 0 {
+				banner = base64.StdEncoding.EncodeToString(p.Banner)
+			}
+			plans = append(plans, map[string]interface{}{
+				"plan_id":     p.PlanID,
+				"title":       p.Title,
+				"description": p.Description,
+				"tags":        p.Tags,
+				"banner":      banner,
+				"categories":  p.Categories,
+				"created_at":  p.CreatedAt,
+			})
+		}
+
+		result = append(result, map[string]interface{}{
+			"category_id": cat.CategoryID,
+			"category":    cat.Name,
+			"image":       base64.StdEncoding.EncodeToString(cat.Image),
+			"user": map[string]interface{}{
+				"user_id":  selected.UserID,
+				"username": selected.Username,
+				"role":     selected.Role,
+				"profile": map[string]interface{}{
+					"rank":   selected.Profile.Rank,
+					"photo":  photoBase64,
+					"status": selected.Profile.Status,
+				},
+				"plans": plans,
+			},
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
 }
