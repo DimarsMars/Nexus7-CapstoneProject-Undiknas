@@ -19,7 +19,7 @@ const Navbar = () => {
     };
 
     return (
-        <header className='fixed left-0 w-full top-0 z-50 bg-white/80 backdrop-blur-md shadow-md transition-all duration-300'>
+        <header className='fixed left-0 w-full top-0 z-500 bg-white/80 backdrop-blur-md shadow-md transition-all duration-300'>
             <nav className='max-w-7xl mx-auto px-5 md:px-5 py-4 flex justify-between items-center'>
                 
                 {/* Logo */}
