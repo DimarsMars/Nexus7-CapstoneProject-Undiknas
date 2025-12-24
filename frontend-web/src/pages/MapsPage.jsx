@@ -86,6 +86,7 @@ const MapsPage = () => {
   const [whatAreYouDoing, setWhatAreYouDoing] = useState("");
   const [title, setTitle] = useState("");
   const [planDescription, setPlanDescription] = useState("");
+  const [status, setStatus] = useState("");
 
   // --- STATE KATEGORI ---
   const [categories, setCategories] = useState([]);
@@ -331,6 +332,21 @@ const MapsPage = () => {
               value={planDescription}
               onChange={(e) => setPlanDescription(e.target.value)}
             />
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center">
+            <select 
+              name="status"
+              className="w-full bg-transparent outline-none text-slate-700 font-medium appearance-none cursor-pointer px-4"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="" disabled>Select Status</option>
+              <option value="Married">Married</option>
+              <option value="Single">Single</option>
+              <option value="In Relationship">In Relationship</option>
+              <option value="Adult">Adult</option>
+              <option value="Family Friendly">Family Friendly</option>
+            </select>
           </div>
         </div>
 
