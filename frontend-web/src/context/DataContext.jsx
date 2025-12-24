@@ -50,11 +50,33 @@ export const DataProvider = ({ children }) => {
             setLoadingPlans(false);
         }
     };
+    
+    const fetchAllPlanByUserLogin = async () => {
+        if (plans.length > 0) {
+            return; 
+        }
+        setLoadingPlans(true);
+        try {
+            const response = await apiService.getAllPlanByUserLogin();
+            
+            let receivedData = [];
+            if (response.data && Array.isArray(response.data)) {
+                receivedData = response.data;
+            } 
+
+            setPlans(receivedData);
+        } catch (error) {
+            console.error("Error fetching plans in Context:", error);
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
 
     const value = {
         plans,
         loadingPlans,
         fetchAllPlan,
+        fetchAllPlanByUserLogin,
         favoriteTrips,
         addFavorite,
         removeFavorite

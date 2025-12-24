@@ -6,10 +6,12 @@ import ReviewCard from '../components/ReviewCard';
 import UserReviewCard from '../components/UserReviewCard';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
+import { useData } from '../context/DataContext';
 
-const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
+const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
     const navigate = useNavigate();
     const { user: authUser, logout } = useAuth();
+    const { plans, fetchAllPlanByUserLogin } = useData();
 
     const [profileImage, setProfileImage] = useState('');
     const [profileRank, setProfileRank] = useState('');
@@ -51,6 +53,12 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
     };
 
     const { user } = authUser;
+    
+    useEffect(() => {
+    if (authUser) {
+        fetchAllPlanByUserLogin();
+    }
+    }, [authUser]);
 
     return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
@@ -82,7 +90,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
                         <div className="relative flex items-center justify-center text-white">
                              <FaCertificate className="text-black text-3xl" /> 
                              <span className="absolute font-bold text-xs">{userdummy.rankLevel}</span>
-                             <span className="absolute font-bold text-xs">1</span>
+                             <span className="absolute font-bold text-xs">5</span>
                         </div>
                         <h2 className="text-xl font-bold text-[#1e293b]">{profileRank}</h2>
                     </div>
@@ -152,7 +160,7 @@ const MyProfilePage = ({ userdummy, trips, myReviews, othersReviews }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {trips && trips.slice(0, 3).map((trip, index) => (
+                {plans && plans.slice(0, 3).map((trip, index) => (
                     <div key={trip.id} 
                         onClick={() => navigate(`/mytripreview/${trip.id}`)}
                         className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
