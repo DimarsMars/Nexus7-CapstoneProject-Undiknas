@@ -312,44 +312,6 @@ func DeletePlan(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Plan berhasil dihapus"})
 }
 
-func GetPlansByCategory(c *gin.Context) {
-	catIDStr := c.Param("id")
-	catID, err := strconv.ParseUint(catIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID kategori tidak valid"})
-		return
-	}
-
-	var plans []models.Plan
-	if err := config.DB.
-		Joins("JOIN plan_categories pc ON pc.plan_id = plans.plan_id").
-		Where("pc.category_id = ?", catID).
-		Preload("Categories").
-		Find(&plans).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil plans"})
-		return
-	}
-
-	var response []map[string]interface{}
-	for _, p := range plans {
-		var bannerBase64 string
-		if len(p.Banner) > 0 {
-			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
-		}
-		response = append(response, map[string]interface{}{
-			"plan_id":     p.PlanID,
-			"title":       p.Title,
-			"description": p.Description,
-			"tags":        p.Tags,
-			"banner":      bannerBase64,
-			"categories":  p.Categories,
-			"created_at":  p.CreatedAt,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": response})
-}
-
 type VerifyLocationInput struct {
 	Latitude  float64 `json:"latitude" binding:"required"`
 	Longitude float64 `json:"longitude" binding:"required"`
@@ -530,50 +492,6 @@ func GetRecommendedPlans(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": resp})
-}
-
-func GetMyRoutes(c *gin.Context) {
-	userID := c.GetUint("user_id")
-
-	var routes []models.Route
-
-	if err := config.DB.
-		Joins("JOIN plans ON plans.plan_id = routes.plan_id").
-		Where("plans.user_id = ?", userID).
-		Order("routes.created_at DESC").
-		Find(&routes).Error; err != nil {
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Gagal mengambil route user",
-		})
-		return
-	}
-
-	var response []map[string]interface{}
-
-	for _, r := range routes {
-		imageBase64 := ""
-		if len(r.Image) > 0 {
-			imageBase64 = base64.StdEncoding.EncodeToString(r.Image)
-		}
-
-		response = append(response, map[string]interface{}{
-			"route_id":    r.RouteID,
-			"title":       r.Title,
-			"address":     r.Address,
-			"description": r.Description,
-			"latitude":    r.Latitude,
-			"longitude":   r.Longitude,
-			"step_order":  r.StepOrder,
-			"tags":        r.Tags,
-			"image":       imageBase64,
-			"plan_id":     r.PlanID,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": response,
-	})
 }
 
 func GetAllPlans(c *gin.Context) {
