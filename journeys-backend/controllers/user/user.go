@@ -302,3 +302,35 @@ func GetUserProfile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": resp})
 }
+
+func GetAllTravellerProfiles(c *gin.Context) {
+	var users []models.User
+
+	err := config.DB.
+		Preload("Profile").
+		Where("role = ?", "traveller").
+		Find(&users).Error
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data pengguna"})
+		return
+	}
+
+	var result []map[string]interface{}
+	for _, u := range users {
+		photoBase64 := ""
+		if len(u.Profile.Photo) > 0 {
+			photoBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(u.Profile.Photo)
+		}
+
+		result = append(result, map[string]interface{}{
+			"user_id":  u.UserID,
+			"username": u.Username,
+			"rank":     u.Profile.Rank,
+			"photo":    photoBase64,
+			"role":     u.Role,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
