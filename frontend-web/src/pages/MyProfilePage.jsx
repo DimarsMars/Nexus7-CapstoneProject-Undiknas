@@ -6,23 +6,25 @@ import ReviewCard from '../components/ReviewCard';
 import UserReviewCard from '../components/UserReviewCard';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
-import { useData } from '../context/DataContext';
 
-const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
+const MyProfilePage = ({ myReviews, othersReviews }) => {
     const navigate = useNavigate();
     const { user: authUser, logout } = useAuth();
-    const { plans, fetchAllPlanByUserLogin } = useData();
+    const [myPlans, setMyPlans] = useState([]);
 
     const [profileImage, setProfileImage] = useState('');
     const [profileRank, setProfileRank] = useState('');
+    const [userXP, setUserXP] = useState({});
 
     useEffect(() => {
         const fetchProfileData = async () => {
             if (authUser && authUser.idToken) {
                 try {
                     const profileResponse = await apiService.getProfileMe();
+                    const xpResponse = await apiService.getUserXP();
                     setProfileImage(profileResponse.data.photo || '');
                     setProfileRank(profileResponse.data.rank || '');
+                    setUserXP(xpResponse || {});
                 } catch (error) {
                     console.error("Error fetching profile data:", error);
                 }
@@ -53,12 +55,23 @@ const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
     };
 
     const { user } = authUser;
-    
+
     useEffect(() => {
-    if (authUser) {
-        fetchAllPlanByUserLogin();
-    }
-    }, [authUser]);
+    const fetchPlanByUserLogin = async () => {
+      if (!authUser) {
+        setMyPlans([]); // Clear plans if user logs out
+        return;
+      }
+      try {
+        const response = await apiService.getAllPlanByUserLogin();
+        setMyPlans(response.data);
+      } catch (error) {
+        console.error("Error fetching my plans:", error);
+      }
+    };
+
+    fetchPlanByUserLogin();
+  }, [authUser]);
 
     return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
@@ -89,8 +102,7 @@ const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
                     <div className="flex flex-row items-center justify-center md:justify-start gap-2">
                         <div className="relative flex items-center justify-center text-white">
                              <FaCertificate className="text-black text-3xl" /> 
-                             <span className="absolute font-bold text-xs">{userdummy.rankLevel}</span>
-                             <span className="absolute font-bold text-xs">5</span>
+                             <span className="absolute font-bold text-xs"></span>
                         </div>
                         <h2 className="text-xl font-bold text-[#1e293b]">{profileRank}</h2>
                     </div>
@@ -101,28 +113,12 @@ const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
                 <div className="flex gap-3 items-center">
                     <div className="relative flex items-center justify-center text-white shrink-0">
                         <FaCertificate className="text-[#0f172a] text-5xl drop-shadow-md" />
-                        <span className="absolute font-bold text-lg">{userdummy.stats.travelScore.level}</span>
+                        <span className="absolute font-bold text-lg"></span>
                     </div>
                     <div className="w-full">
-                        <h4 className="font-bold text-[#1e293b] text-sm">Traveling Score’s</h4>
-                        <p className="text-[10px] text-gray-500 font-medium">XP {userdummy.stats.travelScore.xp}</p>
-                        <p className="font-bold text-xs text-[#1e293b] mt-0.5">{userdummy.stats.travelScore.title}</p>
-                        
-                        <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
-                            <div className="h-full bg-[#1e293b] w-[60%] rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex gap-3 items-center">
-                    <div className="relative flex items-center justify-center text-white shrink-0">
-                        <FaCertificate className="text-[#0f172a] text-5xl drop-shadow-md" />
-                        <span className="absolute font-bold text-lg">{userdummy.stats.routeScore.level}</span>
-                    </div>
-                    <div className="w-full">
-                        <h4 className="font-bold text-[#1e293b] text-sm">Route Score</h4>
-                        <p className="text-[10px] text-gray-500 font-medium">XP {userdummy.stats.routeScore.xp}</p>
-                        <p className="font-bold text-xs text-[#1e293b] mt-0.5">{userdummy.stats.routeScore.title}</p>
+                        <h4 className="font-bold text-[#1e293b] text-[18px]">Your Score’s</h4>
+                        <p className="text-[14px] text-gray-500 font-medium">{userXP.rank}</p>
+                        <p className="font-bold text-[14px] text-[#1e293b] mt-0.5">{userXP.xp}</p>
                         
                         <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
                             <div className="h-full bg-[#1e293b] w-[60%] rounded-full"></div>
@@ -160,26 +156,37 @@ const MyProfilePage = ({ userdummy, myReviews, othersReviews }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {plans && plans.slice(0, 3).map((trip, index) => (
-                    <div key={trip.id} 
-                        onClick={() => navigate(`/mytripreview/${trip.id}`)}
-                        className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
-                    >
-                        <TripCard
-                            key={trip.id}
-                            title={trip.title}
-                            author={trip.author}
-                            rating={trip.rating}
-                            image={trip.image}
-                            className={
-                                index === 0
-                                ? "md:col-span-2 h-56 md:h-72"
-                                : "h-56 md:h-60"               
-                            }
-                        />
+                {myPlans && myPlans.length > 0 ? (
+                    myPlans.slice(0, 3).map((trip, index) => (
+                        <div key={trip.plan_id} 
+                            onClick={() => navigate(`/mytripreview/${trip.plan_id}`)}
+                            className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
+                        >
+                            <TripCard
+                                key={trip.plan_id}
+                                title={trip.title}
+                                author={trip.description}
+                                rating={trip.rating || 5}
+                                image={`data:image/jpeg;base64,${trip.banner}`}
+                                className={
+                                    index === 0
+                                    ? "md:col-span-2 h-56 md:h-72"
+                                    : "h-56 md:h-60"               
+                                }
+                            />
+                        </div>
+                    ))
+                ) : (
+                    <div className="md:col-span-2 flex flex-col items-center justify-center py-10 text-gray-500">
+                        <p className="text-center">Anda belum membuat rute apapun. Mulai rencanakan petualangan Anda berikutnya!</p>
+                        <button
+                            onClick={() => navigate('/maps')} 
+                            className="mt-4 px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-700 transition shadow-sm tracking-wide"
+                        >
+                            Buat Rute Baru
+                        </button>
                     </div>
-                ))}
-
+                )}
             </div>
         </div>
 
