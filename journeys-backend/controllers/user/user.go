@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"firebase.google.com/go/v4/auth"
 	"github.com/gin-gonic/gin"
@@ -187,7 +188,6 @@ func GetCategoryTravellers(c *gin.Context) {
 			continue
 		}
 
-
 		selected := users[rand.Intn(len(users))]
 
 		var photoBase64 string
@@ -231,4 +231,78 @@ func GetCategoryTravellers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
+}
+
+func GetUserProfile(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	var user models.User
+	if err := config.DB.Preload("Profile").
+		First(&user, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var totalReviews int64
+	config.DB.Model(&models.PlaceReview{}).
+		Where("user_id = ?", userID).
+		Count(&totalReviews)
+
+	var totalRoutes int64
+	config.DB.Model(&models.Route{}).
+		Joins("JOIN plans ON plans.plan_id = routes.plan_id").
+		Where("plans.user_id = ?", userID).
+		Count(&totalRoutes)
+
+	var plans []models.Plan
+	config.DB.Preload("Categories").
+		Where("user_id = ?", userID).
+		Find(&plans)
+
+	planResp := []map[string]interface{}{}
+	for _, p := range plans {
+		bannerBase64 := ""
+		if len(p.Banner) > 0 {
+			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
+		}
+		planResp = append(planResp, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"tags":        p.Tags,
+			"banner":      bannerBase64,
+			"categories":  p.Categories,
+			"created_at":  p.CreatedAt,
+			"status":      p.Status,
+		})
+	}
+
+	photoBase64 := ""
+	if len(user.Profile.Photo) > 0 {
+		photoBase64 = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(user.Profile.Photo)
+	}
+
+	resp := map[string]interface{}{
+		"user_id":  user.UserID,
+		"username": user.Username,
+		"email":    user.Email,
+		"role":     user.Role,
+		"profile": map[string]interface{}{
+			"photo":     photoBase64,
+			"rank":      user.Profile.Rank,
+			"followers": user.Profile.Followers,
+			"following": user.Profile.Following,
+		},
+		"stats": map[string]interface{}{
+			"reviews": totalReviews,
+			"routes":  totalRoutes,
+		},
+		"plans": planResp,
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": resp})
 }
