@@ -30,6 +30,10 @@ const getAllPlan = () => {
 
 const getMostActiveTravellers = () => {
   return apiClient.get('/user/mostactive');
+};
+
+const getTravellersByCategory = () => {
+  return apiClient.get('/user/recomendations/category');
 }
 
 const apiService = {
@@ -40,7 +44,8 @@ const apiService = {
   createPlan,
   getAllPlan,
   getAllPlanByUserLogin,
-  getMostActiveTravellers
+  getMostActiveTravellers,
+  getTravellersByCategory
 };
 
 export default apiService;

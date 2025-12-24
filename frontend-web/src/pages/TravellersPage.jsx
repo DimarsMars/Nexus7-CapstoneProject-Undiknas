@@ -7,6 +7,7 @@ import apiService from "../services/apiService";
 const TravellersPage = ({ recommendationData }) => {
   const navigate = useNavigate();
   const [mostActive, setMostActive] = useState([]);
+  const [travellersByCategory, setTravellersByCategory] = useState([]);
 
   useEffect(() => {
     const fetchMostActive = async () => {
@@ -20,6 +21,25 @@ const TravellersPage = ({ recommendationData }) => {
 
     fetchMostActive();
   }, []);
+
+useEffect(() => {
+    const fetchTravellersByCategory = async () => {
+      try {
+        const response = await apiService.getTravellersByCategory();
+      
+        if (response.data && Array.isArray(response.data.data)) {
+            setTravellersByCategory(response.data.data);
+        } else if (Array.isArray(response.data)) {
+            setTravellersByCategory(response.data);
+        }
+
+      } catch (error) {
+        console.error("Error fetching travellers:", error);
+      }
+    };
+
+    fetchTravellersByCategory();
+}, []);
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 px-5">
@@ -42,15 +62,19 @@ const TravellersPage = ({ recommendationData }) => {
                 You may like
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-5">
-                {recommendationData?.map((person) => (
-                    <TravellerCard 
-                        key={person.id}
-                        id={person.id}
-                        image={person.image}
-                        name={person.name}
-                        role={person.role}
-                    />
-                ))}
+                {travellersByCategory?.map((item, index) => {
+                    const person = item.user; 
+
+                    return (
+                        <TravellerCard 
+                            key={person.user_id || index} 
+                            id={person.user_id}
+                            image={person.photo} 
+                            name={person.username}
+                            role={person.role}
+                        />
+                    );
+                })}
             </div>
         </div>
 
