@@ -4,7 +4,7 @@ import TravellerCard from '../components/TravellerCard';
 import { useEffect, useState } from "react";
 import apiService from "../services/apiService";
 
-const TravellersPage = ({ recommendationData }) => {
+const TravellersPage = () => {
   const navigate = useNavigate();
   const [mostActive, setMostActive] = useState([]);
   const [travellersByCategory, setTravellersByCategory] = useState([]);
