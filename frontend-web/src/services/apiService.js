@@ -21,7 +21,7 @@ const createPlan = (planData) => {
 };
 
 const getAllPlanByUserLogin = () => {
-  return get('/plans/');
+  return apiClient.get('/plans/');
 };
 
 const getAllPlan = () => {
@@ -34,6 +34,22 @@ const getMostActiveTravellers = () => {
 
 const getTravellersByCategory = () => {
   return apiClient.get('/user/recomendations/category');
+};
+
+const getUserXP = () => {
+  return apiClient.get('/user/xp');
+}
+
+const getUserProfileById = (id) => {
+  return apiClient.get(`/user/profile/${id}`);
+}
+
+const followUser = (id) => {
+  return apiClient.post(`/follow/${id}`, {});
+}
+
+const unfollowUser = (id) => {
+  return apiClient.delete(`/follow/${id}`);
 }
 
 const apiService = {
@@ -45,7 +61,11 @@ const apiService = {
   getAllPlan,
   getAllPlanByUserLogin,
   getMostActiveTravellers,
-  getTravellersByCategory
+  getTravellersByCategory,
+  getUserXP,
+  getUserProfileById,
+  followUser,
+  unfollowUser
 };
 
 export default apiService;
