@@ -171,6 +171,7 @@ func GetCategoryTravellers(c *gin.Context) {
 	}
 
 	result := []map[string]interface{}{}
+	usedUserIDs := map[uint]bool{} // mencegah duplikat user di kategori lain
 
 	for _, cat := range categories {
 		var users []models.User
@@ -188,7 +189,20 @@ func GetCategoryTravellers(c *gin.Context) {
 			continue
 		}
 
-		selected := users[rand.Intn(len(users))]
+		// filter user yang belum pernah dipakai
+		filteredUsers := []models.User{}
+		for _, u := range users {
+			if !usedUserIDs[u.UserID] {
+				filteredUsers = append(filteredUsers, u)
+			}
+		}
+
+		if len(filteredUsers) == 0 {
+			continue
+		}
+
+		selected := filteredUsers[rand.Intn(len(filteredUsers))]
+		usedUserIDs[selected.UserID] = true // tandai user sudah digunakan
 
 		var photoBase64 string
 		if len(selected.Profile.Photo) > 0 {
@@ -251,9 +265,8 @@ func GetUserProfile(c *gin.Context) {
 		Count(&totalReviews)
 
 	var totalRoutes int64
-	config.DB.Model(&models.Route{}).
-		Joins("JOIN plans ON plans.plan_id = routes.plan_id").
-		Where("plans.user_id = ?", userID).
+	config.DB.Model(&models.Plan{}).
+		Where("user_id = ?", userID).
 		Count(&totalRoutes)
 
 	var plans []models.Plan
