@@ -115,6 +115,10 @@ const handleSubmitReview = async () => {
   const { plan, routes } = tripData;
   const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : 'placeholder-image-url';
 
+  const handleCardClick = (id) => {
+    navigate(`/mytripreview/${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center">
       <div className="w-full max-w-7xl">
@@ -187,10 +191,11 @@ const handleSubmitReview = async () => {
                     routes.map((item, index) => (
                         <RouteCard 
                             key={item.route_id || index}
-                            image={item.image ? `data:image/jpeg;base64,${item.image}` : 'placeholder-route-image-url'}
+                            image={`data:image/jpeg;base64,${item.image}`}
                             title={item.title}
-                            activity={item.description || "Sightseeing"}
+                            activity={item.description}
                             location={item.address}
+                            onClick={() => handleCardClick(item.route_id)}
                         />
                     ))
                 ) : (

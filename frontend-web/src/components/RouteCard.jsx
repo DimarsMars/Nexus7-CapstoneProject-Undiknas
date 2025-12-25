@@ -1,16 +1,10 @@
 import { FaMapMarkerAlt } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom';
 
-const RouteCard = ({ image, title, activity, location }) => {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-      navigate(`/trip/${id}`);
-  };
+const RouteCard = ({ image, title, activity, location, onClick}) => {
 
   return (
     <div 
-      onClick={handleClick}
+      onClick={onClick}
       className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col md:flex-row gap-4 w-full shadow-sm hover:shadow-md transition-shadow"
     >
       <div className="w-full md:w-48 h-32 shrink-0 rounded-lg overflow-hidden">
