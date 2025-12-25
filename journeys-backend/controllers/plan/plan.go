@@ -558,3 +558,39 @@ func GetRouteDetail(c *gin.Context) {
 		},
 	})
 }
+
+func GetRoutesByPlanID(c *gin.Context) {
+	planIDStr := c.Param("plan_id")
+	planID, err := strconv.ParseUint(planIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
+		return
+	}
+
+	var routes []models.Route
+	if err := config.DB.Where("plan_id = ?", planID).Order("step_order ASC").Find(&routes).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil routes"})
+		return
+	}
+
+	var routeList []map[string]interface{}
+	for _, r := range routes {
+		imgBase64 := ""
+		if len(r.Image) > 0 {
+			imgBase64 = base64.StdEncoding.EncodeToString(r.Image)
+		}
+		routeList = append(routeList, map[string]interface{}{
+			"route_id":    r.RouteID,
+			"title":       r.Title,
+			"description": r.Description,
+			"address":     r.Address,
+			"latitude":    r.Latitude,
+			"longitude":   r.Longitude,
+			"tags":        r.Tags,
+			"step_order":  r.StepOrder,
+			"image":       imgBase64,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": routeList})
+}
