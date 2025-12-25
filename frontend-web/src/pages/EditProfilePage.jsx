@@ -125,6 +125,7 @@ const EditProfilePage = ({ user }) => {
       await apiService.updateUserProfile(formDataToSend);
       alert("Profile Updated!");
       setProfileDescription(descriptionString);
+      navigate('/myprofile');
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile. Please try again.");
