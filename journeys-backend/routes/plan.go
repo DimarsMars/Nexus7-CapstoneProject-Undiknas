@@ -21,7 +21,7 @@ func PlanRoutes(r *gin.Engine) {
 		planGroup.GET("/recommendations", plan.GetRecommendedPlans)
 		planGroup.GET("/all", plan.GetAllPlans)
 		planGroup.GET("/route/:id", plan.GetRouteDetail)
-		planGroup.GET("/plans/:plan_id/routes", plan.GetRoutesByPlanID)
+		planGroup.GET("/plans/:plan_id/route", plan.GetRoutesByPlanID)
 
 	}
 }
