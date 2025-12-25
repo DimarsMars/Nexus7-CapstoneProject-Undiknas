@@ -260,8 +260,11 @@ func GetUserProfile(c *gin.Context) {
 	}
 
 	var totalReviews int64
-	config.DB.Model(&models.PlaceReview{}).
-		Where("user_id = ?", userID).
+	config.DB.
+		Model(&models.TripReview{}).
+		Joins("JOIN plans ON plans.plan_id = trip_reviews.plan_id").
+		Where("plans.user_id = ?", userID).
+		Where("trip_reviews.user_id != ?", userID).
 		Count(&totalReviews)
 
 	var totalRoutes int64
