@@ -5,7 +5,6 @@ const TravellerCard = ({ id, image, name, role }) => {
 
   return (
     <div 
-        onClick={() => navigate(`/profile/${id}`)}
         className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center text-center border border-gray-100">
             <div className="w-24 h-24 mb-3 rounded-full overflow-hidden">
                 <img 
