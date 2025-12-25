@@ -14,7 +14,7 @@ const MyProfilePage = () => {
     // State Data
     const [myPlans, setMyPlans] = useState([]);
     const [myReviews, setMyReviews] = useState([]);
-    const [reviewsOnMyPlans, setReviewsOnMyPlans] = useState([]); // State baru untuk "Those who review you"
+    const [reviewsOnMyPlans, setReviewsOnMyPlans] = useState([]);
 
     // Profile Data
     const [profileImage, setProfileImage] = useState('');
@@ -79,7 +79,7 @@ const MyProfilePage = () => {
         fetchMyReviews();
     }, [authUser]);
 
-    // 4. FETCH REVIEWS ON MY PLANS (Those who review you) -- NEW INTEGRATION
+    // 4. FETCH REVIEWS ON MY PLANS (Those who review you)
     useEffect(() => {
         const fetchReviewsOnMyPlans = async () => {
             if (!authUser) {
@@ -118,6 +118,12 @@ const MyProfilePage = () => {
         return `data:image/jpeg;base64,${profileImage}`;
     };
 
+    const getRankLevel = (rankString) => {
+        if (!rankString) return '?';
+        const match = rankString.match(/lvl (\d+)/i);
+        return match ? match[1] : '?';
+    };
+
     if (!authUser || !authUser.user) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -154,7 +160,9 @@ const MyProfilePage = () => {
                             <div className="flex flex-row items-center justify-center md:justify-start gap-2">
                                 <div className="relative flex items-center justify-center text-white">
                                     <FaCertificate className="text-black text-3xl" />
-                                    <span className="absolute font-bold text-xs"></span>
+                                    <span className="absolute font-bold text-xs">
+                                        {getRankLevel(profileRank)}
+                                    </span>
                                 </div>
                                 <h2 className="text-xl font-bold text-[#1e293b]">{profileRank}</h2>
                             </div>
