@@ -1,7 +1,4 @@
-import { useNavigate } from 'react-router-dom';
-
-const TravellerCard = ({ id, image, name, role }) => {
-    const navigate = useNavigate();
+const TravellerCard = ({ image, name, role, categories }) => {
 
   return (
     <div 
@@ -15,7 +12,8 @@ const TravellerCard = ({ id, image, name, role }) => {
             </div>
 
       <h3 className="text-gray-900 font-bold text-lg">{name}</h3>
-      <p className="text-gray-500 text-sm font-normal mb-4">{role}</p>
+      <p className="text-gray-500 text-sm font-normal mb-1">{role}</p>
+      <p className="text-gray-600 text-sm font-semibold mb-4">{categories}</p>
 
       <button className="bg-slate-900 text-white text-sm font-medium px-6 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
         Follow
