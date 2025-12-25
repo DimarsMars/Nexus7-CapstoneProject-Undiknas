@@ -559,3 +559,38 @@ func GetRoutesByPlanID(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": routeList})
 }
+
+func GetRouteDetail(c *gin.Context) {
+	routeIDStr := c.Param("id")
+	routeID, err := strconv.ParseUint(routeIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID route tidak valid"})
+		return
+	}
+
+	var route models.Route
+	if err := config.DB.First(&route, "route_id = ?", routeID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Route tidak ditemukan"})
+		return
+	}
+
+	imgBase64 := ""
+	if len(route.Image) > 0 {
+		imgBase64 = base64.StdEncoding.EncodeToString(route.Image)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": map[string]interface{}{
+			"route_id":    route.RouteID,
+			"plan_id":     route.PlanID,
+			"title":       route.Title,
+			"description": route.Description,
+			"address":     route.Address,
+			"latitude":    route.Latitude,
+			"longitude":   route.Longitude,
+			"tags":        route.Tags,
+			"step_order":  route.StepOrder,
+			"image":       imgBase64,
+		},
+	})
+}
