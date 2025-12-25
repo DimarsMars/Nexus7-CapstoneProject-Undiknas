@@ -64,6 +64,18 @@ const getAllUsers = () => {
   return apiClient.get('/user/all');
 }
 
+const getRouteData = (id) => {
+  return apiClient.get(`/plans/route/${id}`);
+}
+
+const getReviewPlace = (id) => {
+  return apiClient.get(`/reviews/place/${id}`);
+}
+
+const postReviewPlace = (data) => {
+  return apiClient.post(`/reviews/place`, data);
+}
+
 const apiService = {
   updateUserProfile,
   getUserMe,
@@ -80,7 +92,10 @@ const apiService = {
   unfollowUser,
   getMyTripReviews,
   getReviewsOnMyPlans,
-  getAllUsers
+  getAllUsers,
+  getRouteData,
+  getReviewPlace,
+  postReviewPlace
 };
 
 export default apiService;
