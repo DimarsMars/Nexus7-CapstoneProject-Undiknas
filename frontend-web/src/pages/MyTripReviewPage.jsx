@@ -11,6 +11,7 @@ const MyTripReviewPage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
+  const [isBookmarking, setIsBookmarking] = useState(false);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +23,7 @@ const MyTripReviewPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // FETCH DATA (ROUTE & REVIEWS)
-const fetchData = async () => {
+  const fetchData = async () => {
     try {
         // Jangan set loading true jika hanya refresh data setelah submit
         // (opsional: bisa diatur sesuai kebutuhan UI)
@@ -107,6 +108,25 @@ const fetchData = async () => {
     }
   };
 
+  const handleBookmark = async () => {
+    setIsBookmarking(true);
+    try {
+        // Panggil API POST /bookmarks/{route-id}
+        const response = await apiService.postBookmarkRoute(id);
+        
+        // Tampilkan notifikasi sukses
+        alert(response.data.message || "Berhasil ditambahkan ke Bookmark!");
+        
+        // Opsional: Anda bisa navigate ke halaman bookmark langsung
+        // navigate('/bookmarked'); 
+    } catch (error) {
+        console.error("Gagal bookmark:", error);
+        alert("Gagal menambahkan bookmark. Coba lagi.");
+    } finally {
+        setIsBookmarking(false);
+    }
+  };
+
   // HANDLING LOADING & ERROR
   if (loading) {
       return (
@@ -176,7 +196,13 @@ const fetchData = async () => {
 
         {/* ACTION BAR */}
         <div className="flex justify-end items-center gap-4 mb-8">
-            <FaBookmark className="text-3xl text-[#1e293b] cursor-pointer hover:text-gray-600 transition" title="Save this place" />
+            <FaBookmark 
+                onClick={handleBookmark}
+                className={`text-3xl cursor-pointer transition ${
+                    isBookmarking ? 'text-gray-300' : 'text-[#1e293b] hover:text-gray-600'
+                }`} 
+                title="Save this place" 
+            />
             <button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-[#1e293b] text-white px-8 py-2 rounded-lg font-medium text-sm hover:bg-slate-700 transition"
