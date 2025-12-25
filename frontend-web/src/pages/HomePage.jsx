@@ -8,7 +8,7 @@ import PlansCategory from "../components/PlanCategorySection";
 import TravellerSection from "../components/TravellerSection";
 import TripCard from "../components/TripCard";
 
-const HomePage = ({ travellers }) => {
+const HomePage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -54,7 +54,7 @@ const HomePage = ({ travellers }) => {
 
             <CreatePlanSection />
             <PlansCategory />
-            <TravellerSection travellers={travellers}/>
+            <TravellerSection />
 
         </div>
     );
