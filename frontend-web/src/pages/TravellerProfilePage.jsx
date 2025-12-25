@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaChevronLeft } from "react-icons/fa";
+import { FaChevronLeft, FaCertificate } from "react-icons/fa";
 import TripCard from '../components/TripCard';
 import apiService from '../services/apiService';
 
@@ -8,32 +8,43 @@ const TravellerProfilePage = () => {
   const { id: idParam } = useParams();
   const navigate = useNavigate();
 
+  // State
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // State Social
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
 
+  // 1. FETCH PROFILE
   useEffect(() => {
     const fetchProfile = async () => {
       const id = parseInt(idParam, 10);
       if (isNaN(id)) {
         setLoading(false);
-        setError('No user ID provided.');
+        setError('Invalid User ID');
         return;
       }
+
       setLoading(true);
       try {
         const response = await apiService.getUserProfileById(id);
-        if (response.data) {
-          setProfile(response.data);
-          setFollowerCount(response.data.profile.followers || 0);
-          // NOTE: The API does not provide an is_following status,
-          // so the button will always default to "Follow" on page load.
+        const userData = response.data?.data || response.data;
+
+        if (userData && userData.user_id) {
+          setProfile(userData);
+          setFollowerCount(userData.followers || 0);
+          setIsFollowing(false); 
         } else {
-          setError('User not found.');
+          if (response.user_id) {
+             setProfile(response);
+             setFollowerCount(response.followers || 0);
+          } else {
+             setError('User not found.');
+          }
         }
+
       } catch (err) {
         console.error("Error fetching traveller profile:", err);
         setError('Failed to fetch user profile.');
@@ -44,14 +55,6 @@ const TravellerProfilePage = () => {
 
     fetchProfile();
   }, [idParam]);
-  
-  const getImageSrc = (base64String) => {
-    if (!base64String) return null;
-    if (base64String.startsWith('data:image')) {
-      return base64String;
-    }
-    return `data:image/jpeg;base64,${base64String}`;
-  };
 
   const getRankLevel = (rankString) => {
     if (!rankString) return '?';
@@ -59,40 +62,37 @@ const TravellerProfilePage = () => {
     return match ? match[1] : '?';
   };
 
+  // 3. ACTION HANDLERS
   const handleFollow = async () => {
     const id = parseInt(idParam, 10);
-    if (isNaN(id)) {
-      alert('Invalid User ID');
-      return;
-    }
+    if (!profile || isNaN(id)) return;
 
-    const originalIsFollowing = isFollowing;
-    const originalFollowerCount = followerCount;
+    const previousState = isFollowing;
+    const previousCount = followerCount;
 
-    // Optimistic UI update
-    setIsFollowing(!originalIsFollowing);
-    setFollowerCount(originalIsFollowing ? originalFollowerCount - 1 : originalFollowerCount + 1);
+    setIsFollowing(!previousState);
+    setFollowerCount(previousState ? previousCount - 1 : previousCount + 1);
 
     try {
-      if (originalIsFollowing) {
-        // If the user was following, unfollow them
+      if (previousState) {
         await apiService.unfollowUser(id);
       } else {
-        // If the user was not following, follow them
         await apiService.followUser(id);
       }
     } catch (error) {
       console.error("Failed to toggle follow:", error);
-      // Revert UI on error
-      setIsFollowing(originalIsFollowing);
-      setFollowerCount(originalFollowerCount);
-      alert('Failed to update follow status. Please try again.');
+      setIsFollowing(previousState);
+      setFollowerCount(previousCount);
+      alert("Failed to update follow status.");
     }
   };
 
   if (loading) return <div className="h-screen w-full flex items-center justify-center">Loading profile...</div>;
-  
-  if (error || !profile) return <div className="h-screen w-full flex items-center justify-center text-gray-400 font-bold text-md">{error || 'User not found :('}</div>;
+  if (error || !profile) return <div className="h-screen w-full flex items-center justify-center text-gray-400 font-bold text-md">{error}</div>;
+
+  const handleCardClick = (id) => {
+    navigate(`/trip/${id}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 pb-20 px-5">
@@ -107,8 +107,8 @@ const TravellerProfilePage = () => {
 
         <div className="bg-white rounded-xl p-6 md:p-15 shadow-sm flex flex-col md:flex-row items-center gap-8 md:gap-12 mb-10">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-gray-100 shrink-0">
-                {profile.profile.photo ? (
-                    <img src={getImageSrc(profile.profile.photo)} alt={profile.username} className="w-full h-full object-cover" />
+                {profile.photo ? (
+                    <img src={profile.photo} alt={profile.username} className="w-full h-full object-cover" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                         Profile
@@ -124,10 +124,15 @@ const TravellerProfilePage = () => {
                         <h1 className="text-2xl font-bold text-gray-900 mb-4">{profile.username}</h1>
                         
                         <div className="flex items-center justify-center md:justify-start gap-2">
-                            <span className="bg-black text-white text-xs px-2 py-1 rounded-full font-bold">{getRankLevel(profile.profile.rank)}</span>
+                            <div className="relative flex items-center justify-center text-white">
+                                <FaCertificate className="text-black text-3xl" />
+                                <span className="absolute font-bold text-xs">
+                                    {getRankLevel(profile.rank)}
+                                </span>
+                            </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Rank's</p>
-                                <p className="font-bold text-sm text-gray-900">{profile.profile.rank || "Traveler"}</p>
+                                <p className="font-bold text-sm text-gray-900">{profile.rank || "Traveler"}</p>
                             </div>
                         </div>
                     </div>
@@ -168,20 +173,27 @@ const TravellerProfilePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {profile.plans && profile.plans.slice(0, 3).map((trip, index) => (
-                <TripCard
-                    key={trip.plan_id}
-                    title={trip.title}
-                    author={profile.username}
-                    rating={trip.rating || 5}
-                    image={getImageSrc(trip.banner)}
-                    className={
-                        index === 0
-                        ? "md:col-span-2 h-64 md:h-80"
-                        : "h-64"
-                    }
-                />
-            ))}
+            {profile.plans && profile.plans.length > 0 ? (
+                profile.plans.slice(0, 3).map((trip, index) => (
+                    <TripCard
+                        key={trip.plan_id}
+                        title={trip.title}
+                        author={trip.description}
+                        rating={trip.rating || 5}
+                        image={`data:image/jpeg;base64,${trip.banner}`}
+                        className={
+                            index === 0
+                            ? "md:col-span-2 h-64 md:h-80"
+                            : "h-64"
+                        }
+                        onClick={() => handleCardClick(trip.plan_id)}
+                    />
+                ))
+            ) : (
+                <div className="md:col-span-2 text-center py-10 text-gray-400">
+                    Pengguna ini belum memiliki trip.
+                </div>
+            )}
         </div>
 
       </div>
