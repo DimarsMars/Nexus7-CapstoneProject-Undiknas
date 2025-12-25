@@ -134,6 +134,10 @@ const MyProfilePage = () => {
 
     const { user } = authUser;
 
+    const handleCardClick = (id) => {
+        navigate(`/trip/${id}`);
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
             <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
@@ -214,19 +218,17 @@ const MyProfilePage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         {myPlans && myPlans.length > 0 ? (
                             myPlans.slice(0, 3).map((trip, index) => (
-                                <div key={trip.plan_id}
-                                    onClick={() => navigate(`/mytripreview/${trip.plan_id}`)}
-                                    className={index === 0 ? "md:col-span-2 cursor-pointer" : "cursor-pointer"}
-                                >
+
                                     <TripCard
                                         key={trip.plan_id}
+                                        id={trip.plan_id}
                                         title={trip.title}
                                         author={trip.description}
                                         rating={trip.rating || 5}
                                         image={`data:image/jpeg;base64,${trip.banner}`}
                                         className={index === 0 ? "md:col-span-2 h-56 md:h-72" : "h-56 md:h-60"}
+                                        onClick={() => handleCardClick(trip.plan_id)}
                                     />
-                                </div>
                             ))
                         ) : (
                             <div className="md:col-span-2 flex flex-col items-center justify-center py-10 text-gray-500">

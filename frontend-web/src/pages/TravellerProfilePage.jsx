@@ -175,19 +175,22 @@ const TravellerProfilePage = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.plans && profile.plans.length > 0 ? (
                 profile.plans.slice(0, 3).map((trip, index) => (
-                    <TripCard
-                        key={trip.plan_id}
-                        title={trip.title}
-                        author={trip.description}
-                        rating={trip.rating || 5}
-                        image={`data:image/jpeg;base64,${trip.banner}`}
-                        className={
-                            index === 0
-                            ? "md:col-span-2 h-64 md:h-80"
-                            : "h-64"
-                        }
-                        onClick={() => handleCardClick(trip.plan_id)}
-                    />
+
+                        <TripCard
+                            key={trip.plan_id}
+                            id={trip.plan_id}
+                            title={trip.title}
+                            author={trip.description}
+                            rating={trip.rating || 5}
+                            image={`data:image/jpeg;base64,${trip.banner}`}
+                            className={
+                              index === 0
+                              ? "md:col-span-2 h-64 md:h-80"
+                              : "h-64"
+                            }
+                            onClick={() => handleCardClick(trip.plan_id)}
+                        />
+
                 ))
             ) : (
                 <div className="md:col-span-2 text-center py-10 text-gray-400">
