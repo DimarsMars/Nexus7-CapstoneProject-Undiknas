@@ -61,7 +61,7 @@ const ExplorePage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 min-h-[500px]">
-          {plans.map((plan, index) => {
+          {currentTrips.map((plan, index) => {
             const isBigCard = index % 3 === 0;
 
             return (
