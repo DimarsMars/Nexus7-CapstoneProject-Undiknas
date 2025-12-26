@@ -7,27 +7,45 @@ export const DataProvider = ({ children }) => {
     const [plans, setPlans] = useState([]);
     const [loadingPlans, setLoadingPlans] = useState(false);
     
-    const [favoriteTrips, setFavoriteTrips] = useState(() => {
-        const savedFavorites = localStorage.getItem('favoriteTrips');
-        return savedFavorites ? JSON.parse(savedFavorites) : [];
-    });
+    const [favoriteTrips, setFavoriteTrips] = useState([]);
 
-    useEffect(() => {
-        localStorage.setItem('favoriteTrips', JSON.stringify(favoriteTrips));
-    }, [favoriteTrips]);
-
-    const addFavorite = (tripToAdd) => {
-        setFavoriteTrips((prevFavorites) => {
-            const isAlreadyFavorited = prevFavorites.some(trip => trip.plan_id === tripToAdd.plan_id);
-            if (!isAlreadyFavorited) {
-                return [...prevFavorites, tripToAdd];
+    // 1. GET FAVORITES
+    const fetchFavorites = async () => {
+        try {
+            const response = await apiService.getFavorite();
+            if (response.data) {
+                setFavoriteTrips(response.data);
             }
-            return prevFavorites;
-        });
+        } catch (error) {
+            console.error("Error fetching favorites:", error);
+        }
     };
 
-    const removeFavorite = (tripId) => {
-        setFavoriteTrips((prevFavorites) => prevFavorites.filter(trip => trip.plan_id !== tripId));
+    // Load favorites saat aplikasi pertama kali dibuka
+    useEffect(() => {
+        fetchFavorites();
+    }, []);
+
+    // 2. ADD FAVORITE (POST)
+    const addFavorite = async (planId) => {
+        try {
+            const response = await apiService.postFavorite(planId);
+            await fetchFavorites();
+        } catch (error) {
+            console.error("Error adding favorite:", error);
+            alert("Gagal menambahkan ke favorite");
+        }
+    };
+
+    // 3. REMOVE FAVORITE (DELETE)
+    const removeFavorite = async (favoriteId) => {
+        try {
+            await apiService.deleteFavorite(favoriteId);
+            await fetchFavorites();
+        } catch (error) {
+            console.error("Error removing favorite:", error);
+            alert("Gagal menghapus favorite");
+        }
     };
 
     const fetchAllPlan = async () => {
@@ -79,7 +97,8 @@ export const DataProvider = ({ children }) => {
         fetchAllPlanByUserLogin,
         favoriteTrips,
         addFavorite,
-        removeFavorite
+        removeFavorite,
+        fetchFavorites
     };
 
     return (
