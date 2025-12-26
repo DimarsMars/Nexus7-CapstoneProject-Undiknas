@@ -40,7 +40,7 @@ const TravellerProfilePage = () => {
 
           // Fetch follower data
           const followersResponse = await apiService.getFollower(id);
-          const followers = followersResponse.data?.data || [];
+          const followers = followersResponse.data || [];
           
           setFollowerCount(followers.length);
 
