@@ -45,7 +45,11 @@ const getUserProfileById = (id) => {
 }
 
 const followUser = (id) => {
-  return apiClient.post(`/follow/${id}`, {});
+  return apiClient.post(`/follow/${id}`);
+}
+
+const getFollower = (id) => {
+  return apiClient.get(`/follow/${id}/followers`);
 }
 
 const unfollowUser = (id) => {
@@ -89,7 +93,11 @@ const deleteBookmarkRoute = (bookmarkId) => {
 }
 
 const getPlanForRunTrip = (id) => {
-  return apiClient.get(`/plans/${id}/detail/`);
+  return apiClient.get(`/plans/${id}/detail`);
+}
+
+const postPlanVerifyLocation = (id, data) => {
+  return apiClient.post(`/plans/${id}/verify-location`, data);
 }
 
 const apiService = {
@@ -105,6 +113,7 @@ const apiService = {
   getUserXP,
   getUserProfileById,
   followUser,
+  getFollower,
   unfollowUser,
   getMyTripReviews,
   getReviewsOnMyPlans,
@@ -115,7 +124,8 @@ const apiService = {
   postBookmarkRoute,
   getBookmarkRoute,
   deleteBookmarkRoute,
-  getPlanForRunTrip
+  getPlanForRunTrip,
+  postPlanVerifyLocation
 };
 
 export default apiService;
