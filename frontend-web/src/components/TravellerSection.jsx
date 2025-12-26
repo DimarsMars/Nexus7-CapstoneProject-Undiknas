@@ -35,7 +35,7 @@ const TravellerSection = () => {
                 <div key={person.user_id} className="flex flex-col items-center group cursor-pointer">
                     <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden shadow-lg border-4 border-transparent group-hover:border-white transition-all duration-300 transform group-hover:scale-105">
                         <img 
-                            src={person.photo} 
+                            src={person.photo || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"} 
                             alt={person.username} 
                             className="w-full h-full object-cover"
                         />
