@@ -58,21 +58,14 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                     <div className="flex flex-col gap-4">
                         {favoriteTrips && favoriteTrips.length > 0 ? (
                             favoriteTrips.map((item) => (
-                                // Perhatikan mapping data di sini berdasarkan response GET
                                 <FavoriteCard 
                                     key={item.favorite_id} 
-                                    // Akses ke dalam object 'plan'
                                     image={item.plan.banner ? `data:image/jpeg;base64,${item.plan.banner}` : 'placeholder_url'}
                                     title={item.plan.title}
                                     description={item.plan.description}
-                                    // Response GET favorite belum menyertakan lokasi spesifik, 
-                                    // kita bisa pakai default atau kosongkan dulu.
                                     location="Saved Location" 
                                     actionIcon={<FaHeart className="text-red-600" />}
-                                    // Panggil removeFavorite dengan favorite_id
                                     onAction={() => removeFavorite(item.favorite_id)}
-                                    // Tambahkan onClick card agar bisa navigate ke detail (opsional)
-                                    onClick={() => navigate(`/trip/${item.plan_id}`)}
                                 />
                             ))
                         ) : (
