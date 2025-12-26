@@ -154,7 +154,7 @@ const handleSubmitReview = async () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100">
                 <div className="flex gap-3">
-                    <button  onClick={() => navigate('/maps')} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">
+                    <button  onClick={() => navigate(`/runtrip/${plan.plan_id}`)} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">
                         Set Trip
                     </button>
                     <button className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">

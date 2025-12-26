@@ -165,7 +165,7 @@ function App() {
         <Route path='trip/:id' element={<TripDetailPage trips={trips}/>} />
         <Route path='mytripreview/:id' element={<MyTripReviewPage sliderImages={sliderImages} myreviewstrips={myreviewstrips}/>} />
         <Route path='maps' element={<MapsPage />} />
-        <Route path='runtrip' element={<RunTripPage />} />
+        <Route path='runtrip/:id' element={<RunTripPage />} />
         <Route path='history' element={<HistoryPage activeTrips={activeTrips} favouriteTrips={favouriteTrips} pastTrips={pastTrips} />} />
       </Route>
 

@@ -90,42 +90,53 @@ const RoutingMachine = ({ userLocation, destination, onRouteFound }) => {
   return null;
 };
 
+import apiClient from '../services/apiClient';
+
 // --- KOMPONEN UTAMA ---
 const RunTripPage = () => {
   const navigate = useNavigate();
-  // const { id } = useParams(); // Jika nanti pakai API beneran
+  const { id } = useParams();
 
-  // 1. STATE DATA TRIP (Mock Data / Simulasi)
-  // Nanti ini diganti dengan fetch API berdasarkan ID Trip
-  const [tripRoute, setTripRoute] = useState([
-    {
-        id: 1,
-        title: "Aloha Ubud Swing",
-        category: "Attraction",
-        lat: -8.4556,
-        lng: 115.2798,
-        image: "https://via.placeholder.com/150",
-        address: "Jl. Raya Tegallalang, Gianyar"
-    },
-    {
-        id: 2,
-        title: "Serenity Oasis",
-        category: "Restaurant",
-        lat: -8.5069, 
-        lng: 115.2625,
-        image: "https://via.placeholder.com/150",
-        address: "Bedugul Area"
-    },
-    {
-        id: 3,
-        title: "Banjar Banjir",
-        category: "Night Club",
-        lat: -8.6705, 
-        lng: 115.2126,
-        image: "https://via.placeholder.com/150",
-        address: "Denpasar City"
+  // 1. STATE DATA TRIP
+  const [tripRoute, setTripRoute] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const getPlanForRunTrip = (id) => {
+      return apiClient.get(`/plans/${id}/detail`);
     }
-  ]);
+
+    const fetchTripData = async () => {
+        try {
+            setIsLoading(true);
+            const response = await getPlanForRunTrip(id);
+            if (response.data && response.data.routes) {
+              const formattedRoutes = response.data.routes.map(route => ({
+                  id: route.route_id,
+                  title: route.title,
+                  category: route.description, // Menggunakan deskripsi sebagai kategori sesuai kebutuhan komponen
+                  lat: route.latitude,
+                  lng: route.longitude,
+                  image: route.image ? `data:image/jpeg;base64,${route.image}` : "https://via.placeholder.com/150",
+                  address: route.address,
+              }));
+              setTripRoute(formattedRoutes);
+            } else {
+              setTripRoute([]);
+            }
+        } catch (err) {
+            setError("Failed to fetch trip data.");
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (id) {
+        fetchTripData();
+    }
+  }, [id]);
 
   // 2. STATE UNTUK NAVIGASI
   const [currentStepIndex, setCurrentStepIndex] = useState(0); // Sedang menuju lokasi ke-0
@@ -178,7 +189,8 @@ const RunTripPage = () => {
 
   const handleBookmark = async (routeId) => {
     try {
-      await apiService.postBookmarkRoute(routeId);
+      // Ganti dengan apiClient yang benar
+      await apiClient.post(`/bookmarks/route/${routeId}`);
       alert("Location added to bookmarks!");
     } catch (error) {
       console.error("Error adding bookmark:", error);
@@ -187,13 +199,32 @@ const RunTripPage = () => {
     }
   };
 
+  if (isLoading) {
+    return <div className="h-screen flex items-center justify-center">Loading Trip...</div>;
+  }
+  
+  if (error) {
+    return <div className="h-screen flex items-center justify-center">{error}</div>;
+  }
+
   if (!userLocation) {
     return <div className="h-screen flex items-center justify-center">Looking for GPS signal...</div>;
+  }
+  
+  if (tripRoute.length === 0) {
+      return (
+        <div className="h-screen flex flex-col items-center justify-center">
+          <p>This trip has no routes.</p>
+          <button onClick={() => navigate(-1)} className="mt-4 bg-slate-800 text-white px-4 py-2 rounded-lg">
+            Go Back
+          </button>
+      </div>
+    );
   }
 
   // Filter lokasi berikutnya (Next Locations list)
   // Menampilkan lokasi SETELAH lokasi tujuan saat ini
-  const nextLocations = tripRoute.slice(currentStepIndex + 1);
+  const allLocations = tripRoute;
 
     return (
         <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 pt-28 px-4 font-sans">
@@ -272,12 +303,12 @@ const RunTripPage = () => {
                     </button>
                 </div>
 
-                {/* === SECTION 3: NEXT LOCATIONS LIST === */}
+                {/* === SECTION 3: TRIP ITINERARY === */}
                 <div>
-                    <h3 className="text-slate-700 font-bold mb-3">Next Location</h3>
+                    <h3 className="text-slate-700 font-bold mb-3">Trip Itinerary</h3>
                     <div className="flex flex-col gap-3">
-                        {nextLocations.length > 0 ? (
-                            nextLocations.map((loc, index) => (
+                        {allLocations.length > 0 ? (
+                            allLocations.map((loc, index) => (
                                 <LocationRouteCard
                                     key={loc.id} // Use loc.id for the key
                                     point={{
@@ -295,7 +326,7 @@ const RunTripPage = () => {
                             ))
                         ) : (
                             <div className="p-8 text-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300">
-                                All destinations completed!
+                                This trip has no locations.
                             </div>
                         )}
                     </div>

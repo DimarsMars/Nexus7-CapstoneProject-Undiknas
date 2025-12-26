@@ -88,6 +88,10 @@ const deleteBookmarkRoute = (bookmarkId) => {
   return apiClient.delete(`/bookmarks/${bookmarkId}`);
 }
 
+const getPlanForRunTrip = (id) => {
+  return apiClient.get(`/plans/${id}/detail/`);
+}
+
 const apiService = {
   updateUserProfile,
   getUserMe,
@@ -110,7 +114,8 @@ const apiService = {
   postReviewPlace,
   postBookmarkRoute,
   getBookmarkRoute,
-  deleteBookmarkRoute
+  deleteBookmarkRoute,
+  getPlanForRunTrip
 };
 
 export default apiService;
