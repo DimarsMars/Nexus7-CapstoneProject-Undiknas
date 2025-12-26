@@ -112,9 +112,14 @@ const deleteFavorite = (id) => {
   return apiClient.delete(`/favorites/${id}`);
 }
 
-const getPasTripCard = () => {
-  return apiClient.get(`/plans/history`);
+const getPasTripCard = (id) => {
+  return apiClient.get(`/plans/completed-plans/${id}`);
 }
+
+const deleteReviewTrips = (id) => {
+  return apiClient.delete(`/reviews/my/${id}`);
+}
+
 
 const apiService = {
   updateUserProfile,
@@ -145,7 +150,8 @@ const apiService = {
   postFavorite,
   getFavorite,
   deleteFavorite,
-  getPasTripCard
+  getPasTripCard,
+  deleteReviewTrips
 };
 
 export default apiService;
