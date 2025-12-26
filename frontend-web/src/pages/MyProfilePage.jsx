@@ -107,6 +107,25 @@ const MyProfilePage = () => {
         fetchReviewsOnMyPlans();
     }, [authUser]);
 
+    // --- HANDLE DELETE REVIEW FUNCTION ---
+    const handleDeleteReview = async (reviewId) => {
+        const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus ulasan ini?");
+        if (!isConfirmed) return;
+
+        try {
+            await apiService.deleteReviewTrips(reviewId);
+
+            setMyReviews((prevReviews) => 
+                prevReviews.filter((review) => review.review_id !== reviewId)
+            );
+
+            alert("Ulasan berhasil dihapus.");
+        } catch (error) {
+            console.error("Gagal menghapus review:", error);
+            alert("Gagal menghapus ulasan. Silakan coba lagi.");
+        }
+    };
+
 
     const handleLogout = () => {
         logout();
@@ -257,7 +276,7 @@ const MyProfilePage = () => {
                                         description={review.comment}
                                         location={plan.description || 'Location not found'}
                                         rating={review.rating}
-                                        onDelete={() => alert(`Delete review for plan ${plan ? plan.title : review.review_id}?`)}
+                                        onDelete={() => handleDeleteReview(review.review_id)}
                                     />
                                 );
                             })
