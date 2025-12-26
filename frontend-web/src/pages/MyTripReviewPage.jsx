@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaStar, FaBookmark, FaTimes, FaCamera } from "react-icons/fa";
+// 1. IMPORT FaRegBookmark (Outline)
+import { FaChevronLeft, FaStar, FaBookmark, FaRegBookmark, FaTimes, FaCamera } from "react-icons/fa";
 import apiService from '../services/apiService';
 
 const MyTripReviewPage = () => {
@@ -11,7 +12,11 @@ const MyTripReviewPage = () => {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
+  
+  // 2. STATE UNTUK STATUS BOOKMARK
+  const [isBookmarked, setIsBookmarked] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
+  const [bookmarkId, setBookmarkId] = useState(null);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,36 +27,52 @@ const MyTripReviewPage = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // FETCH DATA (ROUTE & REVIEWS)
+  // FETCH DATA (ROUTE, REVIEWS, & CHECK BOOKMARK STATUS)
   const fetchData = async () => {
     try {
-        // Jangan set loading true jika hanya refresh data setelah submit
-        // (opsional: bisa diatur sesuai kebutuhan UI)
-        // if (!routeDetail) setLoading(true); 
+      const [routeRes, reviewsRes, bookmarksRes] = await Promise.all([
+        apiService.getRouteData(id),
+        apiService.getReviewPlace(id),
+        apiService.getBookmarkRoute(),
+      ]);
 
-        const [routeRes, reviewsRes] = await Promise.all([
-            apiService.getRouteData(id),
-            apiService.getReviewPlace(id)
-        ]);
+      if (routeRes.data) {
+        setRouteDetail(routeRes.data);
+      }
 
-        if (routeRes.data) {
-            setRouteDetail(routeRes.data);
-            setReviews(reviewsRes.data);
+      if (reviewsRes.data && Array.isArray(reviewsRes.data)) {
+        setReviews(reviewsRes.data);
+      } else if (reviewsRes.data && reviewsRes.data.data) {
+        setReviews(reviewsRes.data.data);
+      } else {
+        setReviews([]);
+      }
+
+      if (bookmarksRes.data) {
+        const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
+        const foundBookmark = bookmarkList.find(item => item.route_id === parseInt(id));
+
+        if (foundBookmark) {
+          setIsBookmarked(true);
+          setBookmarkId(foundBookmark.bookmark_id);
+        } else {
+          setIsBookmarked(false);
+          setBookmarkId(null);
         }
-
+      }
     } catch (error) {
-        console.error("Error fetching data:", error);
+      console.error("Error fetching data:", error);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  // --- 2. PANGGIL FETCH DATA DI USE EFFECT ---
   useEffect(() => {
     if (id) {
-        setLoading(true); // Set loading awal disini
-        fetchData();
+      setLoading(true);
+      fetchData();
     }
+    // eslint-disable-next-line
   }, [id]);
 
   // HANDLERS
@@ -72,7 +93,6 @@ const MyTripReviewPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Create FormData for file upload
       const formData = new FormData();
       formData.append('route_id', parseInt(id));
       formData.append('rating', userRating);
@@ -90,14 +110,12 @@ const MyTripReviewPage = () => {
         alert("Review submitted successfully!");
       }
 
-      // Reset Form & Close Modal
       setIsModalOpen(false);
       setUserRating(0);
       setReviewComment("");
       setReviewImage(null);
       setPreviewImage(null);
 
-      // Refresh reviews list
       fetchData();
 
     } catch (error) {
@@ -108,22 +126,33 @@ const MyTripReviewPage = () => {
     }
   };
 
+  // 4. UPDATE LOGIKA HANDLE BOOKMARK
   const handleBookmark = async () => {
+    if (isBookmarking) {
+      return;
+    }
     setIsBookmarking(true);
+
     try {
-        // Panggil API POST /bookmarks/{route-id}
-        const response = await apiService.postBookmarkRoute(id);
-        
-        // Tampilkan notifikasi sukses
-        alert(response.data.message || "Berhasil ditambahkan ke Bookmark!");
-        
-        // Opsional: Anda bisa navigate ke halaman bookmark langsung
-        // navigate('/bookmarked'); 
+      if (isBookmarked && bookmarkId) {
+        // --- UNBOOKMARK ---
+        await apiService.deleteBookmarkRoute(bookmarkId);
+        alert("Bookmark removed successfully!");
+        setIsBookmarked(false);
+        setBookmarkId(null);
+      } else {
+        // --- BOOKMARK ---
+        await apiService.postBookmarkRoute(id); // 'id' is routeId from useParams
+        alert("Added to bookmarks!");
+        // Re-fetch all data to get the new bookmarkId and ensure state is perfectly synced
+        await fetchData();
+      }
     } catch (error) {
-        console.error("Gagal bookmark:", error);
-        alert("Gagal menambahkan bookmark. Coba lagi.");
+      console.error("Failed to update bookmark status:", error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "An error occurred.";
+      alert(`Error: ${errorMessage}`);
     } finally {
-        setIsBookmarking(false);
+      setIsBookmarking(false);
     }
   };
 
@@ -144,7 +173,6 @@ const MyTripReviewPage = () => {
       );
   }
 
-  // HELPER GAMBAR
   const getImageSrc = (img) => {
       if (!img) return null;
       return img.startsWith('data:image') || img.startsWith('http') 
@@ -152,7 +180,6 @@ const MyTripReviewPage = () => {
         : `data:image/jpeg;base64,${img}`;
   };
 
-  // Slider image logic
   let sliderImages = [];
   if (routeDetail.image) {
       sliderImages = [routeDetail.image];
@@ -196,13 +223,18 @@ const MyTripReviewPage = () => {
 
         {/* ACTION BAR */}
         <div className="flex justify-end items-center gap-4 mb-8">
-            <FaBookmark 
-                onClick={handleBookmark}
-                className={`text-3xl cursor-pointer transition ${
-                    isBookmarking ? 'text-gray-300' : 'text-[#1e293b] hover:text-gray-600'
-                }`} 
-                title="Save this place" 
-            />
+            
+            {/* 5. IMPLEMENTASI UI TOGGLE ICON */}
+            <div onClick={handleBookmark} className="cursor-pointer transition hover:scale-110" title={isBookmarked ? "Saved" : "Save this place"}>
+                {isBookmarked ? (
+                    // TAMPILAN JIKA SUDAH DI-BOOKMARK (FILLED & WARNA)
+                    <FaBookmark className="text-3xl text-[#1e293b]" />
+                ) : (
+                    // TAMPILAN JIKA BELUM (OUTLINE)
+                    <FaRegBookmark className="text-3xl text-[#1e293b] hover:text-gray-600" />
+                )}
+            </div>
+
             <button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-[#1e293b] text-white px-8 py-2 rounded-lg font-medium text-sm hover:bg-slate-700 transition"
@@ -215,11 +247,10 @@ const MyTripReviewPage = () => {
         <h2 className="text-xl font-bold text-[#1e293b] mb-6">Review from the people’s</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reviews.length > 0 ? (
+            {reviews && reviews.length > 0 ? (
                 reviews.map((item) => (
                     <div key={item.review_id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
                         <div className="flex gap-4 mb-4">
-                            {/* Gambar User/Review */}
                             <div className="w-24 h-20 shrink-0 rounded-lg overflow-hidden">
                                 {item.image ? (
                                     <img src={getImageSrc(item.image)} alt="Review" className="w-full h-full object-cover" />
@@ -229,13 +260,10 @@ const MyTripReviewPage = () => {
                             </div>
 
                             <div className='text-left'>
-                                {/* Bintang Rating */}
                                 <div className="flex text-yellow-400 text-xs mb-1">
                                     {[...Array(item.rating || 0)].map((_, i) => <FaStar key={i} />)}
                                 </div>
-                                
                                 <h3 className="font-bold text-[#1e293b] mb-1">Traveler</h3>
-                                
                                 <p className="text-gray-500 text-[10px] leading-tight line-clamp-3">
                                     {item.comment}
                                 </p>
@@ -269,7 +297,6 @@ const MyTripReviewPage = () => {
                 className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl transform transition-all relative" 
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header Modal */}
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-[#1e293b]">Add Review</h3>
                     <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -277,7 +304,6 @@ const MyTripReviewPage = () => {
                     </button>
                 </div>
 
-                {/* Rating Input */}
                 <div className="flex justify-center gap-2 mb-6">
                     {[...Array(5)].map((_, index) => {
                         const starValue = index + 1;
@@ -295,7 +321,6 @@ const MyTripReviewPage = () => {
                     })}
                 </div>
 
-                {/* Comment Input */}
                 <div className="mb-4">
                     <textarea 
                         className="w-full border border-slate-300 rounded-lg p-4 text-gray-700 focus:outline-none focus:border-slate-800 resize-none h-32 placeholder-gray-400"
@@ -305,7 +330,6 @@ const MyTripReviewPage = () => {
                     ></textarea>
                 </div>
 
-                {/* Image Upload Input */}
                 <div className="mb-6">
                     <label className="block text-sm font-medium text-gray-700 mb-2">Add Photo</label>
                     <div className="flex items-center gap-4">
@@ -327,7 +351,6 @@ const MyTripReviewPage = () => {
                     </div>
                 </div>
 
-                {/* Submit Button */}
                 <button 
                     onClick={handleSubmitReview}
                     disabled={isSubmitting}

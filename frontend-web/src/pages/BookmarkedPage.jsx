@@ -1,85 +1,93 @@
-import React, { useState, useEffect } from 'react'; // Tambah useEffect
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaFilter } from "react-icons/fa";
 import BookmarkedCard from '../components/BookmarkedCard';
-import apiService from '../services/apiService'; // Import Service
+import apiService from '../services/apiService';
 
-const BookmarkedPage = () => { // Hapus props bookmarkedData
+const BookmarkedPage = () => {
   const navigate = useNavigate();
 
-  // 1. STATE MANAGEMENT
-  const [savedItems, setSavedItems] = useState([]); // Default kosong
+  const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
   const [routeItems, setRouteItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // 2. FETCH DATA BOOKMARK DARI API
-  useEffect(() => {
-    const fetchBookmarks = async () => {
-        try {
-            setLoading(true);
-            // Asumsi: Backend menyediakan endpoint GET /bookmarks
-            // Jika backend belum ada endpoint list bookmark, mintalah ke backend developer.
-            const response = await apiService.getBookmarkRoute();
-            
-            // Sesuaikan dengan struktur response backend (misal: response.data.data)
-            if (response.data && Array.isArray(response.data.data)) {
-                setSavedItems(response.data.data);
-            } else if (Array.isArray(response.data)) {
-                setSavedItems(response.data);
-            }
-        } catch (error) {
-            console.error("Gagal mengambil data bookmark:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchBookmarks = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getBookmarkRoute();
+      
+      if (response.data) {
+        const bookmarkList = Array.isArray(response.data) ? response.data : (response.data.data || []);
+        setSavedItems(bookmarkList);
+      } else {
+        setSavedItems([]);
+      }
+    } catch (error) {
+      console.error("Gagal mengambil data bookmark:", error);
+      setSavedItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchBookmarks();
   }, []);
 
-  const handleToggleSelect = (id) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+  const handleToggleSelect = (bookmarkId) => {
+    if (selectedIds.includes(bookmarkId)) {
+      setSelectedIds(selectedIds.filter(id => id !== bookmarkId));
     } else {
-      setSelectedIds([...selectedIds, id]);
+      setSelectedIds([...selectedIds, bookmarkId]);
     }
   };
 
-  // Hapus item (Integrasi API Delete disarankan disini)
-  const handleRemoveItem = async (id) => {
-    // Optimistic UI update (hapus dari layar dulu)
-    setSavedItems(savedItems.filter(item => item.id !== id));
-    if(selectedIds.includes(id)) {
-        setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+  const handleRemoveItem = async (bookmarkIdToRemove) => {
+    setSavedItems(currentItems =>
+      currentItems.filter(item => item.bookmark_id !== bookmarkIdToRemove)
+    );
+    if (selectedIds.includes(bookmarkIdToRemove)) {
+      setSelectedIds(currentIds => currentIds.filter(id => id !== bookmarkIdToRemove));
     }
 
-    // Panggil API Delete (jika ada)
     try {
-        await apiService.deleteBookmarkRoute(id);
+      await apiService.deleteBookmarkRoute(bookmarkIdToRemove);
     } catch (error) {
-        console.error("Gagal menghapus di server", error);
-        // Opsional: Kembalikan item jika gagal
+      console.error("Gagal menghapus bookmark di server:", error);
+      alert("Failed to remove bookmark. Refreshing list.");
+      fetchBookmarks(); // Re-sync with server on failure
     }
   };
 
-  const handleRemoveAll = () => {
-    if(window.confirm("Are you sure you want to remove all saved items?")) {
-        // Disini harusnya ada API call untuk remove all
-        setSavedItems([]);
-        setSelectedIds([]);
+  const handleRemoveAll = async () => {
+    if (window.confirm("Are you sure you want to remove all saved items?")) {
+      const allBookmarkIds = savedItems.map(item => item.bookmark_id);
+      
+      setSavedItems([]);
+      setSelectedIds([]);
+
+      try {
+        await Promise.all(allBookmarkIds.map(id => apiService.deleteBookmarkRoute(id)));
+      } catch (error) {
+        console.error("Failed to remove all bookmarks:", error);
+        alert("Could not remove all items. Please refresh.");
+        fetchBookmarks();
+      }
     }
   };
 
   const handleAddToRoute = () => {
-    const itemsToAdd = savedItems.filter(item => selectedIds.includes(item.id));
+    const itemsToAdd = savedItems
+      .filter(item => selectedIds.includes(item.bookmark_id))
+      .map(item => item.route);
     
     const newRoute = [...routeItems];
     itemsToAdd.forEach(item => {
-        if (!newRoute.find(r => r.id === item.id)) {
-            newRoute.push(item);
-        }
+      if (!newRoute.find(r => r.route_id === item.route_id)) {
+        newRoute.push(item);
+      }
     });
     
     setRouteItems(newRoute);
@@ -87,21 +95,18 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
     alert(`${itemsToAdd.length} items added to route!`);
   };
 
-  // Filter Search
-  const filteredItems = savedItems.filter(item => 
-    (item.title && item.title.toLowerCase().includes(searchQuery.toLowerCase())) || 
-    (item.category && item.category.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredItems = savedItems.filter(item =>
+    item.route && item.route.title && item.route.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
-      return <div className="min-h-screen flex items-center justify-center">Loading bookmarks...</div>;
+    return <div className="min-h-screen flex items-center justify-center">Loading bookmarks...</div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30">
       <div className="max-w-7xl mx-auto">
         
-        {/* HEADER */}
         <div className="flex items-center gap-4 mb-8">
             <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-200 rounded-full transition">
                 <FaChevronLeft className="text-xl text-black" />
@@ -109,7 +114,6 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
             <h1 className="text-xl font-bold text-black">Bookmarked</h1>
         </div>
 
-        {/* SEARCH BAR */}
         <div className="relative mb-8">
             <input 
                 type="text" 
@@ -123,7 +127,6 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
             </button>
         </div>
 
-        {/* SAVED SECTION */}
         <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-md font-bold text-[#1e293b]">Saved</h2>
@@ -137,16 +140,15 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
                 )}
             </div>
 
-            {/* List Saved Cards */}
             <div className="flex flex-col gap-4">
                 {filteredItems.length > 0 ? (
                     filteredItems.map((item) => (
                         <BookmarkedCard 
-                            key={item.id || item.route_id} // Pastikan key unik
-                            item={item}
-                            isSelected={selectedIds.includes(item.id)}
-                            onToggleSelect={() => handleToggleSelect(item.id)}
-                            onRemove={() => handleRemoveItem(item.id)}
+                            key={item.bookmark_id}
+                            item={item.route}
+                            isSelected={selectedIds.includes(item.bookmark_id)}
+                            onToggleSelect={() => handleToggleSelect(item.bookmark_id)}
+                            onRemove={() => handleRemoveItem(item.bookmark_id)}
                         />
                     ))
                 ) : (
@@ -155,7 +157,6 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
             </div>
         </div>
 
-        {/* ADD TO ROUTE BUTTON */}
         {savedItems.length > 0 && (
             <div className="flex justify-center mb-10">
                 <button 
@@ -172,13 +173,12 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
             </div>
         )}
 
-        {/* ADDED TO ROUTE (Visualisasi Hasil) */}
         {routeItems.length > 0 && (
             <div className="border-t-2 border-gray-200 pt-8">
                 <h2 className="text-lg font-bold text-[#1e293b] mb-4">Current Route Plan</h2>
                 <div className="flex flex-col gap-4 opacity-80">
                     {routeItems.map((item) => (
-                        <div key={`route-${item.id}`} className="pointer-events-none grayscale-[0.2]">
+                        <div key={`route-${item.route_id}`} className="pointer-events-none grayscale-[0.2]">
                              <BookmarkedCard 
                                 item={item}
                                 isSelected={true}
@@ -195,5 +195,3 @@ const BookmarkedPage = () => { // Hapus props bookmarkedData
     </div>
   );
 };
-
-export default BookmarkedPage;

@@ -77,15 +77,15 @@ const postReviewPlace = (data) => {
 }
 
 const postBookmarkRoute = (routeId) => {
-  return apiClient.post(`/bookmarks/${routeId}`, {});
+  return apiClient.post(`/bookmarks/${routeId}`);
 }
 
 const getBookmarkRoute = () => {
-  return apiClient.get(`/bookmarks`);
+  return apiClient.get(`/bookmarks/`);
 }
 
-const deleteBookmarkRoute = (routeId) => {
-  return apiClient.delete(`/bookmarks/${routeId}`);
+const deleteBookmarkRoute = (bookmarkId) => {
+  return apiClient.delete(`/bookmarks/${bookmarkId}`);
 }
 
 const apiService = {
