@@ -80,6 +80,10 @@ const postReviewPlace = (data) => {
   return apiClient.post(`/reviews/place`, data);
 }
 
+const postReviewTrip = (data) => {
+  return apiClient.post(`/reviews/trip`, data);
+}
+
 const postBookmarkRoute = (routeId) => {
   return apiClient.post(`/bookmarks/${routeId}`);
 }
@@ -112,12 +116,16 @@ const deleteFavorite = (id) => {
   return apiClient.delete(`/favorites/${id}`);
 }
 
-const getPasTripCard = (id) => {
-  return apiClient.get(`/plans/completed-plans/${id}`);
+const getPasTripCard = () => {
+  return apiClient.get(`/plans/history`);
 }
 
 const deleteReviewTrips = (id) => {
   return apiClient.delete(`/reviews/my/${id}`);
+}
+
+const deletePastTripPlan = (id) => {
+  return apiClient.delete(`/plans/completed-plans/${id}`);
 }
 
 
@@ -142,6 +150,7 @@ const apiService = {
   getRouteData,
   getReviewPlace,
   postReviewPlace,
+  postReviewTrip,
   postBookmarkRoute,
   getBookmarkRoute,
   deleteBookmarkRoute,
@@ -151,7 +160,8 @@ const apiService = {
   getFavorite,
   deleteFavorite,
   getPasTripCard,
-  deleteReviewTrips
+  deleteReviewTrips,
+  deletePastTripPlan
 };
 
 export default apiService;
