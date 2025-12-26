@@ -8,14 +8,20 @@ import { useData } from '../context/DataContext';
 const TripDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  // Ambil fungsi dari Context yang sudah kita update
   const { favoriteTrips, addFavorite, removeFavorite } = useData();
   
   const [tripData, setTripData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // isLiked is now derived from the global context
-  const isLiked = tripData ? favoriteTrips.some(trip => trip.plan_id === tripData.plan.plan_id) : false;
+  // LOGIKA BARU: Cari data favorite berdasarkan plan_id halaman ini
+  // Kita butuh object lengkapnya untuk mendapatkan 'favorite_id' saat delete
+  const favoriteRecord = tripData 
+    ? favoriteTrips.find(fav => fav.plan_id === tripData.plan.plan_id) 
+    : null;
+
+  const isLiked = !!favoriteRecord; // True jika data ditemukan
 
   // STATE REVIEW MODAL
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -42,20 +48,16 @@ const TripDetailPage = () => {
     }
   }, [id]);
 
-  const handleLike = () => {
+  // LOGIKA BARU UNTUK HANDLE LIKE
+  const handleLike = async () => {
     if (!tripData) return;
 
     if (isLiked) {
-        removeFavorite(tripData.plan.plan_id);
+        // Jika sudah like, hapus menggunakan favorite_id
+        await removeFavorite(favoriteRecord.favorite_id);
     } else {
-        const favoriteData = {
-            plan_id: tripData.plan.plan_id,
-            title: tripData.plan.title,
-            description: tripData.plan.description,
-            banner: tripData.plan.banner,
-            location: tripData.routes?.[0]?.address || 'Multiple locations'
-        };
-        addFavorite(favoriteData);
+        // Jika belum like, post menggunakan plan_id
+        await addFavorite(tripData.plan.plan_id);
     }
   };
 
@@ -67,7 +69,7 @@ const handleSubmitReview = async () => {
 
       try {
           const reviewData = {
-              plan_id: parseInt(id, 10), // Ensure plan_id is a number
+              plan_id: parseInt(id, 10), 
               rating: userRating,
               comment: reviewText
           };
@@ -76,7 +78,6 @@ const handleSubmitReview = async () => {
           
           alert(response.message || "Review submitted successfully!");
 
-          // Reset and close the modal
           setIsReviewModalOpen(false);
           setUserRating(0);
           setHoverRating(0);

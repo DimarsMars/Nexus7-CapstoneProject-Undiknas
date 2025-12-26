@@ -7,10 +7,14 @@ import PastTripCard from '../components/PastTripCard';
 
 const HistoryPage = ({ activeTrips, pastTrips }) => {
     const navigate = useNavigate();
+    // Gunakan fungsi dari Context yang sudah diupdate
     const { favoriteTrips, removeFavorite } = useData();
 
-    const handleRemoveAllFavorites = () => {
-        favoriteTrips.forEach(trip => removeFavorite(trip.plan_id));
+    // Fungsi remove all (Looping delete)
+    const handleRemoveAllFavorites = async () => {
+        // Karena delete bersifat async, kita lakukan Promise.all agar paralel
+        const deletePromises = favoriteTrips.map(trip => removeFavorite(trip.favorite_id));
+        await Promise.all(deletePromises);
     };
 
     return (
@@ -40,7 +44,7 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                     </div>
                 </div>
 
-                {/* --- SECTION 2: FAVOURITES --- */}
+                {/* --- SECTION 2: FAVOURITES (UPDATED INTEGRATION) --- */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-slate-900">Favourites</h2>
@@ -52,16 +56,23 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                         </button>
                     </div>
                     <div className="flex flex-col gap-4">
-                        {favoriteTrips.length > 0 ? (
-                            favoriteTrips.map((trip) => (
+                        {favoriteTrips && favoriteTrips.length > 0 ? (
+                            favoriteTrips.map((item) => (
+                                // Perhatikan mapping data di sini berdasarkan response GET
                                 <FavoriteCard 
-                                    key={trip.plan_id}
-                                    image={`data:image/jpeg;base64,${trip.banner}`}
-                                    title={trip.title}
-                                    description={trip.description}
-                                    location={trip.location}
+                                    key={item.favorite_id} 
+                                    // Akses ke dalam object 'plan'
+                                    image={item.plan.banner ? `data:image/jpeg;base64,${item.plan.banner}` : 'placeholder_url'}
+                                    title={item.plan.title}
+                                    description={item.plan.description}
+                                    // Response GET favorite belum menyertakan lokasi spesifik, 
+                                    // kita bisa pakai default atau kosongkan dulu.
+                                    location="Saved Location" 
                                     actionIcon={<FaHeart className="text-red-600" />}
-                                    onAction={() => removeFavorite(trip.plan_id)}
+                                    // Panggil removeFavorite dengan favorite_id
+                                    onAction={() => removeFavorite(item.favorite_id)}
+                                    // Tambahkan onClick card agar bisa navigate ke detail (opsional)
+                                    onClick={() => navigate(`/trip/${item.plan_id}`)}
                                 />
                             ))
                         ) : (

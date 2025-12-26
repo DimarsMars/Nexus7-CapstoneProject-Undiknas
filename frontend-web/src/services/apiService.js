@@ -100,6 +100,18 @@ const postPlanVerifyLocation = (id, data) => {
   return apiClient.post(`/plans/${id}/verify-location`, data);
 }
 
+const postFavorite = (id) => {
+  return apiClient.post(`/favorites/${id}`, {});
+}
+
+const getFavorite = () => {
+  return apiClient.get(`/favorites/`);
+}
+
+const deleteFavorite = (id) => {
+  return apiClient.delete(`/favorites/${id}`);
+}
+
 const apiService = {
   updateUserProfile,
   getUserMe,
@@ -125,7 +137,10 @@ const apiService = {
   getBookmarkRoute,
   deleteBookmarkRoute,
   getPlanForRunTrip,
-  postPlanVerifyLocation
+  postPlanVerifyLocation,
+  postFavorite,
+  getFavorite,
+  deleteFavorite
 };
 
 export default apiService;
