@@ -112,6 +112,10 @@ const deleteFavorite = (id) => {
   return apiClient.delete(`/favorites/${id}`);
 }
 
+const getPasTripCard = () => {
+  return apiClient.get(`/plans/history`);
+}
+
 const apiService = {
   updateUserProfile,
   getUserMe,
@@ -140,7 +144,8 @@ const apiService = {
   postPlanVerifyLocation,
   postFavorite,
   getFavorite,
-  deleteFavorite
+  deleteFavorite,
+  getPasTripCard
 };
 
 export default apiService;

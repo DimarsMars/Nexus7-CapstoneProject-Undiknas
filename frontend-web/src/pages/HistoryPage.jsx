@@ -1,18 +1,38 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import apiService from '../services/apiService';
 import { FaArrowRight, FaTrash, FaHeart } from "react-icons/fa";
 import { useData } from '../context/DataContext';
 import FavoriteCard from '../components/FavoriteCard';
 import TripNowCard from '../components/TripNowCard';
 import PastTripCard from '../components/PastTripCard';
 
-const HistoryPage = ({ activeTrips, pastTrips }) => {
+const HistoryPage = ({ activeTrips }) => {
     const navigate = useNavigate();
-    // Gunakan fungsi dari Context yang sudah diupdate
     const { favoriteTrips, removeFavorite } = useData();
+    const [pastTrips, setPastTrips] = useState([]);
+    const [loadingHistory, setLoadingHistory] = useState(true);
 
-    // Fungsi remove all (Looping delete)
+    useEffect(() => {
+        const fetchHistoryData = async () => {
+            try {
+                setLoadingHistory(true);
+                const response = await apiService.getPasTripCard();
+
+                if (response.data) {
+                    setPastTrips(response.data);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data history:", error);
+            } finally {
+                setLoadingHistory(false);
+            }
+        };
+
+        fetchHistoryData();
+    }, []);
+
     const handleRemoveAllFavorites = async () => {
-        // Karena delete bersifat async, kita lakukan Promise.all agar paralel
         const deletePromises = favoriteTrips.map(trip => removeFavorite(trip.favorite_id));
         await Promise.all(deletePromises);
     };
@@ -60,10 +80,10 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                             favoriteTrips.map((item) => (
                                 <FavoriteCard 
                                     key={item.favorite_id} 
-                                    image={item.plan.banner ? `data:image/jpeg;base64,${item.plan.banner}` : 'placeholder_url'}
+                                    image={`data:image/jpeg;base64,${item.plan.banner}`}
                                     title={item.plan.title}
                                     description={item.plan.description}
-                                    location="Saved Location" 
+                                    location={item.address || "Location Dummy"}
                                     actionIcon={<FaHeart className="text-red-600" />}
                                     onAction={() => removeFavorite(item.favorite_id)}
                                 />
@@ -85,18 +105,26 @@ const HistoryPage = ({ activeTrips, pastTrips }) => {
                         </button>
                     </div>
                     <div className="flex flex-col gap-4">
-                        {pastTrips && pastTrips.map((trip) => (
-                            <PastTripCard 
-                                key={trip.id}
-                                image={trip.image}
-                                title={trip.title}
-                                description={trip.description}
-                                location={trip.location}
-                                actionIcon={<FaTrash />} 
-                                isDanger={true}
-                                onAction={() => console.log("Delete history", trip.id)}
-                            />
-                        ))}
+                    {loadingHistory ? (
+                             <div className="p-4 text-center text-gray-400">Loading history...</div>
+                        ) : pastTrips && pastTrips.length > 0 ? (
+                            pastTrips.map((trip) => (
+                                <PastTripCard 
+                                    key={trip.plan_id}
+                                    image={trip.banner}
+                                    title={trip.title}
+                                    description={trip.description}
+                                    location={trip.address || "Location Dummy"}
+                                    actionIcon={<FaTrash />} 
+                                    isDanger={true}
+                                    onAction={() => console.log("Delete history logic", trip.plan_id)}
+                                />
+                            ))
+                        ) : (
+                            <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-400 italic">
+                                No travel history found.
+                            </div>
+                        )}      
                     </div>
                 </div>
 
