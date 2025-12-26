@@ -4,24 +4,23 @@ import { FaStar, FaHeart, FaRegHeart, FaChevronLeft } from "react-icons/fa";
 import RouteCard from '../components/RouteCard';
 import apiClient from '../services/apiClient';
 import { useData } from '../context/DataContext';
+import apiService from '../services/apiService';
 
 const TripDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  // Ambil fungsi dari Context yang sudah kita update
+
   const { favoriteTrips, addFavorite, removeFavorite } = useData();
   
   const [tripData, setTripData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // LOGIKA BARU: Cari data favorite berdasarkan plan_id halaman ini
-  // Kita butuh object lengkapnya untuk mendapatkan 'favorite_id' saat delete
   const favoriteRecord = tripData 
     ? favoriteTrips.find(fav => fav.plan_id === tripData.plan.plan_id) 
     : null;
 
-  const isLiked = !!favoriteRecord; // True jika data ditemukan
+  const isLiked = !!favoriteRecord;
 
   // STATE REVIEW MODAL
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -33,7 +32,7 @@ const TripDetailPage = () => {
     const fetchTripDetail = async () => {
       try {
         setIsLoading(true);
-        const response = await apiClient.get(`/plans/${id}/detail`);
+        const response = await apiService.getPlanForRunTrip(id);
         setTripData(response.data);
       } catch (err) {
         setError("Failed to fetch trip details. Please try again.");
@@ -53,10 +52,8 @@ const TripDetailPage = () => {
     if (!tripData) return;
 
     if (isLiked) {
-        // Jika sudah like, hapus menggunakan favorite_id
         await removeFavorite(favoriteRecord.favorite_id);
     } else {
-        // Jika belum like, post menggunakan plan_id
         await addFavorite(tripData.plan.plan_id);
     }
   };
@@ -74,7 +71,7 @@ const handleSubmitReview = async () => {
               comment: reviewText
           };
 
-          const response = await apiClient.post('/reviews/trip', reviewData);
+          const response = await apiService.postReviewTrip(reviewData);
           
           alert(response.message || "Review submitted successfully!");
 
@@ -85,7 +82,7 @@ const handleSubmitReview = async () => {
 
       } catch (error) {
           console.error("Error submitting review:", error);
-          alert("Failed to submit review. Please try again.");
+          alert("You cannot review your own plan.");
       }
   };
 
