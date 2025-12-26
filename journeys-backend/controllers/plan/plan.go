@@ -594,3 +594,44 @@ func GetRouteDetail(c *gin.Context) {
 		},
 	})
 }
+
+func GetCompletedPlans(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var completedPlanIDs []uint
+	config.DB.Raw(`
+		SELECT DISTINCT plan_id
+		FROM plan_progresses pp
+		WHERE user_id = ?
+		AND step_order = (
+			SELECT MAX(step_order) FROM routes r WHERE r.plan_id = pp.plan_id
+		)
+	`, userID).Scan(&completedPlanIDs)
+
+	if len(completedPlanIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"data": []interface{}{}})
+		return
+	}
+
+	var plans []models.Plan
+	config.DB.Preload("Categories").Where("plan_id IN ?", completedPlanIDs).Find(&plans)
+
+	result := []map[string]interface{}{}
+	for _, p := range plans {
+		banner := ""
+		if len(p.Banner) > 0 {
+			banner = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(p.Banner)
+		}
+
+		result = append(result, map[string]interface{}{
+			"plan_id":     p.PlanID,
+			"title":       p.Title,
+			"description": p.Description,
+			"banner":      banner,
+			"categories":  p.Categories,
+			"created_at":  p.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": result})
+}
