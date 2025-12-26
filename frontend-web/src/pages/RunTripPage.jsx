@@ -6,10 +6,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import LocationRouteCard from '../components/LocationRouteCard';
-import { FaMapMarkerAlt, FaRegBookmark, FaChevronLeft } from "react-icons/fa";
+import { FaChevronLeft } from "react-icons/fa";
+import apiService from '../services/apiService';
 
 // --- KONFIGURASI ICON MARKER ---
-// Kita butuh icon custom agar terlihat bagus
 import iconMarker from 'leaflet/dist/images/marker-icon.png';
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -33,97 +33,146 @@ const UserIcon = L.divIcon({
     iconAnchor: [10, 10]
 });
 
+// --- PATCH UNTUK LEAFLET ROUTING MACHINE ---
+try {
+  // 1. PATCH CLEANUP (Mencegah error 'removeLayer')
+  const originalClearLines = L.Routing.Control.prototype._clearLines;
+  L.Routing.Control.prototype._clearLines = function() {
+    try {
+      originalClearLines.call(this);
+    } catch (e) {
+      // Diamkan error jika gagal hapus garis
+    }
+  };
+
+  // 2. PATCH DRAWING (Mencegah error 'addLayer')
+  const originalRouteDone = L.Routing.Control.prototype._routeDone;
+  L.Routing.Control.prototype._routeDone = function(response, inputWaypoints, options) {
+    if (!this._map) {
+        return; 
+    }
+
+    try {
+      originalRouteDone.call(this, response, inputWaypoints, options);
+    } catch (e) {
+    }
+  };
+
+} catch (e) {
+  console.error("Gagal menerapkan patch pada Leaflet Routing Machine");
+}
+
+
 // --- KOMPONEN ROUTING MACHINE ---
-// Ini yang bertugas menggambar garis jalan
 const RoutingMachine = ({ userLocation, destination, onRouteFound }) => {
   const map = useMap();
   const routingControlRef = useRef(null);
 
   useEffect(() => {
-    if (!map || !userLocation || !destination) return;
+    if (!map) return;
 
-    // Hapus routing lama jika ada perubahan
     if (routingControlRef.current) {
-      map.removeControl(routingControlRef.current);
+        try { map.removeControl(routingControlRef.current); } catch(e) {}
     }
 
-    const routingControl = L.Routing.control({
+    const control = L.Routing.control({
       waypoints: [
-        L.latLng(userLocation.lat, userLocation.lng), // Titik Awal (User)
-        L.latLng(destination.lat, destination.lng)    // Titik Tujuan
+        L.latLng(userLocation.lat, userLocation.lng),
+        L.latLng(destination.lat, destination.lng)
       ],
       routeWhileDragging: false,
-      show: false, // Sembunyikan instruksi teks bawaan Leaflet
+      show: false,
       addWaypoints: false,
       draggableWaypoints: false,
       fitSelectedRoutes: true,
       lineOptions: {
-        styles: [{ color: '#6366f1', opacity: 0.8, weight: 6 }] // Warna Ungu seperti desain
+        styles: [{ color: '#6366f1', opacity: 0.8, weight: 6 }]
       },
-      createMarker: function() { return null; } // Jangan buat marker default, kita pakai marker sendiri
+      createMarker: () => null,
+      router: L.Routing.osrmv1({
+         serviceUrl: 'https://router.project-osrm.org/route/v1'
+      })
     });
 
-    // Event Listener untuk mengambil data jarak & waktu
-    routingControl.on('routesfound', function(e) {
-      const routes = e.routes;
-      const summary = routes[0].summary; // totalDistance & totalTime
-      
-      // Kirim data ke parent component
-      if (onRouteFound) {
-        onRouteFound({
-            distance: (summary.totalDistance / 1000).toFixed(1) + ' km',
-            time: Math.round(summary.totalTime / 60) + ' min'
-        });
-      }
+    control.on('routingerror', function(e) {
+       // Suppress routing errors
     });
 
-    routingControl.addTo(map);
-    routingControlRef.current = routingControl;
+    control.addTo(map);
+    routingControlRef.current = control;
+
+    const handleRoutesFound = (e) => {
+        const summary = e.routes[0].summary;
+        if (onRouteFound) {
+            setTimeout(() => {
+                onRouteFound({
+                    distance: (summary.totalDistance / 1000).toFixed(1) + ' km',
+                    time: Math.round(summary.totalTime / 60) + ' min'
+                });
+            }, 0);
+        }
+    };
+
+    control.on('routesfound', handleRoutesFound);
 
     return () => {
-      if (map && routingControlRef.current) {
-        map.removeControl(routingControlRef.current);
-      }
+        if (map && routingControlRef.current) {
+            try {
+                map.removeControl(routingControlRef.current);
+            } catch (error) {}
+            routingControlRef.current = null;
+        }
     };
-  }, [map, userLocation, destination]);
+  }, [map, userLocation.lat, userLocation.lng, destination.lat, destination.lng]);
 
   return null;
 };
-
-import apiClient from '../services/apiClient';
 
 // --- KOMPONEN UTAMA ---
 const RunTripPage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // 1. STATE DATA TRIP
+  // 1. STATE DATA TRIP & BOOKMARKS
   const [tripRoute, setTripRoute] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [bookmarks, setBookmarks] = useState(new Map()); 
+  const [isBookmarking, setIsBookmarking] = useState(false);
+  
+  // State baru untuk loading tombol Verify
+  const [isVerifying, setIsVerifying] = useState(false);
 
+  // Fetch plan and bookmarks in parallel
   useEffect(() => {
-    const getPlanForRunTrip = (id) => {
-      return apiClient.get(`/plans/${id}/detail`);
-    }
-
-    const fetchTripData = async () => {
+    const fetchInitialData = async () => {
         try {
             setIsLoading(true);
-            const response = await getPlanForRunTrip(id);
-            if (response.data && response.data.routes) {
-              const formattedRoutes = response.data.routes.map(route => ({
+            const [planRes, bookmarksRes] = await Promise.all([
+                apiService.getPlanForRunTrip(id),
+                apiService.getBookmarkRoute()
+            ]);
+
+            if (planRes.data && planRes.data.routes) {
+              const formattedRoutes = planRes.data.routes.map(route => ({
                   id: route.route_id,
                   title: route.title,
-                  category: route.description, // Menggunakan deskripsi sebagai kategori sesuai kebutuhan komponen
+                  category: route.description,
                   lat: route.latitude,
                   lng: route.longitude,
                   image: route.image ? `data:image/jpeg;base64,${route.image}` : "https://via.placeholder.com/150",
                   address: route.address,
               }));
               setTripRoute(formattedRoutes);
-            } else {
-              setTripRoute([]);
+            }
+
+            if (bookmarksRes.data) {
+                const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
+                const bookmarkMap = new Map();
+                bookmarkList.forEach(item => {
+                    bookmarkMap.set(item.route_id, item.bookmark_id);
+                });
+                setBookmarks(bookmarkMap);
             }
         } catch (err) {
             setError("Failed to fetch trip data.");
@@ -134,12 +183,12 @@ const RunTripPage = () => {
     };
 
     if (id) {
-        fetchTripData();
+        fetchInitialData();
     }
   }, [id]);
 
   // 2. STATE UNTUK NAVIGASI
-  const [currentStepIndex, setCurrentStepIndex] = useState(0); // Sedang menuju lokasi ke-0
+  const [currentStepIndex, setCurrentStepIndex] = useState(0); 
   const [userLocation, setUserLocation] = useState(null);
   const [routeSummary, setRouteSummary] = useState({ distance: '...', time: '...' });
   const [isPaused, setIsPaused] = useState(false);
@@ -154,7 +203,6 @@ const RunTripPage = () => {
       return;
     }
 
-    // Watch Position: Update terus menerus jika user bergerak
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
@@ -162,7 +210,7 @@ const RunTripPage = () => {
       },
       (error) => {
         console.error("Error getting location:", error);
-        // Fallback location (misal Denpasar) jika GPS error/ditolak
+        // Lokasi default (Denpasar) jika error agar tidak crash
         setUserLocation({ lat: -8.6500, lng: 115.2167 });
       },
       { enableHighAccuracy: true }
@@ -171,14 +219,63 @@ const RunTripPage = () => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // 4. HANDLER TOMBOL
-  const handleArrived = () => {
-    if (currentStepIndex < tripRoute.length - 1) {
-        alert(`Yeay! You arrived at ${currentDestination.title}. Routing to next spot...`);
-        setCurrentStepIndex(prev => prev + 1);
-    } else {
-        alert("Congratulations! You have completed the trip!");
-        navigate('/myprofile'); // Balik ke profile atau halaman selesai
+  // 4. HANDLER TOMBOL (UPDATED: VERIFIKASI LOKASI)
+  const handleArrived = async () => {
+    // Cek apakah lokasi GPS tersedia
+    if (!userLocation) {
+        alert("Menunggu sinyal GPS...");
+        return;
+    }
+
+    setIsVerifying(true);
+
+    try {
+        const stepOrder = currentStepIndex + 1;
+
+        const payload = {
+            latitude: userLocation.lat,
+            longitude: userLocation.lng,
+            step_order: stepOrder
+        };
+
+        // Panggil Endpoint Verify
+        const response = await apiService.postPlanVerifyLocation(id, payload);
+
+        // Cek response body
+        // Skenario 1: Backend mengembalikan status 200 OK tapi dengan pesan error (Soft Error)
+        if (response.data && response.data.error) {
+             const jarak = response.data.distance_km ? `${response.data.distance_km.toFixed(2)} km` : '-';
+             alert(`${response.data.error}\nJarak Anda: ${jarak}`);
+             // Jangan update step index karena belum sampai
+        } 
+        // Skenario 2: Berhasil
+        else {
+             alert(`Berhasil sampai di ${currentDestination.title}! Melanjutkan ke tujuan berikutnya...`);
+             
+             // Pindah ke step berikutnya
+             if (currentStepIndex < tripRoute.length - 1) {
+                setCurrentStepIndex(prev => prev + 1);
+             } else {
+                alert("Selamat! Anda telah menyelesaikan seluruh perjalanan!");
+                navigate('/myprofile');
+             }
+        }
+
+    } catch (error) {
+        // Skenario 3: Backend mengembalikan status 400/500 (Hard Error)
+        console.error("Verifikasi Gagal:", error);
+        
+        const errorData = error.response?.data;
+        const errorMessage = errorData?.error || "Gagal memverifikasi lokasi.";
+        const jarak = errorData?.distance_km ? `${errorData.distance_km.toFixed(2)} km` : null;
+
+        if (jarak) {
+            alert(`${errorMessage}\nJarak Anda: ${jarak}`);
+        } else {
+            alert(errorMessage);
+        }
+    } finally {
+        setIsVerifying(false);
     }
   };
 
@@ -188,14 +285,40 @@ const RunTripPage = () => {
   };
 
   const handleBookmark = async (routeId) => {
+    if (isBookmarking) return;
+    setIsBookmarking(true);
+
+    const isCurrentlyBookmarked = bookmarks.has(routeId);
+    const bookmarkId = bookmarks.get(routeId);
+
     try {
-      // Ganti dengan apiClient yang benar
-      await apiClient.post(`/bookmarks/route/${routeId}`);
-      alert("Location added to bookmarks!");
+        if (isCurrentlyBookmarked && bookmarkId) {
+            await apiService.deleteBookmarkRoute(bookmarkId);
+            alert("Bookmark removed successfully!");
+            setBookmarks(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(routeId);
+                return newMap;
+            });
+        } else {
+            await apiService.postBookmarkRoute(routeId);
+            alert("Added to bookmarks!");
+            const bookmarksRes = await apiService.getBookmarkRoute();
+            if (bookmarksRes.data) {
+                const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
+                const bookmarkMap = new Map();
+                bookmarkList.forEach(item => {
+                    bookmarkMap.set(item.route_id, item.bookmark_id);
+                });
+                setBookmarks(bookmarkMap);
+            }
+        }
     } catch (error) {
-      console.error("Error adding bookmark:", error);
-      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to add bookmark.";
-      alert(`Error: ${errorMessage}`);
+        console.error("Failed to update bookmark status:", error);
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || "An error occurred.";
+        alert(`Error: ${errorMessage}`);
+    } finally {
+        setIsBookmarking(false);
     }
   };
 
@@ -222,8 +345,6 @@ const RunTripPage = () => {
     );
   }
 
-  // Filter lokasi berikutnya (Next Locations list)
-  // Menampilkan lokasi SETELAH lokasi tujuan saat ini
   const allLocations = tripRoute;
 
     return (
@@ -284,16 +405,20 @@ const RunTripPage = () => {
                     </div>
                 </div>
 
-                {/* Spacer agar konten bawah tidak tertutup Card yg offset -40px */}
                 <div className="h-6"></div>
 
                 {/* === SECTION 2: ACTION BUTTONS === */}
                 <div className="flex justify-center gap-4">
                     <button 
                         onClick={handleArrived}
-                        className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-slate-700 transition"
+                        disabled={isVerifying}
+                        className={`flex-1 text-white py-3 rounded-lg font-bold shadow-md transition ${
+                            isVerifying 
+                            ? 'bg-slate-500 cursor-not-allowed' 
+                            : 'bg-slate-800 hover:bg-slate-700'
+                        }`}
                     >
-                        Arrived!
+                        {isVerifying ? "Verifying..." : "Arrived!"}
                     </button>
                     <button 
                         onClick={() => setIsPaused(!isPaused)}
@@ -310,18 +435,19 @@ const RunTripPage = () => {
                         {allLocations.length > 0 ? (
                             allLocations.map((loc, index) => (
                                 <LocationRouteCard
-                                    key={loc.id} // Use loc.id for the key
+                                    key={loc.id}
                                     point={{
                                         name: loc.title,
                                         address: loc.address,
                                         lat: loc.lat,
                                         lng: loc.lng,
-                                        description: loc.category, // Using category as description
+                                        description: loc.category,
                                         image: loc.image,
-                                        id: loc.id // Pass the id as well, to be used for bookmarking
+                                        id: loc.id
                                     }}
+                                    isBookmarked={bookmarks.has(loc.id)}
+                                    onBookmark={handleBookmark}
                                     index={index}
-                                    onBookmark={handleBookmark} // Pass the new bookmark handler
                                 />
                             ))
                         ) : (
