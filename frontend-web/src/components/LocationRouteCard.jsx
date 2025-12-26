@@ -1,7 +1,7 @@
-import { FaMapMarkerAlt, FaTrash } from "react-icons/fa";
+import { FaMapMarkerAlt, FaTrash, FaRegBookmark } from "react-icons/fa";
 import { useRef, useState } from 'react';
 
-const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
+const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookmark }) => {
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(point.name);
@@ -68,27 +68,41 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage }) => {
           </p>
           
           <div className="flex flex-wrap gap-2 mt-3">
-            <button 
-              onClick={handleEditClick}
-              className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
-            >
-              Edit Route
-            </button>
-            <button 
-              onClick={handleAddImageClick}
-              className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
-            >
-              Add Image
-            </button>
-
-            <button 
-              onClick={() => onDelete(index)}
-              className="text-[10px] bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center gap-1"
-            >
-              <FaTrash size={8} /> Delete
-            </button>
+            {onEdit && (
+              <button 
+                onClick={handleEditClick}
+                className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
+              >
+                Edit Route
+              </button>
+            )}
+            {onAddImage && (
+              <button 
+                onClick={handleAddImageClick}
+                className="text-[10px] bg-slate-800 text-white px-2 py-1 rounded hover:bg-slate-700"
+              >
+                Add Image
+              </button>
+            )}
+            {onDelete && (
+              <button 
+                onClick={() => onDelete(index)}
+                className="text-[10px] bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 flex items-center gap-1"
+              >
+                <FaTrash size={8} /> Delete
+              </button>
+            )}
           </div>
         </div>
+        {onBookmark && (
+            <button
+                onClick={() => onBookmark(point.id)}
+                className="p-2 text-gray-400 hover:text-slate-800 cursor-pointer transition self-start"
+                title="Bookmark this location"
+            >
+                <FaRegBookmark size={20} />
+            </button>
+        )}
       </div>
 
       {isEditing && (

@@ -5,6 +5,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+import LocationRouteCard from '../components/LocationRouteCard';
 import { FaMapMarkerAlt, FaRegBookmark, FaChevronLeft } from "react-icons/fa";
 
 // --- KONFIGURASI ICON MARKER ---
@@ -175,6 +176,17 @@ const RunTripPage = () => {
     alert(isPaused ? "Navigation Resumed" : "Navigation Paused");
   };
 
+  const handleBookmark = async (routeId) => {
+    try {
+      await apiService.postBookmarkRoute(routeId);
+      alert("Location added to bookmarks!");
+    } catch (error) {
+      console.error("Error adding bookmark:", error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to add bookmark.";
+      alert(`Error: ${errorMessage}`);
+    }
+  };
+
   if (!userLocation) {
     return <div className="h-screen flex items-center justify-center">Looking for GPS signal...</div>;
   }
@@ -184,118 +196,112 @@ const RunTripPage = () => {
   const nextLocations = tripRoute.slice(currentStepIndex + 1);
 
     return (
-        // WRAPPER UTAMA SESUAI PERMINTAAN
         <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 pt-28 px-4 font-sans">
-        <div className="w-full max-w-7xl flex flex-col gap-6 relative">
-            
-            {/* === SECTION 1: MAP & INFO CARD === */}
-            {/* Saya bungkus dalam satu div relative agar Info Card bisa menumpuk Map */}
-            <div className="relative">
-                {/* BUTTON BACK (Absolute terhadap container map ini) */}
-                <div className="absolute top-4 left-4 z-400">
-                    <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-md text-slate-800 hover:bg-gray-50">
-                        <FaChevronLeft />
-                    </button>
-                </div>
+            <div className="w-full max-w-7xl flex flex-col gap-6 relative">
+                
+                {/* === SECTION 1: MAP & INFO CARD === */}
+                <div className="relative">
+                    <div className="absolute top-4 left-4 z-400">
+                        <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-md text-slate-800 hover:bg-gray-50">
+                            <FaChevronLeft />
+                        </button>
+                    </div>
 
-                {/* MAP CONTAINER */}
-                {/* Tambahkan rounded-2xl dan overflow-hidden karena sekarang dia boxed layout */}
-                <div className="h-[50vh] w-full rounded-xl shadow-md overflow-hidden z-0 border border-slate-200">
-                    <MapContainer 
-                        center={[userLocation.lat, userLocation.lng]} 
-                        zoom={13} 
-                        className="h-full w-full"
-                        zoomControl={false}
-                    >
-                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                        
-                        <Marker position={[userLocation.lat, userLocation.lng]} icon={UserIcon} />
-                        
-                        {currentDestination && (
-                            <Marker position={[currentDestination.lat, currentDestination.lng]}>
-                                <Popup>{currentDestination.title}</Popup>
-                            </Marker>
-                        )}
+                    {/* MAP CONTAINER */}
+                    <div className="h-[50vh] w-full rounded-xl shadow-md overflow-hidden z-0 border border-slate-200">
+                        <MapContainer 
+                            center={[userLocation.lat, userLocation.lng]} 
+                            zoom={13} 
+                            className="h-full w-full"
+                            zoomControl={false}
+                        >
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            
+                            <Marker position={[userLocation.lat, userLocation.lng]} icon={UserIcon} />
+                            
+                            {currentDestination && (
+                                <Marker position={[currentDestination.lat, currentDestination.lng]}>
+                                    <Popup>{currentDestination.title}</Popup>
+                                </Marker>
+                            )}
 
-                        {currentDestination && (
-                            <RoutingMachine 
-                                userLocation={userLocation} 
-                                destination={currentDestination}
-                                onRouteFound={setRouteSummary}
-                            />
-                        )}
-                    </MapContainer>
-                </div>
+                            {currentDestination && (
+                                <RoutingMachine 
+                                    userLocation={userLocation} 
+                                    destination={currentDestination}
+                                    onRouteFound={setRouteSummary}
+                                />
+                            )}
+                        </MapContainer>
+                    </div>
 
-                {/* INFO CARD (OVERLAY) */}
-                <div className="absolute bottom-1 left-0 w-full px-4 md:px-8 z-400">
-                    <div className="bg-white rounded-xl shadow-lg p-5 border border-slate-100">
-                        <div className="flex flex-col gap-1">
-                            <p className="text-gray-500 text-sm">
-                                Current Location - <span className="font-bold text-slate-800">My Position</span>
-                            </p>
-                            <p className="text-gray-500 text-sm">
-                                Going to, {currentDestination?.address?.split(',')[0]} - <span className="font-bold text-slate-800">{currentDestination?.title}</span>
-                            </p>
-                            <p className="text-slate-400 text-sm mt-1">
-                                est - {routeSummary.distance} left ({routeSummary.time})
-                            </p>
+                    {/* INFO CARD (OVERLAY) */}
+                    <div className="absolute bottom-1 left-0 w-full px-4 md:px-8 z-400">
+                        <div className="bg-white rounded-xl shadow-lg p-5 border border-slate-100">
+                            <div className="flex flex-col gap-1">
+                                <p className="text-gray-500 text-sm">
+                                    Current Location - <span className="font-bold text-slate-800">My Position</span>
+                                </p>
+                                <p className="text-gray-500 text-sm">
+                                    Going to, {currentDestination?.address?.split(',')[0]} - <span className="font-bold text-slate-800">{currentDestination?.title}</span>
+                                </p>
+                                <p className="text-slate-400 text-sm mt-1">
+                                    est - {routeSummary.distance} left ({routeSummary.time})
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Spacer agar konten bawah tidak tertutup Card yg offset -40px */}
-            <div className="h-6"></div>
+                {/* Spacer agar konten bawah tidak tertutup Card yg offset -40px */}
+                <div className="h-6"></div>
 
-            {/* === SECTION 2: ACTION BUTTONS === */}
-            <div className="flex justify-center gap-4">
-                <button 
-                    onClick={handleArrived}
-                    className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-slate-700 transition"
-                >
-                    Arrived!
-                </button>
-                <button 
-                    onClick={() => setIsPaused(!isPaused)}
-                    className="flex-1 bg-white text-slate-800 border border-slate-200 py-3 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition"
-                >
-                    {isPaused ? "Resume" : "Pause"}
-                </button>
-            </div>
-
-            {/* === SECTION 3: NEXT LOCATIONS LIST === */}
-            <div>
-                <h3 className="text-slate-700 font-bold mb-3">Next Location</h3>
-                <div className="flex flex-col gap-3">
-                    {nextLocations.length > 0 ? (
-                        nextLocations.map((loc) => (
-                            <div key={loc.id} className="bg-white rounded-lg p-3 shadow-sm border border-slate-200 flex items-center gap-3">
-                                <div className="w-16 h-16 rounded-md overflow-hidden shrink-0 bg-gray-200">
-                                    <img src={loc.image} alt={loc.title} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-slate-800 text-sm">{loc.title}</h4>
-                                    <p className="text-gray-500 text-xs">{loc.category}</p>
-                                    <div className="flex items-center gap-1 text-gray-400 text-xs mt-1">
-                                        <FaMapMarkerAlt size={10} />
-                                        <span className="truncate w-full">{loc.address}</span>
-                                    </div>
-                                </div>
-                                <div className="text-gray-400 hover:text-slate-800 cursor-pointer p-2">
-                                    <FaRegBookmark />
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="p-8 text-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300">
-                            All destinations completed!
-                        </div>
-                    )}
+                {/* === SECTION 2: ACTION BUTTONS === */}
+                <div className="flex justify-center gap-4">
+                    <button 
+                        onClick={handleArrived}
+                        className="flex-1 bg-slate-800 text-white py-3 rounded-lg font-bold shadow-md hover:bg-slate-700 transition"
+                    >
+                        Arrived!
+                    </button>
+                    <button 
+                        onClick={() => setIsPaused(!isPaused)}
+                        className="flex-1 bg-white text-slate-800 border border-slate-200 py-3 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition"
+                    >
+                        {isPaused ? "Resume" : "Pause"}
+                    </button>
                 </div>
-            </div>
 
-        </div>
+                {/* === SECTION 3: NEXT LOCATIONS LIST === */}
+                <div>
+                    <h3 className="text-slate-700 font-bold mb-3">Next Location</h3>
+                    <div className="flex flex-col gap-3">
+                        {nextLocations.length > 0 ? (
+                            nextLocations.map((loc, index) => (
+                                <LocationRouteCard
+                                    key={loc.id} // Use loc.id for the key
+                                    point={{
+                                        name: loc.title,
+                                        address: loc.address,
+                                        lat: loc.lat,
+                                        lng: loc.lng,
+                                        description: loc.category, // Using category as description
+                                        image: loc.image,
+                                        id: loc.id // Pass the id as well, to be used for bookmarking
+                                    }}
+                                    index={index}
+                                    onBookmark={handleBookmark} // Pass the new bookmark handler
+                                />
+                            ))
+                        ) : (
+                            <div className="p-8 text-center text-gray-400 bg-white rounded-lg border border-dashed border-gray-300">
+                                All destinations completed!
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+            </div>
         </div>
     );
 };
