@@ -1,15 +1,18 @@
 import { createContext, useState, useContext, useEffect } from 'react';
 import apiService from '../services/apiService';
+import { useAuth } from './AuthContext';
 
 const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
+    const { user } = useAuth();
     const [plans, setPlans] = useState([]);
     const [loadingPlans, setLoadingPlans] = useState(false);
     
     const [favoriteTrips, setFavoriteTrips] = useState([]);
+    const [searchQuery, setSearchQuery] = useState("");
 
-    // 1. GET FAVORITES
+    // GET FAVORITES
     const fetchFavorites = async () => {
         try {
             const response = await apiService.getFavorite();
@@ -23,10 +26,12 @@ export const DataProvider = ({ children }) => {
 
     // Load favorites saat aplikasi pertama kali dibuka
     useEffect(() => {
-        fetchFavorites();
-    }, []);
+        if (user) {
+            fetchFavorites();
+        }
+    }, [user]);
 
-    // 2. ADD FAVORITE (POST)
+    // ADD FAVORITE (POST)
     const addFavorite = async (planId) => {
         try {
             const response = await apiService.postFavorite(planId);
@@ -37,7 +42,7 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    // 3. REMOVE FAVORITE (DELETE)
+    // REMOVE FAVORITE (DELETE)
     const removeFavorite = async (favoriteId) => {
         try {
             await apiService.deleteFavorite(favoriteId);
@@ -98,7 +103,9 @@ export const DataProvider = ({ children }) => {
         favoriteTrips,
         addFavorite,
         removeFavorite,
-        fetchFavorites
+        fetchFavorites,
+        searchQuery, 
+        setSearchQuery
     };
 
     return (

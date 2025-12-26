@@ -1,13 +1,15 @@
 import { HashLink as Link } from 'react-router-hash-link'; 
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import logoJourneys from '../assets/images/logoJourneys.png';
 import iconSearch from '../assets/icons/iconSearch.png';
 
 const Navbar = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { isAuthenticated, logout } = useAuth();
+    const { isAuthenticated } = useAuth();
+    const { setSearchQuery, searchQuery } = useData();
 
     const getLinkClass = (path, hash = '') => {
         const baseStyle = "hover:text-slate-700 hover:font-bold transition-all duration-200 cursor-pointer";
@@ -16,6 +18,16 @@ const Navbar = () => {
         return isActive 
             ? `text-black font-bold ${baseStyle}` 
             : `text-gray-500 font-medium ${baseStyle}`;
+    };
+
+    const handleSearchInput = (e) => {
+        const text = e.target.value;
+        setSearchQuery(text); // Simpan ke context
+
+        // Jika user mengetik dan belum ada di halaman explore, paksa pindah ke explore
+        if (text.length > 0 && location.pathname !== '/explore') {
+            navigate('/explore');
+        }
     };
 
     return (
@@ -34,6 +46,8 @@ const Navbar = () => {
                             type="text" 
                             placeholder="Search destination..." 
                             className='bg-transparent outline-none w-full text-sm text-gray-700 placeholder-gray-400'
+                            value={searchQuery}
+                            onChange={handleSearchInput}
                         />
                         <button className='ml-2 p-1 hover:bg-gray-200 rounded-full transition'>
                             <img src={iconSearch} alt="Search" className='h-4 w-4 opacity-60'/>
