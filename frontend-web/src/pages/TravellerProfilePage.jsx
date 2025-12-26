@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaCertificate } from "react-icons/fa";
 import TripCard from '../components/TripCard';
 import apiService from '../services/apiService';
+import { useAuth } from '../context/AuthContext';
 
 const TravellerProfilePage = () => {
   const { id: idParam } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth(); 
 
   // State
   const [profile, setProfile] = useState(null);
@@ -17,9 +19,9 @@ const TravellerProfilePage = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
 
-  // 1. FETCH PROFILE
+  // 1. FETCH PROFILE & FOLLOW STATUS
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       const id = parseInt(idParam, 10);
       if (isNaN(id)) {
         setLoading(false);
@@ -29,20 +31,28 @@ const TravellerProfilePage = () => {
 
       setLoading(true);
       try {
-        const response = await apiService.getUserProfileById(id);
-        const userData = response.data?.data || response.data;
+        // Fetch user profile
+        const profileResponse = await apiService.getUserProfileById(id);
+        const userData = profileResponse.data?.data || profileResponse.data;
 
         if (userData && userData.user_id) {
           setProfile(userData);
-          setFollowerCount(userData.followers || 0);
-          setIsFollowing(false); 
-        } else {
-          if (response.user_id) {
-             setProfile(response);
-             setFollowerCount(response.followers || 0);
+
+          // Fetch follower data
+          const followersResponse = await apiService.getFollower(id);
+          const followers = followersResponse.data?.data || [];
+          
+          setFollowerCount(followers.length);
+
+          // Check if the current user is in the followers list
+          if (currentUser && followers.some(follower => follower.user_id === currentUser.user_id)) {
+            setIsFollowing(true);
           } else {
-             setError('User not found.');
+            setIsFollowing(false);
           }
+
+        } else {
+          setError('User not found.');
         }
 
       } catch (err) {
@@ -53,8 +63,8 @@ const TravellerProfilePage = () => {
       }
     };
 
-    fetchProfile();
-  }, [idParam]);
+    fetchProfileData();
+  }, [idParam, currentUser]);
 
   const getRankLevel = (rankString) => {
     if (!rankString) return '?';
@@ -65,11 +75,18 @@ const TravellerProfilePage = () => {
   // 3. ACTION HANDLERS
   const handleFollow = async () => {
     const id = parseInt(idParam, 10);
-    if (!profile || isNaN(id)) return;
+    if (!profile || isNaN(id) || !currentUser) return;
+    
+    // Prevent following self
+    if (profile.user_id === currentUser.user_id) {
+        alert("You cannot follow yourself.");
+        return;
+    }
 
     const previousState = isFollowing;
     const previousCount = followerCount;
 
+    // Optimistic UI update
     setIsFollowing(!previousState);
     setFollowerCount(previousState ? previousCount - 1 : previousCount + 1);
 
@@ -81,6 +98,7 @@ const TravellerProfilePage = () => {
       }
     } catch (error) {
       console.error("Failed to toggle follow:", error);
+      // Rollback on error
       setIsFollowing(previousState);
       setFollowerCount(previousCount);
       alert("Failed to update follow status.");
@@ -154,16 +172,18 @@ const TravellerProfilePage = () => {
                 </div>
 
                 <div className="flex gap-3 justify-center md:justify-end border-t pt-6 md:border-none md:pt-0 px-20">
-                    <button
-                        onClick={handleFollow}
-                        className={`px-8 py-2 rounded-md font-medium transition ${
-                            isFollowing
-                            ? 'bg-gray-200 text-gray-800 border border-gray-300'
-                            : 'bg-[#1e293b] text-white hover:bg-slate-700'
-                        }`}
-                    >
-                        {isFollowing ? 'Following' : 'Follow'}
-                    </button>
+                    {currentUser && currentUser.user_id !== profile.user_id && (
+                         <button
+                            onClick={handleFollow}
+                            className={`px-8 py-2 rounded-md font-medium transition ${
+                                isFollowing
+                                ? 'bg-gray-200 text-gray-800 border border-gray-300'
+                                : 'bg-[#1e293b] text-white hover:bg-slate-700'
+                            }`}
+                        >
+                            {isFollowing ? 'Unfollow' : 'Follow'}
+                        </button>
+                    )}
                     <button className="bg-red-600 text-white px-8 py-2 rounded-md font-medium hover:bg-red-700 transition">
                         Report
                     </button>
