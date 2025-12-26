@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const ExplorePage = () => {
   const [activeTab, setActiveTab] = useState("Culture");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const itemsPerPage = 7;
 
   const { plans, fetchAllPlan } = useData();
   const { user } = useAuth();
