@@ -195,3 +195,5 @@ const BookmarkedPage = () => {
     </div>
   );
 };
+
+export default BookmarkedPage;
