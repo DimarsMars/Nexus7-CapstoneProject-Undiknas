@@ -636,3 +636,29 @@ func GetCompletedPlans(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
 }
+
+func DeleteCompletedPlan(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	progressIDStr := c.Param("progress_id")
+	progressID, err := strconv.ParseUint(progressIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID progress tidak valid"})
+		return
+	}
+
+	var progress models.PlanProgress
+	if err := config.DB.
+		First(&progress, "progress_id = ? AND user_id = ?", progressID, userID).
+		Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Data tidak ditemukan"})
+		return
+	}
+
+	if err := config.DB.Delete(&progress).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus history"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "History berhasil dihapus"})
+}
