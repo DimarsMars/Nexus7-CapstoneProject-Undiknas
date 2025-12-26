@@ -1,7 +1,7 @@
-import { FaMapMarkerAlt, FaTrash, FaRegBookmark } from "react-icons/fa";
+import { FaMapMarkerAlt, FaTrash, FaRegBookmark, FaBookmark } from "react-icons/fa";
 import { useRef, useState } from 'react';
 
-const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookmark }) => {
+const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookmark, isBookmarked }) => {
   const fileInputRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(point.name);
@@ -97,10 +97,10 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookm
         {onBookmark && (
             <button
                 onClick={() => onBookmark(point.id)}
-                className="p-2 text-gray-400 hover:text-slate-800 cursor-pointer transition self-start"
-                title="Bookmark this location"
+                className="p-2 text-slate-800 hover:text-slate-600 cursor-pointer transition self-start"
+                title={isBookmarked ? "Remove from bookmarks" : "Bookmark this location"}
             >
-                <FaRegBookmark size={20} />
+                {isBookmarked ? <FaBookmark size={20} /> : <FaRegBookmark size={20} />}
             </button>
         )}
       </div>
@@ -148,6 +148,6 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookm
       )}
     </>
   );
-};
+}
 
 export default LocationRouteCard;
