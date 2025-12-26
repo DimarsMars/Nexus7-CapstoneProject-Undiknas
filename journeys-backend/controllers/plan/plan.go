@@ -614,7 +614,7 @@ func GetCompletedPlans(c *gin.Context) {
 	}
 
 	var plans []models.Plan
-	config.DB.Preload("Categories").Where("plan_id IN ?", completedPlanIDs).Find(&plans)
+	config.DB.Preload("Categories").Preload("Routes").Where("plan_id IN ?", completedPlanIDs).Find(&plans)
 
 	result := []map[string]interface{}{}
 	for _, p := range plans {
@@ -629,6 +629,7 @@ func GetCompletedPlans(c *gin.Context) {
 			"description": p.Description,
 			"banner":      banner,
 			"categories":  p.Categories,
+			"routes":      p.Routes,
 			"created_at":  p.CreatedAt,
 		})
 	}
