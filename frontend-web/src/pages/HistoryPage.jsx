@@ -32,6 +32,23 @@ const HistoryPage = ({ activeTrips }) => {
         fetchHistoryData();
     }, []);
 
+    // --- FUNGSI DELETE HISTORY ---
+    const handleDeleteHistory = async (planId) => {
+        const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus riwayat perjalanan ini?");
+        if (!isConfirmed) return;
+
+        try {
+            await apiService.deletePastTripPlan(planId);
+
+            setPastTrips((prev) => prev.filter((trip) => trip.plan_id !== planId));
+            
+            alert("Riwayat perjalanan berhasil dihapus.");
+        } catch (error) {
+            console.error("Gagal menghapus history:", error);
+            alert("Gagal menghapus data. Silakan coba lagi.");
+        }
+    };
+
     const handleRemoveAllFavorites = async () => {
         const deletePromises = favoriteTrips.map(trip => removeFavorite(trip.favorite_id));
         await Promise.all(deletePromises);
@@ -83,7 +100,7 @@ const HistoryPage = ({ activeTrips }) => {
                                     image={`data:image/jpeg;base64,${item.plan.banner}`}
                                     title={item.plan.title}
                                     description={item.plan.description}
-                                    location={item.address || "Location Dummy"}
+                                    location={item.plan.routes[0].address}
                                     actionIcon={<FaHeart className="text-red-600" />}
                                     onAction={() => removeFavorite(item.favorite_id)}
                                 />
@@ -114,10 +131,10 @@ const HistoryPage = ({ activeTrips }) => {
                                     image={trip.banner}
                                     title={trip.title}
                                     description={trip.description}
-                                    location={trip.address || "Location Dummy"}
+                                    location={trip.routes[0].address}
                                     actionIcon={<FaTrash />} 
                                     isDanger={true}
-                                    onAction={() => console.log("Delete history logic", trip.plan_id)}
+                                    onAction={() => handleDeleteHistory(trip.plan_id)}
                                 />
                             ))
                         ) : (
