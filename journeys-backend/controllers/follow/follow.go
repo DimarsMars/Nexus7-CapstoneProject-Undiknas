@@ -118,3 +118,22 @@ func GetSocialCounts(c *gin.Context) {
 		"following_count": profile.Following,
 	})
 }
+
+func IsFollowing(c *gin.Context) {
+    followerID := c.GetUint("user_id")
+    targetIDStr := c.Param("user_id")
+    targetID, err := strconv.ParseUint(targetIDStr, 10, 64)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "ID tidak valid"})
+        return
+    }
+
+    var follow models.Follow
+    err = config.DB.
+        First(&follow, "follower_id = ? AND following_id = ?", followerID, uint(targetID)).Error
+    if err == nil {
+        c.JSON(http.StatusOK, gin.H{"is_following": true})
+    } else {
+        c.JSON(http.StatusOK, gin.H{"is_following": false})
+    }
+}

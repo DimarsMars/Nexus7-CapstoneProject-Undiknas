@@ -14,5 +14,6 @@ func FollowRoutes(r *gin.Engine) {
 		followGroup.POST("/:user_id", follow.FollowUser)
 		followGroup.DELETE("/:user_id", follow.UnfollowUser)
 		followGroup.GET("/:user_id/socials", follow.GetSocialCounts)
+		followGroup.GET("/:user_id/is-following", follow.IsFollowing)
 	}
 }
