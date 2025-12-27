@@ -598,23 +598,36 @@ func GetRouteDetail(c *gin.Context) {
 func GetCompletedPlans(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	var completedPlanIDs []uint
+	type ProgressInfo struct {
+		PlanID     uint
+		ProgressID uint
+	}
+
+	var progressList []ProgressInfo
 	config.DB.Raw(`
-		SELECT DISTINCT plan_id
+		SELECT DISTINCT pp.plan_id, pp.progress_id
 		FROM plan_progresses pp
-		WHERE user_id = ?
-		AND step_order = (
+		WHERE pp.user_id = ?
+		AND pp.step_order = (
 			SELECT MAX(step_order) FROM routes r WHERE r.plan_id = pp.plan_id
 		)
-	`, userID).Scan(&completedPlanIDs)
+	`, userID).Scan(&progressList)
 
-	if len(completedPlanIDs) == 0 {
+	if len(progressList) == 0 {
 		c.JSON(http.StatusOK, gin.H{"data": []interface{}{}})
 		return
 	}
 
+	planIDs := []uint{}
+	progressMap := map[uint]uint{}
+	for _, p := range progressList {
+		planIDs = append(planIDs, p.PlanID)
+		progressMap[p.PlanID] = p.ProgressID
+	}
+
 	var plans []models.Plan
-	config.DB.Preload("Categories").Preload("Routes").Where("plan_id IN ?", completedPlanIDs).Find(&plans)
+	config.DB.Preload("Categories").Preload("Routes").
+		Where("plan_id IN ?", planIDs).Find(&plans)
 
 	result := []map[string]interface{}{}
 	for _, p := range plans {
@@ -625,6 +638,7 @@ func GetCompletedPlans(c *gin.Context) {
 
 		result = append(result, map[string]interface{}{
 			"plan_id":     p.PlanID,
+			"progress_id": progressMap[p.PlanID],
 			"title":       p.Title,
 			"description": p.Description,
 			"banner":      banner,
