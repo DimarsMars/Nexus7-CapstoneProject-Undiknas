@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:journeys/pages/category.dart';
-import 'package:journeys/pages/travellers.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,409 +9,516 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String selectedCategory = 'Culture';
-
-  // gambar untuk Plan's Category
-  static const Map<String, String> planCategoryImages = {
-    "Temple":
-        "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=500&q=80",
-    "Beach":
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=500&q=80",
-    "Mini Resto":
-        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=500&q=80",
-    "Store's":
-        "https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=500&q=80",
-  };
-
-  final List<String> categories = [
-    'Culture',
-    'Eatery',
-    'Health',
-    "Craft's",
-  ];
-
-  // data dummy trips per category
-  final Map<String, List<Map<String, String>>> tripsByCategory = {
-    'Culture': [
-      {'title': 'Culture Trip', 'author': 'Horas B.'},
-      {'title': 'Ancient Temples', 'author': 'Sinta C.'},
-    ],
-    'Eatery': [
-      {'title': 'Food Exploration', 'author': 'Deni S.'},
-      {'title': 'Mini Resto Tour', 'author': 'Aulia F.'},
-    ],
-    'Health': [
-      {'title': 'Trip of Health', 'author': 'Thomas A.'},
-      {'title': 'Yoga Retreat', 'author': 'Lina P.'},
-    ],
-    "Craft's": [
-      {'title': 'Craft Workshop', 'author': 'Maya L.'},
-      {'title': 'Art & Craft', 'author': 'Riko H.'},
-    ],
-  };
+  int selectedCategoryIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final currentTrips = tripsByCategory[selectedCategory]!;
+    // Dummy data
+    final List<Map<String, dynamic>> categories = [
+      {'icon': Icons.museum, 'label': 'Culture'},
+      {'icon': Icons.fastfood, 'label': 'Eatery'},
+      {'icon': Icons.health_and_safety, 'label': 'Health'},
+      {'icon': Icons.terrain, 'label': 'Craft\'s'},
+    ];
+
+    final List<Map<String, dynamic>> places = [
+      {
+        'title': 'Trip of Health',
+        'author': 'Thomas A.',
+        'imageUrl': 'assets/icons/trip_of_health.jpg',
+        'rating': 4.0
+      },
+      {
+        'title': 'Culture Trip',
+        'author': 'Horas B.',
+        'imageUrl': 'assets/icons/culture_trip.jpg',
+        'rating': 5.0
+      },
+      {
+        'title': 'Serenity Oasis',
+        'author': 'Maria S.',
+        'imageUrl': 'assets/icons/serenity-oasis.jpg',
+        'rating': 4.5
+      },
+    ];
+
+    final List<Map<String, dynamic>> planCategories = [
+      {'image': 'assets/icons/tamples.jpg', 'label': 'Temple'},
+      {'image': 'assets/icons/beaches.jpg', 'label': 'Beach'},
+      {'image': 'assets/icons/hidden_cafe.jpg', 'label': 'Mini Resto'},
+      {'image': 'assets/icons/villa.jpg', 'label': 'Store\'s'},
+    ];
+
+    final List<Map<String, dynamic>> travellers = [
+      {'name': 'Jackson', 'image': 'assets/icons/jackson.jpg'},
+      {'name': 'Freddy', 'image': 'assets/icons/bob.jpg'},
+      {'name': 'Bob', 'image': 'assets/icons/bob.jpg'},
+      {'name': 'Clara', 'image': 'assets/icons/maria_alice.jpg'},
+    ];
 
     return Scaffold(
-      resizeToAvoidBottomInset: true,
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          "Home",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-        ),
+        toolbarHeight: 0,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
       ),
-
-      // ========== NAVBAR SUDAH DIHAPUS ==========
-
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        behavior: HitTestBehavior.translucent,
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              // 🔍 SEARCH BAR
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 8),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
-                      blurRadius: 4,
+                      blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: const TextField(
+                child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Find a place...',
-                    prefixIcon: Icon(Icons.search),
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 15,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: Colors.grey[400],
+                      size: 22,
+                    ),
                     border: InputBorder.none,
-                    contentPadding:
-                        EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 20),
 
-              const SizedBox(height: 12),
+            // Category Chips
+            SizedBox(
+              height: 44,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                itemCount: categories.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
+                itemBuilder: (context, index) {
+                  final bool isSelected =
+                      selectedCategoryIndex == index;
 
-              // 🔹 CATEGORY TABS
-              SizedBox(
-                height: 40,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: categories.map((cat) {
-                    final isActive = selectedCategory == cat;
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedCategory = cat),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.blue : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.grey[300]!),
-                        ),
-                        child: Text(
-                          cat,
-                          style: TextStyle(
-                            color: isActive ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.w500,
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedCategoryIndex = index;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.black : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            categories[index]['icon'],
+                            color:
+                                isSelected ? Colors.white : Colors.black,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            categories[index]['label'],
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white
+                                  : Colors.black,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            // ===== SISANYA TIDAK DIUBAH =====
+            // (Place cards, Forge Your Route, Plan Category, Travellers)
+
+            const SizedBox(height: 24),
+
+            // Place Cards
+            SizedBox(
+              height: 240,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.only(left: 16),
+                itemCount: places.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 180,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Image.asset(
+                            places[index]['imageUrl'],
+                            width: 180,
+                            height: 240,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // 🗺 TRIP CARDS
-              SizedBox(
-                height: 200,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: currentTrips.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
-                  itemBuilder: (_, index) {
-                    final trip = currentTrips[index];
-                    return _tripCard(trip['title']!, trip['author']!);
-                  },
-                ),
-              ),
-
-              const SizedBox(height: 8),
-              const Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  "Explore More",
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 🧭 FORGE YOUR ROUTE
-              const Text(
-                "Forge Your Route",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              // ⭐ BANNER WITH IMAGE
-              Container(
-                height: 140,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
+                        Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.7),
+                              ],
+                              stops: const [0.5, 1.0],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                places[index]['title'],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                places[index]['author'],
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: List.generate(5, (starIndex) {
+                                  return Icon(
+                                    Icons.star,
+                                    size: 14,
+                                    color: starIndex < places[index]['rating']
+                                        ? Colors.amber
+                                        : Colors.grey[400],
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.55),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    "Create your own plan",
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 📍 PLAN'S CATEGORY
-              const Text(
-                "Plan's Category",
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                height: 90,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _categoryCardWithImage(
-                        "Temple", planCategoryImages["Temple"]!),
-                    _categoryCardWithImage(
-                        "Beach", planCategoryImages["Beach"]!),
-                    _categoryCardWithImage(
-                        "Mini Resto", planCategoryImages["Mini Resto"]!),
-                    _categoryCardWithImage(
-                        "Store's", planCategoryImages["Store's"]!),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CategoryPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "See More",
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // 👥 FOLLOW TRAVELLERS
-              const Text(
-                "Follow These Travellers",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-
-              SizedBox(
-                height: 200,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _TravellerCardHome(
-                      name: "Jackson",
-                      role: "Traveller",
-                      imageUrl:
-                          "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=500&q=80",
-                    ),
-                    _TravellerCardHome(
-                      name: "Bob",
-                      role: "Map Maker",
-                      imageUrl:
-                          "https://images.unsplash.com/photo-1552058544-f2b08422138a?auto=format&fit=crop&w=500&q=80",
-                    ),
-                    _TravellerCardHome(
-                      name: "Alice",
-                      role: "Explorer",
-                      imageUrl:
-                          "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80",
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => TravellersPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "See More",
-                    style: TextStyle(color: Colors.grey, fontSize: 13),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ================= WIDGETS =================
-  static Widget _tripCard(String title, String author) {
-    return SizedBox(
-      width: 160,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 120,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(author, style: const TextStyle(fontSize: 12)),
-          const Row(
-            children: [
-              Icon(Icons.star, size: 14, color: Colors.amber),
-              Icon(Icons.star, size: 14, color: Colors.amber),
-              Icon(Icons.star, size: 14, color: Colors.amber),
-              Icon(Icons.star, size: 14, color: Colors.amber),
-              Icon(Icons.star, size: 14, color: Colors.amber),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  static Widget _categoryCardWithImage(String name, String imageUrl) {
-    return Container(
-      width: 86,
-      margin: const EdgeInsets.only(right: 12),
-      child: Column(
-        children: [
-          Container(
-            height: 56,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              image: DecorationImage(
-                image: NetworkImage(imageUrl),
-                fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(name, style: const TextStyle(fontSize: 12)),
-        ],
+            const SizedBox(height: 20),
+
+            // Explore More link
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => context.go('/explore'),
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'Explore More',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Forge Your Route Title
+const Padding(
+  padding: EdgeInsets.symmetric(horizontal: 16.0),
+  child: Center(
+    child: Text(
+      'Forge Your Route',
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
       ),
-    );
-  }
-}
+    ),
+  ),
+),
+const SizedBox(height: 12),
 
-class _TravellerCardHome extends StatelessWidget {
-  final String name;
-  final String role;
-  final String imageUrl;
-
-  const _TravellerCardHome({
-    required this.name,
-    required this.role,
-    required this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 150,
-      margin: const EdgeInsets.only(right: 12),
+// Forge Your Route Banner
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  child: GestureDetector(
+    onTap: () {
+      context.go('/explore'); // ganti sesuai route kamu
+    },
+    child: Container(
+      height: 90,
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircleAvatar(radius: 35, backgroundImage: NetworkImage(imageUrl)),
-          const SizedBox(height: 8),
-          Text(name,
-              style:
-                  const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(role, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 6),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              minimumSize: const Size(80, 28),
-              padding: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              'assets/icons/forge_your_route.jpg',
+              fit: BoxFit.cover,
+            ),
+            Container(
+              color: Colors.black.withOpacity(0.25),
+            ),
+            const Center(
+              child: Text(
+                'Create your own plan',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-            child: const Text(
-              "Follow",
-              style: TextStyle(fontSize: 12, color: Colors.white),
+          ],
+        ),
+      ),
+    ),
+  ),
+),
+
+
+
+            // Plan's Category Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Plan's Category",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go('/categories'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'See More',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+
+            // Plan's Category Grid
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(planCategories.length, (index) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: index < planCategories.length - 1 ? 12 : 0,
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 75,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.asset(
+                                planCategories[index]['image'],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            planCategories[index]['label'],
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Follow These Traveller Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Follow These Traveller",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.go('/traveller'),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'See More',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Travellers List
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                padding: const EdgeInsets.only(left: 16),
+                scrollDirection: Axis.horizontal,
+                itemCount: travellers.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 90,
+                    margin: const EdgeInsets.only(right: 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 35,
+                            backgroundImage: AssetImage(
+                              travellers[index]['image'],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          travellers[index]['name'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SizedBox(height: 32),
+          ],
+        ),
       ),
     );
   }
