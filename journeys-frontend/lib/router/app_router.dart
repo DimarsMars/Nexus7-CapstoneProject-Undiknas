@@ -19,7 +19,7 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/login',
+  initialLocation: '/intro',
   routes: <RouteBase>[
     // Auth routes (outside the shell)
     GoRoute(

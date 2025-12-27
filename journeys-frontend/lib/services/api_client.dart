@@ -18,4 +18,24 @@ class ApiClient {
       throw Exception(error['error'] ?? 'Unknown error');
     }
   }
+Future<Map<String, dynamic>> get(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await _client.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        ...?headers,
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['error'] ?? 'Unknown error');
+    }
+  }
 }
+

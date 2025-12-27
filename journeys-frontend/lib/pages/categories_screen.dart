@@ -1,5 +1,9 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journeys/services/api_service.dart';
+import '../models/category_model.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -11,24 +15,30 @@ class CategoriesScreen extends StatefulWidget {
 class _CategoriesScreenState extends State<CategoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String searchText = '';
-  String selectedCategory = 'Culture';
+  List<CategoryModel> categories = [];
+  bool _isLoading = true;
+  String? _error;
 
-  final List<String> smallCategories = [
-    'Culture',
-    'Eatery',
-    'Health',
-    "Craft's",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
 
-  // Data kategori dengan gambar assets
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'Waterfall', 'image': 'assets/icons/waterfall.jpg'},
-    {'name': 'Beaches', 'image': 'assets/icons/beaches.jpg'},
-    {'name': 'Temple\'s & Shrine\'s', 'image': 'assets/icons/tamples.jpg'},
-    {'name': 'Mountain & Hills', 'image': 'assets/icons/mountain_hills.jpg'},
-    {'name': 'Villa`s', 'image': 'assets/icons/villa.jpg'},
-    {'name': 'Hidden cafe', 'image': 'assets/icons/hidden_cafe.jpg'},
-  ];
+  Future<void> _fetchCategories() async {
+    try {
+      final result = await ApiService().getCategories();
+      setState(() {
+        categories = result;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -38,10 +48,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Filter kategori berdasarkan input pencarian
     final filteredCategories = categories
         .where((cat) =>
-            cat['name'].toString().toLowerCase().contains(searchText.toLowerCase()))
+            cat.name.toLowerCase().contains(searchText.toLowerCase()))
         .toList();
 
     return Scaffold(
@@ -67,7 +76,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
                     prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
@@ -99,7 +109,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   const SizedBox(width: 12),
                   const Text(
                     'Categories',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -107,55 +118,28 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
             const SizedBox(height: 16),
 
-            // --- SMALL CATEGORY CHIPS ---
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: smallCategories.map((cat) {
-                  final isSelected = selectedCategory == cat;
-                  return GestureDetector(
-                    onTap: () => setState(() => selectedCategory = cat),
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.blue : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? Colors.blue : Colors.grey.shade300,
-                        ),
-                      ),
-                      child: Text(
-                        cat,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- GRID VIEW ---
+            // --- CONTENT ---
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: filteredCategories.length,
-                itemBuilder: (context, index) {
-                  return buildCategoryCard(context, filteredCategories[index]);
-                },
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(child: Text(_error!))
+                      : GridView.builder(
+                          padding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.85,
+                          ),
+                          itemCount: filteredCategories.length,
+                          itemBuilder: (context, index) {
+                            return buildCategoryCard(
+                                filteredCategories[index]);
+                          },
+                        ),
             ),
           ],
         ),
@@ -164,61 +148,73 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 
-  Widget buildCategoryCard(BuildContext context, Map<String, dynamic> category) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              category['image'],
-              fit: BoxFit.cover,
-              width: double.infinity,
-              height: double.infinity,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: Colors.grey[300],
-                child: const Icon(Icons.image_not_supported),
-              ),
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 12,
-            left: 8,
-            right: 8,
-            child: Text(
-              category['name'],
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget buildCategoryCard(CategoryModel category) {
+  Uint8List? imageBytes;
+
+  if (category.imageBase64.isNotEmpty) {
+    imageBytes = const Base64Decoder()
+        .convert(category.imageBase64.split(',').last);
   }
+
+  return Container(
+    height: 180, // Ukuran tetap
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 3),
+        ),
+      ],
+    ),
+    child: Stack(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: imageBytes != null
+                ? Image.memory(
+                    imageBytes,
+                    fit: BoxFit.cover,
+                  )
+                : Container(color: Colors.grey[300]),
+          ),
+        ),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.7)
+              ],
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 12,
+          left: 8,
+          right: 8,
+          child: Text(
+            category.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _buildBottomNav(BuildContext context) {
     return Container(
@@ -240,8 +236,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             children: [
               _navItem(Icons.home, () => context.go('/home')),
               _navItem(Icons.map_outlined, () => context.go('/explore')),
-              _navItem(Icons.receipt_long_outlined, () => context.go('/history')),
-              _navItem(Icons.person_outline, () => context.go('/profile')),
+              _navItem(Icons.receipt_long_outlined,
+                  () => context.go('/history')),
+              _navItem(Icons.person_outline,
+                  () => context.go('/profile')),
             ],
           ),
         ),
@@ -252,10 +250,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget _navItem(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Icon(icon, color: Colors.grey[600], size: 28),
-      ),
+      child:
+          Padding(padding: const EdgeInsets.all(8.0), child: Icon(icon, size: 28)),
     );
   }
 }
