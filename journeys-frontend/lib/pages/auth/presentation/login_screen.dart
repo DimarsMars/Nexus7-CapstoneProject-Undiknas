@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:journeys/services/api_service.dart';
 import '../../../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,7 +11,36 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _apiService = ApiService();
+
   bool _isPasswordVisible = false;
+  bool _isLoading = false;
+  String? _error;
+
+  Future<void> _handleLogin() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      await _apiService.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+      context.go('/home');
+    } catch (e) {
+      setState(() {
+        _error = e.toString().replaceAll('Exception: ', '');
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,11 +53,8 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Logo
               Image.asset('assets/icons/logo.png', height: 250),
               const SizedBox(height: 16),
-
-              // Login Title
               Text(
                 'Login',
                 textAlign: TextAlign.center,
@@ -38,17 +64,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
               ),
               const SizedBox(height: 40),
-
-              // Email or Username TextFormField
               TextFormField(
+                controller: _emailController,
                 decoration: const InputDecoration(
                   hintText: 'Email or Username',
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Password TextFormField
               TextFormField(
+                controller: _passwordController,
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   hintText: 'Password',
@@ -66,17 +90,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Login Button
+              if (_error != null)
+                Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+              if (_error != null) const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () {
-                  context.go('/home');
-                },
-                child: const Text('Login'),
+                onPressed: _isLoading ? null : _handleLogin,
+                child: _isLoading
+                    ? const CircularProgressIndicator()
+                    : const Text('Login'),
               ),
               const SizedBox(height: 24),
-
-              // "Don't have an account?" Text
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
