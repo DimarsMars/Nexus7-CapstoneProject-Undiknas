@@ -149,6 +149,12 @@ const EditProfilePage = ({ user }) => {
     c => !selectedCategories.some(selected => selected.category_id === c.category_id)
   );
 
+  const getRankLevel = (rankString) => {
+      if (!rankString) return '?';
+      const match = rankString.match(/lvl (\d+)/i);
+      return match ? match[1] : '?';
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-28 flex justify-center items-center">
       <div className="bg-white w-full max-w-7xl p-8 md:p-12 rounded-xl shadow-sm">
@@ -188,7 +194,7 @@ const EditProfilePage = ({ user }) => {
           <div className="flex flex-col gap-6 w-full md:w-1/2">
             <div>
               <label className="text-gray-600 text-lg mb-1 block">Name</label>
-              <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 tracking-wide">
+              <div className="rounded px-4 py-2 font-bold text-xl text-slate-900 tracking-wide capitalize">
                 {displayUser.name}
               </div>
             </div>
@@ -198,7 +204,7 @@ const EditProfilePage = ({ user }) => {
               <div className="flex items-center gap-2 justify-center">
                 <div className="relative flex items-center justify-center text-white">
                   <FaCertificate className="text-slate-900 text-4xl" />
-                  <span className="absolute font-bold text-xs">{user.rankLevel}</span>
+                  <span className="absolute font-bold text-xs">{getRankLevel(displayUser.rank)}</span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">
                   {displayUser.rank}
