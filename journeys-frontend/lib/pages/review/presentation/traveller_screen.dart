@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class TravellerScreen extends StatelessWidget {
+class TravellerScreen extends StatefulWidget {
   const TravellerScreen({super.key});
+
+  @override
+  State<TravellerScreen> createState() => _TravellerScreenState();
+}
+
+class _TravellerScreenState extends State<TravellerScreen> {
+  // Set untuk menyimpan nama traveller yang sudah di-follow
+  final Set<String> _followedTravellers = {};
 
   @override
   Widget build(BuildContext context) {
@@ -115,10 +123,12 @@ class TravellerScreen extends StatelessWidget {
                         itemCount: youMayLike.length,
                         itemBuilder: (context, index) {
                           final traveller = youMayLike[index];
+                          final name = traveller['name']!;
                           return _buildTravellerCard(
-                            name: traveller['name']!,
+                            name: name,
                             title: traveller['title']!,
                             imageUrl: traveller['image']!,
+                            isFollowed: _followedTravellers.contains(name),
                           );
                         },
                       ),
@@ -147,10 +157,12 @@ class TravellerScreen extends StatelessWidget {
                         itemCount: mostActive.length,
                         itemBuilder: (context, index) {
                           final traveller = mostActive[index];
+                          final name = traveller['name']!;
                           return _buildTravellerCard(
-                            name: traveller['name']!,
+                            name: name,
                             title: traveller['title']!,
                             imageUrl: traveller['image']!,
+                            isFollowed: _followedTravellers.contains(name),
                           );
                         },
                       ),
@@ -170,87 +182,101 @@ class TravellerScreen extends StatelessWidget {
     required String name,
     required String title,
     required String imageUrl,
+    required bool isFollowed,
   }) {
-    return Container(
-      width: 160,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+    return GestureDetector(
+      // Navigasi ke halaman detail saat kartu di-klik
+      onTap: () => context.push('/traveller-detail', extra: name),
+      child: Container(
+        width: 160,
+        margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(50),
+                child: Image.asset(
+                  imageUrl,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.cover,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Image.asset(
-                imageUrl,
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            name,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A5F),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 8,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 12),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            child: const Text(
-              'Follow',
+            const SizedBox(height: 4),
+            Text(
+              title,
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-        ],
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                // Logika mengubah status follow
+                setState(() {
+                  if (_followedTravellers.contains(name)) {
+                    _followedTravellers.remove(name);
+                  } else {
+                    _followedTravellers.add(name);
+                  }
+                });
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isFollowed ? Colors.grey[400] : const Color(0xFF1E3A5F),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                isFollowed ? 'Followed' : 'Follow',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

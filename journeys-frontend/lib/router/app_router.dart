@@ -10,6 +10,7 @@ import 'package:journeys/pages/review/presentation/place_detail_screen.dart';
 import 'package:journeys/pages/review/presentation/traveller_screen.dart';
 import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
 import 'package:journeys/pages/main_wrapper.dart';
+import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart';
 
 import '../../pages/auth/presentation/intro_screen.dart';
 import '../../pages/auth/presentation/login_screen.dart';
@@ -65,28 +66,43 @@ final GoRouter appRouter = GoRouter(
             return const TravellerScreen();
           },
         ),
-      ],
-    ),
-
-    // Other top-level routes (details, forms, etc.)
-    GoRoute(
+        // Categories dimasukkan ke dalam ShellRoute agar Nav Bar muncul
+        GoRoute(
+          path: '/categories',
+          builder: (BuildContext context, GoRouterState state) {
+            return const CategoriesScreen();
+          },
+        ),
+        GoRoute(
+          path: '/plan-opened', // Kita gunakan nama yang konsisten
+          builder: (BuildContext context, GoRouterState state) {
+            return const PlanOpenedScreen();
+          },
+        ),
+            GoRoute(
       path: '/plan-detail',
       builder: (BuildContext context, GoRouterState state) {
         return const PlanOpenedScreen();
       },
     ),
-    GoRoute(
-      path: '/categories',
-      builder: (BuildContext context, GoRouterState state) {
-        return const CategoriesScreen();
-      },
-    ),
-    GoRoute(
+        GoRoute(
       path: '/place-detail',
       builder: (BuildContext context, GoRouterState state) {
         return const PlaceDetailScreen();
       },
     ),
+        GoRoute(
+      path: '/traveller-detail',
+      builder: (BuildContext context, GoRouterState state) {
+        // Menangkap data 'name' yang dikirim lewat extra
+        final name = state.extra as String? ?? 'Traveller';
+        return TravellerDetailScreen(name: name);
+      },
+    ),
+      ],
+    ),
+
+    // Other top-level routes (details, forms, etc. - Tanpa Nav Bar)
     GoRoute(
       path: '/give-review',
       builder: (BuildContext context, GoRouterState state) {
