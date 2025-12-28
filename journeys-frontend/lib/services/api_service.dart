@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'api_client.dart';
 import '../models/category_model.dart';
+import '../models/plan_model.dart';
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -70,6 +71,22 @@ Future<List<CategoryModel>> getCategories() async {
   final data = response['data'] as List<dynamic>;
   return data.map((json) => CategoryModel.fromJson(json)).toList();
 }
+
+Future<List<PlanModel>> getAllPlans() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/plans/all',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data.map((json) => PlanModel.fromJson(json)).toList();
+}
+
 
 }
 

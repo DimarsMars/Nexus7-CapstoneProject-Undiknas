@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journeys/services/api_service.dart';
+import 'package:journeys/models/plan_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,35 +16,36 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int selectedCategoryIndex = 0;
 
+  List<PlanModel> plans = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlans();
+  }
+
+  Future<void> _loadPlans() async {
+    try {
+      final result = await ApiService().getAllPlans();
+      setState(() {
+        plans = result;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Dummy data
     final List<Map<String, dynamic>> categories = [
       {'icon': Icons.museum, 'label': 'Culture'},
       {'icon': Icons.fastfood, 'label': 'Eatery'},
       {'icon': Icons.health_and_safety, 'label': 'Health'},
       {'icon': Icons.terrain, 'label': 'Craft\'s'},
-    ];
-
-    final List<Map<String, dynamic>> places = [
-      {
-        'title': 'Trip of Health',
-        'author': 'Thomas A.',
-        'imageUrl': 'assets/icons/trip_of_health.jpg',
-        'rating': 4.0
-      },
-      {
-        'title': 'Culture Trip',
-        'author': 'Horas B.',
-        'imageUrl': 'assets/icons/culture_trip.jpg',
-        'rating': 5.0
-      },
-      {
-        'title': 'Serenity Oasis',
-        'author': 'Maria S.',
-        'imageUrl': 'assets/icons/serenity-oasis.jpg',
-        'rating': 4.5
-      },
     ];
 
     final List<Map<String, dynamic>> planCategories = [
@@ -67,7 +73,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Search Bar
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Container(
@@ -105,7 +110,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Category Chips
             SizedBox(
               height: 44,
               child: ListView.separated(
@@ -114,9 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemCount: categories.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
-                  final bool isSelected =
-                      selectedCategoryIndex == index;
-
+                  final bool isSelected = selectedCategoryIndex == index;
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -144,17 +146,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Icon(
                             categories[index]['icon'],
-                            color:
-                                isSelected ? Colors.white : Colors.black,
+                            color: isSelected ? Colors.white : Colors.black,
                             size: 20,
                           ),
                           const SizedBox(width: 6),
                           Text(
                             categories[index]['label'],
                             style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.black,
+                              color: isSelected ? Colors.white : Colors.black,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
@@ -167,106 +166,113 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // ===== SISANYA TIDAK DIUBAH =====
-            // (Place cards, Forge Your Route, Plan Category, Travellers)
-
             const SizedBox(height: 24),
 
-            // Place Cards
             SizedBox(
               height: 240,
-child: ListView.builder(
-  scrollDirection: Axis.horizontal,
-  padding: const EdgeInsets.only(left: 16),
-  itemCount: places.length,
-  itemBuilder: (context, index) {
-    // 1. Tambahkan GestureDetector di sini
-    return GestureDetector(
-      onTap: () {
-        // Navigasi ke rute yang sudah kita buat di main.dart
-// Gunakan ini dulu jika halaman detail belum siap menerima data
-context.push('/plan-opened');
-      },
-      child: Container(
-        width: 180,
-        margin: const EdgeInsets.only(right: 16),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                places[index]['imageUrl'],
-                width: 180,
-                height: 240,
-                fit: BoxFit.cover,
-              ),
-            ),
-            // ... (sisa kode Container gradient dan Positioned kamu tetap sama)
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.7),
-                  ],
-                  stops: const [0.5, 1.0],
-                ),
-              ),
-            ),
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    places[index]['title'],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    places[index]['author'],
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: List.generate(5, (starIndex) {
-                      return Icon(
-                        Icons.star,
-                        size: 14,
-                        color: starIndex < places[index]['rating']
-                            ? Colors.amber
-                            : Colors.grey[400],
-                      );
-                    }),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  },
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(left: 16),
+                      itemCount: plans.length,
+                      itemBuilder: (context, index) {
+                        final plan = plans[index];
+                        Uint8List? imageBytes;
+                        if (plan.bannerBase64.isNotEmpty) {
+                          imageBytes = base64Decode(plan.bannerBase64);
+                        }
+
+                        return GestureDetector(
+                          onTap: () {
+                            context.push('/plan-opened', extra: plan);
+                          },
+                          child: Container(
+                            width: 180,
+                            margin: const EdgeInsets.only(right: 16),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: imageBytes != null
+                                      ? Image.memory(
+                                          imageBytes,
+                                          width: 180,
+                                          height: 240,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          width: 180,
+                                          height: 240,
+                                          color: Colors.grey[300],
+                                        ),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.7),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+  left: 12,
+  right: 12,
+  bottom: 12,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+Text(
+  plan.title,
+  style: const TextStyle(
+    color: Colors.white,
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  ),
+  maxLines: 2,
+  overflow: TextOverflow.ellipsis,
 ),
+const SizedBox(height: 4),
+Text(
+  plan.authorName.isNotEmpty ? plan.authorName : "Anonymous",
+  style: TextStyle(
+    color: Colors.white.withOpacity(0.85),
+    fontSize: 11,
+    fontStyle: FontStyle.italic,
+  ),
+),
+const SizedBox(height: 6),
+Row(
+  children: List.generate(5, (starIndex) {
+    return Icon(
+      Icons.star,
+      size: 14,
+      color: starIndex < plan.rating.round()
+          ? Colors.amber
+          : Colors.grey[400],
+    );
+  }),
+),
+    ],
+  ),
+),
+
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
             ),
+
             const SizedBox(height: 20),
 
-            // Explore More link
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Align(
@@ -291,72 +297,67 @@ context.push('/plan-opened');
             ),
             const SizedBox(height: 16),
 
-            // Forge Your Route Title
-const Padding(
-  padding: EdgeInsets.symmetric(horizontal: 16.0),
-  child: Center(
-    child: Text(
-      'Forge Your Route',
-      style: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-    ),
-  ),
-),
-const SizedBox(height: 12),
-
-// Forge Your Route Banner
-Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  child: GestureDetector(
-    onTap: () {
-      context.go('/explore'); // ganti sesuai route kamu
-    },
-    child: Container(
-      height: 90,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.asset(
-              'assets/icons/forge_your_route.jpg',
-              fit: BoxFit.cover,
-            ),
-            Container(
-              color: Colors.black.withOpacity(0.25),
-            ),
-            const Center(
-              child: Text(
-                'Create your own plan',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Center(
+                child: Text(
+                  'Forge Your Route',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    ),
-  ),
-),
+            const SizedBox(height: 12),
 
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: GestureDetector(
+                onTap: () {
+                  context.go('/explore');
+                },
+                child: Container(
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Image.asset(
+                          'assets/icons/forge_your_route.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                        Container(
+                          color: Colors.black.withOpacity(0.25),
+                        ),
+                        const Center(
+                          child: Text(
+                            'Create your own plan',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-
-            // Plan's Category Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -390,7 +391,6 @@ Padding(
             ),
             const SizedBox(height: 16),
 
-            // Plan's Category Grid
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -444,7 +444,6 @@ Padding(
             ),
             const SizedBox(height: 24),
 
-            // Follow These Traveller Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -477,8 +476,7 @@ Padding(
               ),
             ),
             const SizedBox(height: 16),
-            
-            // Travellers List
+
             SizedBox(
               height: 120,
               child: ListView.builder(

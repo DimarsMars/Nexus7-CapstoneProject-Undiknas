@@ -100,7 +100,7 @@ class AppTheme {
     // Define custom navigation bar theme for Material 3
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: AppColors.background,
-      indicatorColor: AppColors.accent.withOpacity(0.2), // Light indicator
+      indicatorColor: AppColors.accent.withOpacity(0.1), // Light indicator
       labelTextStyle: MaterialStateProperty.resolveWith((states) {
         if (states.contains(MaterialState.selected)) {
           return GoogleFonts.poppins(

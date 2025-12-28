@@ -37,23 +37,23 @@ class MainWrapper extends StatelessWidget {
         },
         destinations: const <NavigationDestination>[
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_rounded),
+            selectedIcon: Icon(Icons.home_filled),
             label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map),
+            selectedIcon: Icon(Icons.map_rounded),
             label: 'Explore',
           ),
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
+            selectedIcon: Icon(Icons.receipt_long_rounded),
             label: 'History',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: 'Profile',
           ),
         ],
