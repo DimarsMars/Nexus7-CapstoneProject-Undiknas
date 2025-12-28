@@ -10,6 +10,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { useData } from '../context/DataContext'; // Added useData import
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -77,6 +78,7 @@ const PreviewMarker = ({ position }) => {
 const MapsPage = () => {
   const [waypoints, setWaypoints] = useState([]); 
   const navigate = useNavigate();
+  const { fetchAllPlan } = useData(); // Added useData hook
   
   // State Search & Preview
   const [searchQuery, setSearchQuery] = useState("");
@@ -289,6 +291,8 @@ const MapsPage = () => {
       console.log("Plan created successfully:", response);
       alert("Your plan has been created successfully!");
       
+      await fetchAllPlan(true); // Force a refresh of the plans after successful creation
+
       // Reset state
       setTitle("");
       setPlanDescription("");

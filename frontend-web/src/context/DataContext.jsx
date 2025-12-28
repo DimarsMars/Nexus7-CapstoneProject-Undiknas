@@ -53,8 +53,8 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const fetchAllPlan = async () => {
-        if (plans.length > 0) {
+    const fetchAllPlan = async (forceRefresh = false) => {
+        if (!forceRefresh && plans.length > 0) {
             return; 
         }
         setLoadingPlans(true);
