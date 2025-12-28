@@ -31,7 +31,7 @@ const TravellerSection = () => {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-2 justify-items-center">
             
-            {travellers?.map((person) => (
+            {travellers.slice(0, 5).map((person) => (
                 <div key={person.user_id} className="flex flex-col items-center group cursor-pointer">
                     <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden shadow-lg border-4 border-transparent group-hover:border-white transition-all duration-300 transform group-hover:scale-105">
                         <img 
