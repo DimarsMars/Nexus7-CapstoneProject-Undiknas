@@ -65,7 +65,7 @@ const UserReviewCard = ({ userId, image, name, role, review, rating }) => {
           />
         </div>
 
-        <h3 className="text-gray-900 font-bold text-lg leading-tight">{name}</h3>
+        <h3 className="text-gray-900 font-bold text-lg leading-tight capitalize">{name}</h3>
         <p className="text-gray-900 font-normal text-sm mb-3">{role}</p>
 
         {currentUser && currentUser.user_id !== userId && (

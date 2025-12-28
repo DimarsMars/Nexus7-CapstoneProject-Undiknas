@@ -176,7 +176,7 @@ const MyProfilePage = () => {
                     <div className="flex flex-col justify-center text-center md:text-left gap-4">
                         <div>
                             <h3 className="text-gray-400 text-sm font-normal mb-0.5">Name</h3>
-                            <h1 className="text-xl md:text-2xl font-bold text-[#1e293b] tracking-wide">{user.username}</h1>
+                            <h1 className="text-xl md:text-2xl font-bold text-[#1e293b] tracking-wide capitalize">{user.username}</h1>
                         </div>
                         <div className="flex flex-col justify-center">
                             <h3 className="text-gray-400 text-sm font-normal mb-1">Rank’s</h3>
@@ -196,6 +196,9 @@ const MyProfilePage = () => {
                         <div className="flex gap-3 items-center">
                             <div className="relative flex items-center justify-center text-white shrink-0">
                                 <FaCertificate className="text-[#0f172a] text-5xl drop-shadow-md" />
+                                <span className="absolute font-bold text-md">
+                                    {getRankLevel(profileRank)}
+                                </span>
                             </div>
                             <div className="w-full">
                                 <h4 className="font-bold text-[#1e293b] text-[18px]">Your Score’s</h4>

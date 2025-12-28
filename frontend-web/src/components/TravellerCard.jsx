@@ -64,8 +64,8 @@ const TravellerCard = ({ userId, image, name, role, categories }) => {
                 />
             </div>
 
-      <h3 className="text-gray-900 font-bold text-lg">{name}</h3>
-      <p className="text-gray-500 text-sm font-normal mb-1">{role}</p>
+      <h3 className="text-gray-900 font-bold text-lg capitalize">{name}</h3>
+      <p className="text-gray-500 text-sm font-normal mb-1 capitalize">{role}</p>
       <p className="text-gray-600 text-sm font-semibold mb-4">{categories}</p>
 
       {currentUser && currentUser.user_id !== userId && (

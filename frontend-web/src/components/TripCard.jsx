@@ -26,7 +26,7 @@ const TripCard = ({ id, image, title, author, rating, className, isClickable = t
       <div className="absolute inset-0 group-hover:bg-black/20 transition-colors duration-300"></div>
 
       <div className="absolute bottom-0 left-0 p-5 w-full text-left">
-        <h3 className="text-white text-2xl font-bold mb-1">{title}</h3>
+        <h3 className="text-white text-2xl font-bold mb-1 capitalize">{title}</h3>
         <p className="text-gray-300 text-xs px-2 mb-3">{author}</p>
         
         <div className="flex items-center space-x-1">

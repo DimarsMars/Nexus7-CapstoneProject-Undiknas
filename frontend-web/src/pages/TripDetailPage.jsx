@@ -139,7 +139,7 @@ const handleSubmitReview = async () => {
 
             <div className="mb-4">
                 <div className="flex justify-between items-start">
-                    <h1 className="text-3xl font-bold text-[#1e293b]">{plan.title}</h1>
+                    <h1 className="text-3xl font-bold text-[#1e293b] capitalize">{plan.title}</h1>
                     <div onClick={() => setIsReviewModalOpen(true)} className="hidden md:block bg-[#5e6c7c] text-white px-4 py-1 rounded text-sm font-medium cursor-pointer hover:bg-[#4a5568]">Rate trip</div>
                 </div>
                 

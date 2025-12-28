@@ -40,7 +40,7 @@ const TravellerSection = () => {
                             className="w-full h-full object-cover"
                         />
                     </div>
-                    <h3 className="mt-4 text-md font-medium text-gray-900 group-hover:text-slate-800 transition-colors">
+                    <h3 className="mt-4 text-md font-medium text-gray-900 group-hover:text-slate-800 transition-colors capitalize">
                         {person.username}
                     </h3>
                 </div>

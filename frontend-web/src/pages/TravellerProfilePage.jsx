@@ -125,7 +125,7 @@ const TravellerProfilePage = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 px-20">
                     <div>
                         <p className="text-gray-500 text-sm">Name</p>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-4">{profile.username}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900 mb-4 capitalize">{profile.username}</h1>
                         
                         <div className="flex items-center justify-center md:justify-start gap-2">
                             <div className="relative flex items-center justify-center text-white">
