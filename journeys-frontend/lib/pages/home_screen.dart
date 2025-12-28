@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/traveller_model.dart';
+import 'package:journeys/theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -502,10 +503,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         final traveller = travellers[index];
                         Uint8List? imageBytes;
                        if (traveller.photoBase64.isNotEmpty) {
-  final base64String = traveller.photoBase64.split(',').last;
-  imageBytes = base64Decode(base64String);
-}
-
+                        try {
+                          final base64String = traveller.photoBase64.split(',').last;
+                          imageBytes = base64Decode(base64String);
+                        } catch (_) {
+                          imageBytes = null;
+                        }
+                      }
 
                         return Container(
                           width: 90,
@@ -523,14 +527,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ],
                                 ),
-                                child: CircleAvatar(
-                                  radius: 35,
-                                  backgroundImage: imageBytes != null
-                                      ? MemoryImage(imageBytes)
-                                      : const AssetImage(
-                                              'assets/icons/default_avatar.png')
-                                          as ImageProvider,
-                                ),
+                      child: CircleAvatar(
+                        radius: 35,
+                        // Tambahkan baris ini:
+                        backgroundColor: AppColors.lightGrey, 
+                        backgroundImage: imageBytes != null
+                            ? MemoryImage(imageBytes)
+                            : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
+                      ),
                               ),
                               const SizedBox(height: 10),
                               Text(
