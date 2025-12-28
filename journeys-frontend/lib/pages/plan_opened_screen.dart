@@ -1,8 +1,15 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../models/plan_model.dart';
+import '../../services/api_service.dart';
+
 class PlanOpenedScreen extends StatefulWidget {
-  const PlanOpenedScreen({super.key});
+  final int planId;
+  const PlanOpenedScreen({super.key, required this.planId});
 
   @override
   State<PlanOpenedScreen> createState() => _PlanOpenedScreenState();
@@ -11,6 +18,26 @@ class PlanOpenedScreen extends StatefulWidget {
 class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
+
+  PlanModel? _plan;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPlan();
+  }
+
+  Future<void> _loadPlan() async {
+    final plan = await ApiService().getPlanDetail(widget.planId);
+    if (plan != null) {
+      plan.routes.sort((a, b) => a.stepOrder.compareTo(b.stepOrder));
+    }
+    setState(() {
+      _plan = plan;
+      _isLoading = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -96,11 +123,12 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                             );
                           }),
                         ),
-                        
+
                         // Add Review Button
                         ElevatedButton(
                           onPressed: () {
-                            if (_reviewController.text.isNotEmpty && _rating > 0) {
+                            if (_reviewController.text.isNotEmpty &&
+                                _rating > 0) {
                               // TODO: Submit review
                               Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -155,26 +183,35 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Dummy data - in real app, this would come from route parameters
-    final String tripTitle = 'Trip of Health';
-    final double rating = 5.0;
-    final String tripImage = 'assets/icons/plan_culture_of_health.jpg';
-    final String description = '7 days exploring the island with my friends and we had the time of our lives. We started our adventure in Ubud, where we stayed at the beautiful Villa \'Serenity Oasis\' and spent our days exploring the rice fields, temples, and local markets.';
-    
-    final List<String> tags = ['#Adventure', '#Health', '#Walk'];
-    
-    final List<Map<String, dynamic>> activities = [
-      {
-        'title': 'Yoga',
-        'subtitle': 'Riding, Eating at someplace',
-        'image': 'assets/icons/yoga.jpg',
-      },
-      {
-        'title': 'Walk',
-        'subtitle': 'Walking, Staying at some',
-        'image': 'assets/icons/walk.jpg',
-      },
-    ];
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_plan == null) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: Text('Plan not found')),
+      );
+    }
+
+    final tripTitle = _plan!.title;
+    final double rating = _plan!.rating;
+    final String description = _plan!.description;
+    final List<String> tags = _plan!.categories
+        .map((category) => '#${category['name']}')
+        .toList();
+
+    Uint8List? bannerBytes;
+    if (_plan!.bannerBase64.isNotEmpty) {
+      try {
+        bannerBytes = base64Decode(_plan!.bannerBase64);
+      } catch (_) {}
+    }
+
+    final activities = _plan!.routes;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -183,7 +220,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
           children: [
             // Header with back button and title
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -226,7 +264,7 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    
+
                     // Main image card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -246,19 +284,19 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Image
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20),
+                            if (bannerBytes != null)
+                              ClipRRect(
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(20),
+                                  topRight: Radius.circular(20),
+                                ),
+                                child: Image.memory(
+                                  bannerBytes,
+                                  height: 260,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
                               ),
-                              child: Image.asset(
-                                tripImage,
-                                height: 260,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            
                             Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
@@ -266,12 +304,15 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                 children: [
                                   // Title and Rate button
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               tripTitle,
@@ -286,7 +327,9 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                                 return Icon(
                                                   Icons.star,
                                                   size: 24,
-                                                  color: index < rating ? Colors.amber : Colors.grey[300],
+                                                  color: index < rating
+                                                      ? Colors.amber
+                                                      : Colors.grey[300],
                                                 );
                                               }),
                                             ),
@@ -297,7 +340,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                       ElevatedButton(
                                         onPressed: _showRateTripModal,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF4A5B7A),
+                                          backgroundColor:
+                                              const Color(0xFF4A5B7A),
                                           foregroundColor: Colors.white,
                                           elevation: 0,
                                           padding: const EdgeInsets.symmetric(
@@ -305,7 +349,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                             vertical: 12,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(10),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
                                           ),
                                         ),
                                         child: const Text(
@@ -327,12 +372,15 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                         child: ElevatedButton(
                                           onPressed: () {},
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1E3A5F),
+                                            backgroundColor:
+                                                const Color(0xFF1E3A5F),
                                             foregroundColor: Colors.white,
                                             elevation: 0,
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                           ),
                                           child: const Text(
@@ -352,9 +400,11 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                             backgroundColor: Colors.red,
                                             foregroundColor: Colors.white,
                                             elevation: 0,
-                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 12),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(10),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
                                             ),
                                           ),
                                           child: const Text(
@@ -370,7 +420,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                       Container(
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(10),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
                                           border: Border.all(
                                             color: Colors.grey[300]!,
                                             width: 1.5,
@@ -378,11 +429,13 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                         ),
                                         child: IconButton(
                                           onPressed: () {},
-                                          icon: const Icon(Icons.bookmark_border),
+                                          icon: const Icon(
+                                              Icons.bookmark_border),
                                           color: Colors.black,
                                           iconSize: 22,
                                           padding: const EdgeInsets.all(8),
-                                          constraints: const BoxConstraints(),
+                                          constraints:
+                                              const BoxConstraints(),
                                         ),
                                       ),
                                     ],
@@ -401,7 +454,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
                                         child: Text(
                                           tag,
@@ -440,7 +494,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                       child: Column(
                         children: activities.map((activity) {
                           return GestureDetector(
-                            onTap: () => context.push('/place-detail'), // Navigasi ke detail
+                            onTap: () =>
+                                context.push('/place-detail'), // route detail
                             child: Container(
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
@@ -460,46 +515,63 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  // Activity image
-                                  ClipRRect(
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      bottomLeft: Radius.circular(16),
+                                  if (activity.imageBase64.isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(16),
+                                        bottomLeft: Radius.circular(16),
+                                      ),
+                                      child: Image.memory(
+                                        base64Decode(activity.imageBase64),
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
-                                    child: Image.asset(
-                                      activity['image'],
-                                      width: 100,
-                                      height: 100,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
                                   const SizedBox(width: 16),
                                   // Activity details
                                   Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            activity['title'],
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            activity['subtitle'],
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey[500],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+  child: Padding(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          activity.title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          activity.description,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey[600],
+          ),
+        ),
+       Row(
+  children: [
+    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+    const SizedBox(width: 4),
+    Expanded(
+      child: Text(
+        activity.address,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey[500],
+        ),
+      ),
+    ),
+  ],
+),
+
+      ],
+    ),
+  ),
+),
+
                                   const SizedBox(width: 16),
                                 ],
                               ),
@@ -508,7 +580,6 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                         }).toList(),
                       ),
                     ),
-
                     const SizedBox(height: 32),
                   ],
                 ),
