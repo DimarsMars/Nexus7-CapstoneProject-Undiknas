@@ -96,7 +96,7 @@ useEffect(() => {
                         className="cursor-pointer"
                     >
                     <TravellerCard 
-                        id={person.user.user_id}
+                        userId={person.user.user_id}
                         image={person.user.photo} 
                         name={person.user.username}
                         role={person.user.role}
@@ -120,7 +120,7 @@ useEffect(() => {
                     >
                       <TravellerCard 
                           key={person.user_id}
-                          id={person.user_id}
+                          userId={person.user_id}
                           image={person.photo}
                           name={person.username}
                           role={person.role}

@@ -301,14 +301,12 @@ const MyProfilePage = () => {
                                 return (
                                     <UserReviewCard
                                         key={item.review_id}
-                                        // JSON photo sudah mengandung prefix data:image, jadi langsung pakai
+                                        userId={reviewer.user_id}
                                         image={reviewer.photo} 
                                         name={reviewer.username}
-                                        role={reviewer.rank} // Rank ditampilkan di posisi role
+                                        role={reviewer.rank}
                                         rating={item.rating}
                                         review={item.comment}
-                                        // Placeholder action
-                                        onDelete={() => {}} 
                                     />
                                 );
                             })

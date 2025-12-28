@@ -1,4 +1,57 @@
-const TravellerCard = ({ image, name, role, categories }) => {
+import { useState, useEffect } from 'react';
+import apiService from '../services/apiService';
+import { useAuth } from '../context/AuthContext';
+
+const TravellerCard = ({ userId, image, name, role, categories }) => {
+  const { user: currentUser } = useAuth();
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!currentUser || !userId || currentUser.user_id === userId) {
+      setLoading(false);
+      return;
+    }
+
+    const checkStatus = async () => {
+      try {
+        setLoading(true);
+        const followStatusRes = await apiService.checkIsFollowing(userId);
+        setIsFollowing(followStatusRes?.is_following === true);
+      } catch (error) {
+        console.error(`Failed to check follow status for user ${userId}:`, error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkStatus();
+  }, [currentUser, userId]);
+
+  const handleFollow = async (e) => {
+    e.stopPropagation(); 
+
+    if (!currentUser || !userId || loading) return;
+    if (currentUser.user_id === userId) {
+      alert("You cannot follow yourself.");
+      return;
+    }
+
+    const previousState = isFollowing;
+    setIsFollowing(!previousState);
+
+    try {
+      if (previousState) {
+        await apiService.unfollowUser(userId);
+      } else {
+        await apiService.followUser(userId);
+      }
+    } catch (error) {
+      console.error(`Failed to toggle follow for user ${userId}:`, error);
+      setIsFollowing(previousState);
+      alert("Failed to update follow status.");
+    }
+  };
 
   return (
     <div 
@@ -15,10 +68,19 @@ const TravellerCard = ({ image, name, role, categories }) => {
       <p className="text-gray-500 text-sm font-normal mb-1">{role}</p>
       <p className="text-gray-600 text-sm font-semibold mb-4">{categories}</p>
 
-      <button className="bg-slate-900 text-white text-sm font-medium px-6 py-1.5 rounded-lg hover:bg-gray-700 transition-colors">
-        Follow
-      </button>
-
+      {currentUser && currentUser.user_id !== userId && (
+        <button 
+          onClick={handleFollow}
+          disabled={loading}
+          className={`text-sm font-medium px-2 py-1.5 rounded-lg transition-colors w-24 ${
+            isFollowing
+            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+            : 'bg-slate-900 text-white hover:bg-gray-700'
+          }`}
+        >
+          {loading ? '...' : (isFollowing ? 'Unfollow' : 'Follow')}
+        </button>
+      )}
     </div>
   );
 };
