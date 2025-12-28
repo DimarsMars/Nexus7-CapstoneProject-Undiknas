@@ -33,14 +33,14 @@ const HistoryPage = ({ activeTrips }) => {
     }, []);
 
     // --- FUNGSI DELETE HISTORY ---
-    const handleDeleteHistory = async (planId) => {
+    const handleDeleteHistory = async (progressId) => {
         const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus riwayat perjalanan ini?");
         if (!isConfirmed) return;
 
         try {
-            await apiService.deletePastTripPlan(planId);
+            await apiService.deletePastTripPlan(progressId);
 
-            setPastTrips((prev) => prev.filter((trip) => trip.plan_id !== planId));
+            setPastTrips((prev) => prev.filter((trip) => trip.progress_id !== progressId));
             
             alert("Riwayat perjalanan berhasil dihapus.");
         } catch (error) {
@@ -134,7 +134,7 @@ const HistoryPage = ({ activeTrips }) => {
                                     location={trip.routes[0].address}
                                     actionIcon={<FaTrash />} 
                                     isDanger={true}
-                                    onAction={() => handleDeleteHistory(trip.plan_id)}
+                                    onAction={() => handleDeleteHistory(trip.progress_id)}
                                 />
                             ))
                         ) : (
