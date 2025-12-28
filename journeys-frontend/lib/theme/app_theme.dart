@@ -98,26 +98,39 @@ class AppTheme {
       ),
     ),
     // Define custom navigation bar theme for Material 3
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.background,
-      indicatorColor: AppColors.accent.withOpacity(0.1), // Light indicator
-      labelTextStyle: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
-          return GoogleFonts.poppins(
-              color: AppColors.accent, fontWeight: FontWeight.bold, fontSize: 12);
-        }
-        return GoogleFonts.poppins(
-            color: Colors.grey[600], fontWeight: FontWeight.normal, fontSize: 12);
-      }),
-      iconTheme: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
-          return const IconThemeData(color: AppColors.accent);
-        }
-        return IconThemeData(color: Colors.grey[600]);
-      }),
-    ),
-    // Apply soft elevation and corner radius globally where applicable
-    // This often needs to be applied to specific widgets, but setting default themes helps.
-    // For shadows, Flutter's Material design handles it, but explicit elevation on cards/buttons is set.
+ navigationBarTheme: NavigationBarThemeData(
+  backgroundColor: AppColors.background,
+  elevation: 0,
+  // 1. Menghilangkan warna background bulat (indicator)
+  indicatorColor: Colors.transparent, 
+  // 2. Mengatur perilaku label (hanya muncul saat dipilih)
+  labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+  
+  labelTextStyle: WidgetStateProperty.resolveWith((states) {
+    if (states.contains(WidgetState.selected)) {
+      return GoogleFonts.poppins(
+          color: AppColors.primary, // Ganti ke Navy
+          fontWeight: FontWeight.bold, 
+          fontSize: 12);
+    }
+    return GoogleFonts.poppins(
+        color: AppColors.secondary, // Ganti ke Abu-abu kebiruan
+        fontWeight: FontWeight.normal, 
+        fontSize: 12);
+  }),
+  
+  iconTheme: WidgetStateProperty.resolveWith((states) {
+    if (states.contains(WidgetState.selected)) {
+      return const IconThemeData(
+        color: AppColors.primary, // Ganti ke Navy
+        size: 28,
+      );
+    }
+    return const IconThemeData(
+      color: AppColors.secondary, // Ganti ke Abu-abu kebiruan
+      size: 24,
+    );
+  }),
+),
   );
 }

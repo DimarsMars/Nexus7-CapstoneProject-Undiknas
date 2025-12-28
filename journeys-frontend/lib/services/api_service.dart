@@ -6,6 +6,8 @@ import '../models/category_model.dart';
 import '../models/plan_model.dart';
 import '../models/route_model.dart';
 import '../models/traveller_model.dart';
+import '../models/traveller_recomen_model.dart';
+import '../models/most_active_traveller_model.dart';
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -127,6 +129,41 @@ Future<List<TravellerModel>> getAllTravellers() async {
   final data = response['data'] as List<dynamic>;
   return data.map((json) => TravellerModel.fromJson(json)).toList();
 }
+
+Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/user/recomendations/category',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data
+      .map((json) => TravellerRecommendationModel.fromJson(json))
+      .toList();
+}
+
+Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/user/mostactive',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data
+      .map((json) => MostActiveTravellerModel.fromJson(json))
+      .toList();
+}
+
 
 
 }

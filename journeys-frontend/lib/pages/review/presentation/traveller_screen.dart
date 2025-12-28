@@ -1,5 +1,10 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journeys/services/api_service.dart';
+import '../../../models/traveller_recomen_model.dart';
+import '../../../models/most_active_traveller_model.dart';
 
 class TravellerScreen extends StatefulWidget {
   const TravellerScreen({super.key});
@@ -9,18 +14,35 @@ class TravellerScreen extends StatefulWidget {
 }
 
 class _TravellerScreenState extends State<TravellerScreen> {
-  // Set untuk menyimpan nama traveller yang sudah di-follow
   final Set<String> _followedTravellers = {};
+  List<TravellerRecommendationModel> youMayLike = [];
+  List<MostActiveTravellerModel> mostActiveTravellers = [];
+
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecommendations();
+  }
+
+  Future<void> _loadRecommendations() async {
+  try {
+    final result = await ApiService().getCategoryTravellers();
+    final mostActiveResult = await ApiService().getMostActiveTravellers(); // <- tambah ini
+    setState(() {
+      youMayLike = result;
+      mostActiveTravellers = mostActiveResult; // <- dan ini
+      isLoading = false;
+    });
+  } catch (e) {
+    setState(() => isLoading = false);
+  }
+}
+
 
   @override
   Widget build(BuildContext context) {
-    // Dummy Data
-    final List<Map<String, String>> youMayLike = [
-      {'name': 'Jackson', 'title': 'Traveller', 'image': 'assets/icons/jackson.jpg'},
-      {'name': 'Bob', 'title': 'Map Maker', 'image': 'assets/icons/bob.jpg'},
-      {'name': 'Alice', 'title': 'Photographer', 'image': 'assets/icons/maria_alice.jpg'},
-    ];
-    
     final List<Map<String, String>> mostActive = [
       {'name': 'Jackson', 'title': 'Traveller', 'image': 'assets/icons/jackson.jpg'},
       {'name': 'Bob', 'title': 'Map Maker', 'image': 'assets/icons/bob.jpg'},
@@ -117,21 +139,34 @@ class _TravellerScreenState extends State<TravellerScreen> {
                     // You may like section
                     SizedBox(
                       height: 240,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: youMayLike.length,
-                        itemBuilder: (context, index) {
-                          final traveller = youMayLike[index];
-                          final name = traveller['name']!;
-                          return _buildTravellerCard(
-                            name: name,
-                            title: traveller['title']!,
-                            imageUrl: traveller['image']!,
-                            isFollowed: _followedTravellers.contains(name),
-                          );
-                        },
-                      ),
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              itemCount: youMayLike.length,
+                              itemBuilder: (context, index) {
+                                final traveller = youMayLike[index].user;
+                                final name = traveller.username;
+                                final title = traveller.role;
+
+                               dynamic imageData;
+                                if (traveller.photoBase64.isNotEmpty) {
+                                  final clean = traveller.photoBase64.split(',').last;
+                                  imageData = base64Decode(clean);
+                                } else {
+                                  imageData = 'assets/icons/profile.jpg'; // Gambar dummy kamu
+                                }
+
+
+                                return _buildTravellerCard(
+                                  name: name,
+                                  title: title,
+                                  imageUrl: imageData,
+                                  isFollowed: _followedTravellers.contains(name),
+                                );
+                              },
+                            ),
                     ),
                     const SizedBox(height: 32),
 
@@ -149,24 +184,37 @@ class _TravellerScreenState extends State<TravellerScreen> {
                     const SizedBox(height: 16),
 
                     // Most Active section
-                    SizedBox(
-                      height: 240,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: mostActive.length,
-                        itemBuilder: (context, index) {
-                          final traveller = mostActive[index];
-                          final name = traveller['name']!;
-                          return _buildTravellerCard(
-                            name: name,
-                            title: traveller['title']!,
-                            imageUrl: traveller['image']!,
-                            isFollowed: _followedTravellers.contains(name),
-                          );
-                        },
-                      ),
-                    ),
+                   SizedBox(
+  height: 240,
+  child: isLoading
+      ? const Center(child: CircularProgressIndicator())
+      : ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          itemCount: mostActiveTravellers.length,
+          itemBuilder: (context, index) {
+            final traveller = mostActiveTravellers[index];
+            final name = traveller.username;
+            final title = traveller.role;
+
+            dynamic imageData;
+            if (traveller.photoBase64.isNotEmpty) {
+              final clean = traveller.photoBase64.split(',').last;
+              imageData = base64Decode(clean);
+            } else {
+              imageData = 'assets/icons/profile.jpg';
+            }
+
+            return _buildTravellerCard(
+              name: name,
+              title: title,
+              imageUrl: imageData,
+              isFollowed: _followedTravellers.contains(name),
+            );
+          },
+        ),
+),
+
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -181,11 +229,20 @@ class _TravellerScreenState extends State<TravellerScreen> {
   Widget _buildTravellerCard({
     required String name,
     required String title,
-    required String imageUrl,
+    required dynamic imageUrl,
     required bool isFollowed,
   }) {
+    Image imageWidget;
+
+    if (imageUrl is Uint8List) {
+      imageWidget = Image.memory(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
+    } else if (imageUrl is String) {
+      imageWidget = Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
+    } else {
+      imageWidget = Image.asset('assets/icons/default_avatar.png', width: 80, height: 80);
+    }
+
     return GestureDetector(
-      // Navigasi ke halaman detail saat kartu di-klik
       onTap: () => context.push('/traveller-detail', extra: name),
       child: Container(
         width: 160,
@@ -218,12 +275,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(50),
-                child: Image.asset(
-                  imageUrl,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                ),
+                child: imageWidget,
               ),
             ),
             const SizedBox(height: 12),
@@ -245,7 +297,6 @@ class _TravellerScreenState extends State<TravellerScreen> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
-                // Logika mengubah status follow
                 setState(() {
                   if (_followedTravellers.contains(name)) {
                     _followedTravellers.remove(name);
