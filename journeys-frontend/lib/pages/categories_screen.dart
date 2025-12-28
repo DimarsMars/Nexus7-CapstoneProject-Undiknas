@@ -144,114 +144,76 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(context),
+      // bottomNavigationBar sudah dihapus agar menggunakan milik MainWrapper
     );
   }
 
   Widget buildCategoryCard(CategoryModel category) {
-  Uint8List? imageBytes;
+    Uint8List? imageBytes;
 
-  if (category.imageBase64.isNotEmpty) {
-    imageBytes = const Base64Decoder()
-        .convert(category.imageBase64.split(',').last);
-  }
+    if (category.imageBase64.isNotEmpty) {
+      imageBytes = const Base64Decoder()
+          .convert(category.imageBase64.split(',').last);
+    }
 
-  return Container(
-    height: 180, // Ukuran tetap
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 8,
-          offset: const Offset(0, 3),
-        ),
-      ],
-    ),
-    child: Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: imageBytes != null
-                ? Image.memory(
-                    imageBytes,
-                    fit: BoxFit.cover,
-                  )
-                : Container(color: Colors.grey[300]),
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.7)
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 12,
-          left: 8,
-          right: 8,
-          child: Text(
-            category.name,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-
-  Widget _buildBottomNav(BuildContext context) {
     return Container(
+      height: 180, // Ukuran tetap
       decoration: BoxDecoration(
-        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.home, () => context.go('/home')),
-              _navItem(Icons.map_outlined, () => context.go('/explore')),
-              _navItem(Icons.receipt_long_outlined,
-                  () => context.go('/history')),
-              _navItem(Icons.person_outline,
-                  () => context.go('/profile')),
-            ],
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: imageBytes != null
+                  ? Image.memory(
+                      imageBytes,
+                      fit: BoxFit.cover,
+                    )
+                  : Container(color: Colors.grey[300]),
+            ),
           ),
-        ),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.7)
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            left: 8,
+            right: 8,
+            child: Text(
+              category.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
-
-  Widget _navItem(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child:
-          Padding(padding: const EdgeInsets.all(8.0), child: Icon(icon, size: 28)),
-    );
-  }
+  
+  // Fungsi _buildBottomNav dan _navItem telah dihapus sepenuhnya
 }
