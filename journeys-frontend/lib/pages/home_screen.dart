@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
-
+import 'dart:math'; 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/models/plan_model.dart';
+import 'package:journeys/models/traveller_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,10 +20,14 @@ class _HomeScreenState extends State<HomeScreen> {
   List<PlanModel> plans = [];
   bool isLoading = true;
 
+  List<TravellerModel> travellers = [];
+  bool isTravellerLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadPlans();
+    _loadTravellers();
   }
 
   Future<void> _loadPlans() async {
@@ -39,6 +44,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadTravellers() async {
+  try {
+    final result = await ApiService().getAllTravellers();
+    result.shuffle(Random()); // acak list
+    final limited = result.take(5).toList(); // ambil 5 pertama
+    setState(() {
+      travellers = limited;
+      isTravellerLoading = false;
+    });
+  } catch (e) {
+    setState(() {
+      isTravellerLoading = false;
+    });
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> categories = [
@@ -53,13 +74,6 @@ class _HomeScreenState extends State<HomeScreen> {
       {'image': 'assets/icons/beaches.jpg', 'label': 'Beach'},
       {'image': 'assets/icons/hidden_cafe.jpg', 'label': 'Mini Resto'},
       {'image': 'assets/icons/villa.jpg', 'label': 'Store\'s'},
-    ];
-
-    final List<Map<String, dynamic>> travellers = [
-      {'name': 'Jackson', 'image': 'assets/icons/jackson.jpg'},
-      {'name': 'Freddy', 'image': 'assets/icons/bob.jpg'},
-      {'name': 'Bob', 'image': 'assets/icons/bob.jpg'},
-      {'name': 'Clara', 'image': 'assets/icons/maria_alice.jpg'},
     ];
 
     return Scaffold(
@@ -185,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return GestureDetector(
                           onTap: () {
-                            context.push('/plan-opened', extra: plan);
+                            context.push('/plan-opened/${plan.planId}');
                           },
                           child: Container(
                             width: 180,
@@ -221,48 +235,47 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                 ),
                                 Positioned(
-  left: 12,
-  right: 12,
-  bottom: 12,
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-Text(
-  plan.title,
-  style: const TextStyle(
-    color: Colors.white,
-    fontSize: 16,
-    fontWeight: FontWeight.bold,
-  ),
-  maxLines: 2,
-  overflow: TextOverflow.ellipsis,
-),
-const SizedBox(height: 4),
-Text(
-  plan.authorName.isNotEmpty ? plan.authorName : "Anonymous",
-  style: TextStyle(
-    color: Colors.white.withOpacity(0.85),
-    fontSize: 11,
-    fontStyle: FontStyle.italic,
-  ),
-),
-const SizedBox(height: 6),
-Row(
-  children: List.generate(5, (starIndex) {
-    return Icon(
-      Icons.star,
-      size: 14,
-      color: starIndex < plan.rating.round()
-          ? Colors.amber
-          : Colors.grey[400],
-    );
-  }),
-),
-    ],
-  ),
-),
-
+                                  left: 12,
+                                  right: 12,
+                                  bottom: 12,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        plan.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        plan.authorName.isNotEmpty ? plan.authorName : "Anonymous",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.85),
+                                          fontSize: 11,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: List.generate(5, (starIndex) {
+                                          return Icon(
+                                            Icons.star,
+                                            size: 14,
+                                            color: starIndex < plan.rating.round()
+                                                ? Colors.amber
+                                                : Colors.grey[400],
+                                          );
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -479,48 +492,60 @@ Row(
 
             SizedBox(
               height: 120,
-              child: ListView.builder(
-                padding: const EdgeInsets.only(left: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: travellers.length,
-                itemBuilder: (context, index) {
-                  return Container(
-                    width: 90,
-                    margin: const EdgeInsets.only(right: 20),
-                    child: Column(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+              child: isTravellerLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(left: 16),
+                      scrollDirection: Axis.horizontal,
+                      itemCount: travellers.length,
+                      itemBuilder: (context, index) {
+                        final traveller = travellers[index];
+                        Uint8List? imageBytes;
+                       if (traveller.photoBase64.isNotEmpty) {
+  final base64String = traveller.photoBase64.split(',').last;
+  imageBytes = base64Decode(base64String);
+}
+
+
+                        return Container(
+                          width: 90,
+                          margin: const EdgeInsets.only(right: 20),
+                          child: Column(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: CircleAvatar(
+                                  radius: 35,
+                                  backgroundImage: imageBytes != null
+                                      ? MemoryImage(imageBytes)
+                                      : const AssetImage(
+                                              'assets/icons/default_avatar.png')
+                                          as ImageProvider,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                traveller.username,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
-                          child: CircleAvatar(
-                            radius: 35,
-                            backgroundImage: AssetImage(
-                              travellers[index]['image'],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          travellers[index]['name'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
 
             const SizedBox(height: 32),

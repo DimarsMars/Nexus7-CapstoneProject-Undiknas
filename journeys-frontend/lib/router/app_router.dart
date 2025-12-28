@@ -73,18 +73,15 @@ final GoRouter appRouter = GoRouter(
             return const CategoriesScreen();
           },
         ),
-        GoRoute(
-          path: '/plan-opened', // Kita gunakan nama yang konsisten
-          builder: (BuildContext context, GoRouterState state) {
-            return const PlanOpenedScreen();
-          },
-        ),
-            GoRoute(
-      path: '/plan-detail',
-      builder: (BuildContext context, GoRouterState state) {
-        return const PlanOpenedScreen();
-      },
-    ),
+         GoRoute(
+  path: '/plan-opened/:id',
+  builder: (context, state) {
+    final planId = int.parse(state.pathParameters['id']!);
+    return PlanOpenedScreen(planId: planId);
+  },
+),
+
+
         GoRoute(
       path: '/place-detail',
       builder: (BuildContext context, GoRouterState state) {
