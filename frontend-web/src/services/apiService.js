@@ -48,9 +48,13 @@ const followUser = (id) => {
   return apiClient.post(`/follow/${id}`);
 }
 
-const getFollower = (id) => {
-  return apiClient.get(`/follow/${id}/followers`);
+const checkIsFollowing = (id) => {
+  return apiClient.get(`/follow/${id}/is-following`);
 }
+
+const getUserSocials = (id) => {
+  return apiClient.get(`/follow/${id}/socials`);
+};
 
 const unfollowUser = (id) => {
   return apiClient.delete(`/follow/${id}`);
@@ -142,7 +146,8 @@ const apiService = {
   getUserXP,
   getUserProfileById,
   followUser,
-  getFollower,
+  checkIsFollowing,
+  getUserSocials,
   unfollowUser,
   getMyTripReviews,
   getReviewsOnMyPlans,

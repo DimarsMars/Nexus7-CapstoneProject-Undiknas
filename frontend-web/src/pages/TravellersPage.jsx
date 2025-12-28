@@ -34,32 +34,25 @@ useEffect(() => {
             rawData = response.data;
         }
 
-        // --- SOLUSI DEDUPLIKASI & PENGGABUNGAN KATEGORI ---
-        // Gunakan Map untuk menyimpan user unik berdasarkan user_id.
-        // Jika user sudah ada, tambahkan kategori barunya ke daftar kategori user tersebut.
         const userMap = new Map();
 
         rawData.forEach((item) => {
             const userId = item.user.user_id;
-            // Ambil kategori dari item saat ini (bersihkan spasi)
             const currentCategory = item.category ? item.category.trim() : "";
 
             if (userMap.has(userId)) {
-                // Jika user sudah ada, tambahkan kategori baru jika belum ada
                 const existingUser = userMap.get(userId);
                 if (currentCategory && !existingUser.displayCategories.includes(currentCategory)) {
                     existingUser.displayCategories.push(currentCategory);
                 }
             } else {
-                // Jika user belum ada, buat entri baru
                 userMap.set(userId, {
-                    ...item, // Salin semua data item
-                    displayCategories: currentCategory ? [currentCategory] : [] // Buat array kategori
+                    ...item,
+                    displayCategories: currentCategory ? [currentCategory] : []
                 });
             }
         });
 
-        // Konversi Map kembali ke Array
         const uniqueTravellers = Array.from(userMap.values());
         setTravellersByCategory(uniqueTravellers);
 

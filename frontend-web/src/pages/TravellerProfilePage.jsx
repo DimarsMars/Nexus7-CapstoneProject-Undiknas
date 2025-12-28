@@ -1,25 +1,22 @@
-import { useEffect, useState, useContext } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FaChevronLeft, FaCertificate } from "react-icons/fa";
+import { useEffect, useState } from 'react';
+import { FaCertificate, FaChevronLeft } from "react-icons/fa";
+import { useNavigate, useParams } from 'react-router-dom';
 import TripCard from '../components/TripCard';
-import apiService from '../services/apiService';
 import { useAuth } from '../context/AuthContext';
+import apiService from '../services/apiService';
 
 const TravellerProfilePage = () => {
   const { id: idParam } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth(); 
 
-  // State
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // State Social
+
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
 
-  // 1. FETCH PROFILE & FOLLOW STATUS
   useEffect(() => {
     const fetchProfileData = async () => {
       const id = parseInt(idParam, 10);
@@ -31,25 +28,19 @@ const TravellerProfilePage = () => {
 
       setLoading(true);
       try {
-        // Fetch user profile
         const profileResponse = await apiService.getUserProfileById(id);
         const userData = profileResponse.data?.data || profileResponse.data;
 
         if (userData && userData.user_id) {
           setProfile(userData);
 
-          // Fetch follower data
-          const followersResponse = await apiService.getFollower(id);
-          const followers = followersResponse.data || [];
-          
-          setFollowerCount(followers.length);
+          const [socialResponse, followStatusRes] = await Promise.all([
+            apiService.getUserSocials(id),
+            apiService.checkIsFollowing(id)
+          ]);
 
-          // Check if the current user is in the followers list
-          if (currentUser && followers.some(follower => follower.user_id === currentUser.user_id)) {
-            setIsFollowing(true);
-          } else {
-            setIsFollowing(false);
-          }
+          setFollowerCount(socialResponse?.followers_count ?? 0);
+          setIsFollowing(followStatusRes?.is_following === true);
 
         } else {
           setError('User not found.');
@@ -72,23 +63,19 @@ const TravellerProfilePage = () => {
     return match ? match[1] : '?';
   };
 
-  // 3. ACTION HANDLERS
   const handleFollow = async () => {
     const id = parseInt(idParam, 10);
     if (!profile || isNaN(id) || !currentUser) return;
-    
-    // Prevent following self
     if (profile.user_id === currentUser.user_id) {
-        alert("You cannot follow yourself.");
-        return;
+      alert("You cannot follow yourself.");
+      return;
     }
 
     const previousState = isFollowing;
-    const previousCount = followerCount;
 
-    // Optimistic UI update
+    // Optimistically update state
     setIsFollowing(!previousState);
-    setFollowerCount(previousState ? previousCount - 1 : previousCount + 1);
+    setFollowerCount((prev) => previousState ? prev - 1 : prev + 1);
 
     try {
       if (previousState) {
@@ -96,11 +83,11 @@ const TravellerProfilePage = () => {
       } else {
         await apiService.followUser(id);
       }
+
     } catch (error) {
       console.error("Failed to toggle follow:", error);
-      // Rollback on error
       setIsFollowing(previousState);
-      setFollowerCount(previousCount);
+      setFollowerCount((prev) => previousState ? prev + 1 : prev - 1);
       alert("Failed to update follow status.");
     }
   };
@@ -135,7 +122,6 @@ const TravellerProfilePage = () => {
             </div>
 
             <div className="grow text-center md:text-left w-full">
-                
                 <div className="flex flex-col md:flex-row justify-between items-start mb-6 px-20">
                     <div>
                         <p className="text-gray-500 text-sm">Name</p>
@@ -181,36 +167,33 @@ const TravellerProfilePage = () => {
                                 : 'bg-[#1e293b] text-white hover:bg-slate-700'
                             }`}
                         >
-                            {isFollowing ? 'Unfollow' : 'Follow'}
+                            {isFollowing === true ? 'Unfollow' : 'Follow'}
                         </button>
                     )}
                     <button className="bg-red-600 text-white px-8 py-2 rounded-md font-medium hover:bg-red-700 transition">
                         Report
                     </button>
                 </div>
-
             </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {profile.plans && profile.plans.length > 0 ? (
                 profile.plans.slice(0, 3).map((trip, index) => (
-
-                        <TripCard
-                            key={trip.plan_id}
-                            id={trip.plan_id}
-                            title={trip.title}
-                            author={trip.description}
-                            rating={trip.rating || 5}
-                            image={`data:image/jpeg;base64,${trip.banner}`}
-                            className={
-                              index === 0
-                              ? "md:col-span-2 h-64 md:h-80"
-                              : "h-64"
-                            }
-                            onClick={() => handleCardClick(trip.plan_id)}
-                        />
-
+                    <TripCard
+                        key={trip.plan_id}
+                        id={trip.plan_id}
+                        title={trip.title}
+                        author={trip.description}
+                        rating={trip.rating || 5}
+                        image={`data:image/jpeg;base64,${trip.banner}`}
+                        className={
+                          index === 0
+                          ? "md:col-span-2 h-64 md:h-80"
+                          : "h-64"
+                        }
+                        onClick={() => handleCardClick(trip.plan_id)}
+                    />
                 ))
             ) : (
                 <div className="md:col-span-2 text-center py-10 text-gray-400">
@@ -218,7 +201,6 @@ const TravellerProfilePage = () => {
                 </div>
             )}
         </div>
-
       </div>
     </div>
   );
