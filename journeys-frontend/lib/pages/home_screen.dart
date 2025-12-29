@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:math'; 
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/traveller_model.dart';
 import 'package:journeys/theme/app_theme.dart';
+import 'package:journeys/models/category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,11 +25,15 @@ class _HomeScreenState extends State<HomeScreen> {
   List<TravellerModel> travellers = [];
   bool isTravellerLoading = true;
 
+  List<CategoryModel> categories = [];
+  bool isCategoryLoading = true;
+
   @override
   void initState() {
     super.initState();
     _loadPlans();
     _loadTravellers();
+    _loadCategories();
   }
 
   Future<void> _loadPlans() async {
@@ -38,37 +43,39 @@ class _HomeScreenState extends State<HomeScreen> {
         plans = result;
         isLoading = false;
       });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+    } catch (_) {
+      setState(() => isLoading = false);
     }
   }
 
   Future<void> _loadTravellers() async {
-  try {
-    final result = await ApiService().getAllTravellers();
-    result.shuffle(Random()); // acak list
-    final limited = result.take(5).toList(); // ambil 5 pertama
-    setState(() {
-      travellers = limited;
-      isTravellerLoading = false;
-    });
-  } catch (e) {
-    setState(() {
-      isTravellerLoading = false;
-    });
+    try {
+      final result = await ApiService().getAllTravellers();
+      result.shuffle(Random());
+      setState(() {
+        travellers = result.take(5).toList();
+        isTravellerLoading = false;
+      });
+    } catch (_) {
+      setState(() => isTravellerLoading = false);
+    }
   }
-}
+
+  Future<void> _loadCategories() async {
+    try {
+      final result = await ApiService().getCategories();
+      setState(() {
+        categories = result;
+        isCategoryLoading = false;
+      });
+    } catch (_) {
+      setState(() => isCategoryLoading = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> categories = [
-      {'icon': Icons.museum, 'label': 'Culture'},
-      {'icon': Icons.fastfood, 'label': 'Eatery'},
-      {'icon': Icons.health_and_safety, 'label': 'Health'},
-      {'icon': Icons.terrain, 'label': 'Craft\'s'},
-    ];
 
     final List<Map<String, dynamic>> planCategories = [
       {'image': 'assets/icons/tamples.jpg', 'label': 'Temple'},
@@ -125,60 +132,52 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            SizedBox(
+             SizedBox(
               height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final bool isSelected = selectedCategoryIndex == index;
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedCategoryIndex = index;
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            categories[index]['icon'],
-                            color: isSelected ? Colors.white : Colors.black,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            categories[index]['label'],
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+              child: isCategoryLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: categories.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final isSelected = selectedCategoryIndex == index;
+                        final category = categories[index];
+
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedCategoryIndex = index;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color:
+                                  isSelected ? Colors.black : Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              category.name,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
 
             const SizedBox(height: 24),
