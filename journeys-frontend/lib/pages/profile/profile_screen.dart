@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'edit_profile_screen.dart';
+import 'presentation/edit_profile_screen.dart';
+import 'presentation/my_route_screen.dart';
+import 'presentation/my_rating_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -153,8 +155,18 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
                       _buildMenuItem(context, 'Languages'),
                       _buildMenuItem(context, 'Location'),
-                      _buildMenuItem(context, 'My Route\'s'),
-                      _buildMenuItem(context, 'My Rating\'s'),
+                      _buildMenuItem(context, 'My Route\'s', onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MyRouteOwned()),
+                        );
+                      }),
+                      _buildMenuItem(context, 'My Rating\'s', onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const MyRatingOwned()),
+                        );
+                      }),
 
                       const SizedBox(height: 10),
                       const Padding(
@@ -182,15 +194,18 @@ class _MyProfileScreen extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildMenuItem(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xFF1C314A),
-          fontWeight: FontWeight.normal,
+  Widget _buildMenuItem(BuildContext context, String title, {VoidCallback? onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Color(0xFF1C314A),
+            fontWeight: FontWeight.normal,
+          ),
         ),
       ),
     );

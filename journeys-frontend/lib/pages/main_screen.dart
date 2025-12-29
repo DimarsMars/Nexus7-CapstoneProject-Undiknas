@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:journeys/pages/history_screen.dart';
 import 'route_screen.dart';
-import 'profile_screen.dart';
+import 'profile/profile_screen.dart';
 import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
