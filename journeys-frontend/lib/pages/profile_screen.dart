@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -12,11 +13,11 @@ class _MyProfileScreen extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFe9ebee),
+      backgroundColor: const Color(0xFFe9ebee),
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: const Text('My Profile'),
-        titleTextStyle: TextStyle(
+        titleTextStyle: const TextStyle(
           color: Colors.black,
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -30,7 +31,6 @@ class _MyProfileScreen extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(4.0),
-
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withAlpha(60),
@@ -40,20 +40,18 @@ class _MyProfileScreen extends State<ProfileScreen> {
                     ),
                   ],
                 ),
-
                 child: Padding(
-                  padding: EdgeInsets.all(24.0),
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-
-                      SizedBox(height: 20),
-                      CircleAvatar(
+                      const SizedBox(height: 20),
+                      const CircleAvatar(
                         radius: 60,
+                        backgroundColor: Color(0xFF1C314A),
                       ),
-                      SizedBox(height: 30),
-
-                      Text(
+                      const SizedBox(height: 30),
+                      const Text(
                         'Name',
                         textAlign: TextAlign.center,
                           style: TextStyle(
@@ -62,9 +60,8 @@ class _MyProfileScreen extends State<ProfileScreen> {
                             color: Color(0xFF1C314A),
                           ),
                       ),
-
-                      Text(
-                        'Alexander Supri',
+                      const Text(
+                        'ELALALANG',
                         textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 22,
@@ -72,10 +69,8 @@ class _MyProfileScreen extends State<ProfileScreen> {
                             color: Color(0xFF1C314A),
                           ),
                       ),
-
-                      SizedBox(height: 15),
-
-                      Text(
+                      const SizedBox(height: 15),
+                      const Text(
                         'Rank\'s',
                         textAlign: TextAlign.center,
                           style: TextStyle(
@@ -84,21 +79,51 @@ class _MyProfileScreen extends State<ProfileScreen> {
                             color: Color(0xFF1C314A),
                           ),
                       ),
+                      
+                      const SizedBox(height: 5),
 
-                      Text(
-                        'Adventurer',
-                        textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1C314A),
+                      // --- BAGIAN ICON BADGE ---
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Icon Lencana Solid Polos (Cupertino)
+                              const Icon(
+                                CupertinoIcons.shield_fill, 
+                                color: Color(0xFF1C314A),
+                                size: 32,
+                              ),
+                              // Angka Level
+                              const Text(
+                                '3',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14, 
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
+                          const SizedBox(width: 10), 
+                          const Text(
+                            'Adventurer',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1C314A),
+                            ),
+                          ),
+                        ],
                       ),
+                      // -------------------------
 
-                      SizedBox(height: 40),
+                      const SizedBox(height: 40),
 
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal:90.0),
+                        padding: const EdgeInsets.symmetric(horizontal:90.0),
                         child: ElevatedButton(
                           onPressed: () {
                             Navigator.push(
@@ -108,14 +133,14 @@ class _MyProfileScreen extends State<ProfileScreen> {
                           },
                           style: ElevatedButton.styleFrom(
                             elevation: 5,
-                            backgroundColor: Color(0xFF1C314A),
+                            backgroundColor: const Color(0xFF1C314A),
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 0),
+                            padding: const EdgeInsets.symmetric(vertical: 0),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.0),
                               ),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Edit Profile',
                               style: TextStyle(
                                 fontSize: 16,
@@ -124,27 +149,24 @@ class _MyProfileScreen extends State<ProfileScreen> {
                         ),
                       ),
 
-                      SizedBox(height: 40),
+                      const SizedBox(height: 40),
 
                       _buildMenuItem(context, 'Languages'),
                       _buildMenuItem(context, 'Location'),
                       _buildMenuItem(context, 'My Route\'s'),
                       _buildMenuItem(context, 'My Rating\'s'),
 
-                      SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      const SizedBox(height: 10),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20.0),
                         child: Divider(
                           color: Color(0xFF1C314A),
-
                         ),
                       ),
-
-                      SizedBox(height: 10),
-
+                      const SizedBox(height: 10),
                       TextButton(
                         onPressed: () {},
-                          child: Text(
+                          child: const Text(
                             'Log Out',
                               style: TextStyle(
                                 fontSize: 16,
@@ -159,6 +181,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
       ),
     );
   }
+
   Widget _buildMenuItem(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0, horizontal: 20.0),

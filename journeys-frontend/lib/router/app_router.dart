@@ -11,6 +11,8 @@ import 'package:journeys/pages/review/presentation/traveller_screen.dart';
 import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
 import 'package:journeys/pages/main_wrapper.dart';
 import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart';
+import 'package:journeys/pages/profile_screen.dart';
+import 'package:journeys/pages/history_screen.dart';
 
 import '../../pages/auth/presentation/intro_screen.dart';
 import '../../pages/auth/presentation/login_screen.dart';
@@ -96,6 +98,18 @@ final GoRouter appRouter = GoRouter(
         return TravellerDetailScreen(name: name);
       },
     ),
+        GoRoute(
+          path: '/profile',
+          builder: (BuildContext context, GoRouterState state) {
+            return const ProfileScreen();
+          },
+        ),
+        GoRoute(
+          path: '/history',
+          builder: (BuildContext context, GoRouterState state) {
+            return const HistoryScreen();
+          },
+        ),
       ],
     ),
 

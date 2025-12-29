@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -59,34 +60,40 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                     _buildLabel('Rank\'s', center: true),
                     const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: _darkBlue,
-                            shape: BoxShape.circle,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Icon Lencana Solid Polos (Cupertino)
+                              const Icon(
+                                CupertinoIcons.shield_fill, 
+                                color: Color(0xFF1C314A),
+                                size: 32,
+                              ),
+                              // Angka Level
+                              const Text(
+                                '3',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14, 
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
-                          child: const Text(
-                            '1',
+                          const SizedBox(width: 10), 
+                          const Text(
+                            'Adventurer',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: Colors.white,
+                              fontSize: 22,
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              color: Color(0xFF1C314A),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Adventurer',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: _darkBlue,
-                          ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 20),
                     
                     // --- Birth Date ---
@@ -125,12 +132,14 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                               borderRadius: BorderRadius.circular(8.0),
                             ),
                           ),
-                          child: const Text('Accept'),
+                          child: const Text('Save'),
                         ),
                         const SizedBox(width: 16),
                         // Tombol Cancel
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.redAccent,
                             foregroundColor: Colors.white,
