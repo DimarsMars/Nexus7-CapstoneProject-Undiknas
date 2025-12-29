@@ -8,6 +8,9 @@ import '../models/route_model.dart';
 import '../models/traveller_model.dart';
 import '../models/traveller_recomen_model.dart';
 import '../models/most_active_traveller_model.dart';
+import '../models/traveller_profile_model.dart';
+import '../models/place_review.dart';
+import '../models/place_detail.dart';
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -162,6 +165,106 @@ Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
   return data
       .map((json) => MostActiveTravellerModel.fromJson(json))
       .toList();
+}
+
+// GET /user/profile/:id
+Future<TravellerProfileModel> getUserProfile(int id) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/user/profile/$id',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  final data = response['data'];
+  return TravellerProfileModel.fromJson(data);
+}
+
+// GET /follow/:id/is-following
+Future<bool> isFollowing(int id) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/follow/$id/is-following',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response['is_following'] ?? false;
+}
+
+// GET /follow/:id/socials
+Future<Map<String, dynamic>> getSocialCounts(int id) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/follow/$id/socials',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return {
+    'followers': response['followers_count'] ?? 0,
+    'following': response['following_count'] ?? 0,
+  };
+}
+
+// POST /follow/:id
+Future<bool> followUser(int id) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.post(
+    'http://172.20.10.2:8080/follow/$id',
+    {},
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response != null;
+}
+
+// DELETE /follow/:id
+Future<bool> unfollowUser(int id) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.delete(
+    'http://172.20.10.2:8080/follow/$id',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response != null;
+}
+
+// GET /plans/route/:id
+Future<PlaceDetail?> getPlaceDetail(int routeId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/plans/route/$routeId',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  final data = response['data'];
+  if (data == null) return null;
+
+  return PlaceDetail.fromJson(data);
+}
+
+
+Future<List<PlaceReview>> getPlaceReviews(int routeId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/reviews/place/$routeId',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  final List<dynamic> data = response['data'] ?? []; // ✅ fix null case
+  return data.map((e) => PlaceReview.fromJson(e)).toList();
 }
 
 

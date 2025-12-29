@@ -17,7 +17,6 @@ class _TravellerScreenState extends State<TravellerScreen> {
   final Set<String> _followedTravellers = {};
   List<TravellerRecommendationModel> youMayLike = [];
   List<MostActiveTravellerModel> mostActiveTravellers = [];
-
   bool isLoading = true;
 
   @override
@@ -27,28 +26,23 @@ class _TravellerScreenState extends State<TravellerScreen> {
   }
 
   Future<void> _loadRecommendations() async {
-  try {
-    final result = await ApiService().getCategoryTravellers();
-    final mostActiveResult = await ApiService().getMostActiveTravellers(); // <- tambah ini
-    setState(() {
-      youMayLike = result;
-      mostActiveTravellers = mostActiveResult; // <- dan ini
-      isLoading = false;
-    });
-  } catch (e) {
-    setState(() => isLoading = false);
-  }
-}
+    try {
+      final result = await ApiService().getCategoryTravellers();
+      final mostActiveResult =
+          await ApiService().getMostActiveTravellers();
 
+      setState(() {
+        youMayLike = result;
+        mostActiveTravellers = mostActiveResult;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> mostActive = [
-      {'name': 'Jackson', 'title': 'Traveller', 'image': 'assets/icons/jackson.jpg'},
-      {'name': 'Bob', 'title': 'Map Maker', 'image': 'assets/icons/bob.jpg'},
-      {'name': 'Maria', 'title': 'Blogger', 'image': 'assets/icons/maria_alice.jpg'},
-    ];
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
@@ -62,159 +56,112 @@ class _TravellerScreenState extends State<TravellerScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
                 ),
-                child: TextField(
+                child: const TextField(
                   decoration: InputDecoration(
                     hintText: 'Find traveller...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 15,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey[400],
-                      size: 22,
-                    ),
+                    prefixIcon: Icon(Icons.search),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
                   ),
                 ),
               ),
             ),
 
-            // Back Button and Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.go('/home'),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left,
-                        size: 28,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'You may like (Categories #)',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
+            // Header
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                'You may like',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 20),
 
-            // Content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // You may like section
+                    // YOU MAY LIKE
                     SizedBox(
                       height: 240,
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: youMayLike.length,
                               itemBuilder: (context, index) {
                                 final traveller = youMayLike[index].user;
-                                final name = traveller.username;
-                                final title = traveller.role;
 
-                               dynamic imageData;
+                                dynamic imageData;
                                 if (traveller.photoBase64.isNotEmpty) {
-                                  final clean = traveller.photoBase64.split(',').last;
-                                  imageData = base64Decode(clean);
+                                  imageData = base64Decode(
+                                    traveller.photoBase64.split(',').last,
+                                  );
                                 } else {
-                                  imageData = 'assets/icons/profile.jpg'; // Gambar dummy kamu
+                                  imageData = 'assets/icons/profile.jpg';
                                 }
 
-
                                 return _buildTravellerCard(
-                                  name: name,
-                                  title: title,
+                                  userId: traveller.userId,
+                                  name: traveller.username,
+                                  title: traveller.role,
                                   imageUrl: imageData,
-                                  isFollowed: _followedTravellers.contains(name),
+                                  isFollowed: _followedTravellers
+                                      .contains(traveller.username),
                                 );
                               },
                             ),
                     ),
+
                     const SizedBox(height: 32),
 
-                    // Most Active Traveller Header
+                    // MOST ACTIVE
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0),
                       child: Text(
                         'Most Active Traveller',
                         style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 16),
 
-                    // Most Active section
-                   SizedBox(
-  height: 240,
-  child: isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          itemCount: mostActiveTravellers.length,
-          itemBuilder: (context, index) {
-            final traveller = mostActiveTravellers[index];
-            final name = traveller.username;
-            final title = traveller.role;
+                    SizedBox(
+                      height: 240,
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: mostActiveTravellers.length,
+                              itemBuilder: (context, index) {
+                                final traveller =
+                                    mostActiveTravellers[index];
 
-            dynamic imageData;
-            if (traveller.photoBase64.isNotEmpty) {
-              final clean = traveller.photoBase64.split(',').last;
-              imageData = base64Decode(clean);
-            } else {
-              imageData = 'assets/icons/profile.jpg';
-            }
+                                dynamic imageData;
+                                if (traveller.photoBase64.isNotEmpty) {
+                                  imageData = base64Decode(
+                                    traveller.photoBase64.split(',').last,
+                                  );
+                                } else {
+                                  imageData = 'assets/icons/profile.jpg';
+                                }
 
-            return _buildTravellerCard(
-              name: name,
-              title: title,
-              imageUrl: imageData,
-              isFollowed: _followedTravellers.contains(name),
-            );
-          },
-        ),
-),
-
+                                return _buildTravellerCard(
+                                  userId: traveller.userId,
+                                  name: traveller.username,
+                                  title: traveller.role,
+                                  imageUrl: imageData,
+                                  isFollowed: _followedTravellers
+                                      .contains(traveller.username),
+                                );
+                              },
+                            ),
+                    ),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -226,7 +173,9 @@ class _TravellerScreenState extends State<TravellerScreen> {
     );
   }
 
+  // ===================== CARD =====================
   Widget _buildTravellerCard({
+    required int userId,
     required String name,
     required String title,
     required dynamic imageUrl,
@@ -235,15 +184,21 @@ class _TravellerScreenState extends State<TravellerScreen> {
     Image imageWidget;
 
     if (imageUrl is Uint8List) {
-      imageWidget = Image.memory(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
-    } else if (imageUrl is String) {
-      imageWidget = Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
+      imageWidget =
+          Image.memory(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
     } else {
-      imageWidget = Image.asset('assets/icons/default_avatar.png', width: 80, height: 80);
+      imageWidget =
+          Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
     }
 
     return GestureDetector(
-      onTap: () => context.push('/traveller-detail', extra: name),
+      onTap: () => context.push(
+        '/traveller-detail',
+        extra: {
+          'userId': userId,
+          'name': name,
+        },
+      ),
       child: Container(
         width: 160,
         margin: const EdgeInsets.only(right: 16),
@@ -261,71 +216,30 @@ class _TravellerScreenState extends State<TravellerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: imageWidget,
-              ),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: imageWidget,
             ),
             const SizedBox(height: 12),
-            Text(
-              name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
-            ),
+            Text(name,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(title,
+                style:
+                    TextStyle(fontSize: 13, color: Colors.grey[600])),
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  if (_followedTravellers.contains(name)) {
+                  if (isFollowed) {
                     _followedTravellers.remove(name);
                   } else {
                     _followedTravellers.add(name);
                   }
                 });
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isFollowed ? Colors.grey[400] : const Color(0xFF1E3A5F),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                isFollowed ? 'Followed' : 'Follow',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: Text(isFollowed ? 'Followed' : 'Follow'),
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),

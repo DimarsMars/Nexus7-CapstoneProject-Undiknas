@@ -82,20 +82,36 @@ final GoRouter appRouter = GoRouter(
 ),
 
 
+      GoRoute(
+  path: '/place-detail',
+  builder: (BuildContext context, GoRouterState state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    final routeId = extra?['routeId'] as int?;
+
+    if (routeId == null) {
+      return const Scaffold(body: Center(child: Text('Route ID not provided')));
+    }
+
+    return PlaceDetailScreen(routeId: routeId);
+  },
+),
+
         GoRoute(
-      path: '/place-detail',
-      builder: (BuildContext context, GoRouterState state) {
-        return const PlaceDetailScreen();
-      },
-    ),
-        GoRoute(
-      path: '/traveller-detail',
-      builder: (BuildContext context, GoRouterState state) {
-        // Menangkap data 'name' yang dikirim lewat extra
-        final name = state.extra as String? ?? 'Traveller';
-        return TravellerDetailScreen(name: name);
-      },
-    ),
+  path: '/traveller-detail',
+  builder: (BuildContext context, GoRouterState state) {
+    final extra = state.extra as Map<String, dynamic>?;
+
+    final userId = extra?['userId'] as int?;
+    if (userId == null) {
+      return const Scaffold(
+        body: Center(child: Text('User ID not provided')),
+      );
+    }
+
+    return TravellerDetailScreen(userId: userId);
+  },
+),
+
       ],
     ),
 
