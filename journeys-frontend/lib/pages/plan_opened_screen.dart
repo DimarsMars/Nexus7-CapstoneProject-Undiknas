@@ -490,96 +490,95 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
 
                     // Activities list
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        children: activities.map((activity) {
-                          return GestureDetector(
-                            onTap: () =>
-                                context.push('/place-detail'), // route detail
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.grey[200]!,
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
+  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+  child: Column(
+    children: activities.map((activity) {
+      return GestureDetector(
+        onTap: () => context.push('/place-detail', extra: {
+          'routeId': activity.routeId,
+        }),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.grey[200]!,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              if (activity.imageBase64.isNotEmpty)
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    bottomLeft: Radius.circular(16),
+                  ),
+                  child: Image.memory(
+                    base64Decode(activity.imageBase64),
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activity.title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        activity.description,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              activity.address,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[500],
                               ),
-                              child: Row(
-                                children: [
-                                  if (activity.imageBase64.isNotEmpty)
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(16),
-                                        bottomLeft: Radius.circular(16),
-                                      ),
-                                      child: Image.memory(
-                                        base64Decode(activity.imageBase64),
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 16),
-                                  // Activity details
-                                  Expanded(
-  child: Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          activity.title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+            ],
           ),
         ),
-        const SizedBox(height: 6),
-        Text(
-          activity.description,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[600],
-          ),
-        ),
-       Row(
-  children: [
-    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-    const SizedBox(width: 4),
-    Expanded(
-      child: Text(
-        activity.address,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey[500],
-        ),
-      ),
-    ),
-  ],
-),
-
-      ],
-    ),
+      );
+    }).toList(),
   ),
 ),
 
-                                  const SizedBox(width: 16),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
                     const SizedBox(height: 32),
                   ],
                 ),

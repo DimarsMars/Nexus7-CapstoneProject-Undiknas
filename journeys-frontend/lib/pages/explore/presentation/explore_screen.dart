@@ -1,58 +1,64 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journeys/services/api_service.dart';
+import 'package:journeys/models/plan_model.dart';
+import 'package:journeys/models/category_model.dart'; // Tambahan untuk kategori model
 
-class ExploreScreen extends StatelessWidget {
+class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 
   @override
+  State<ExploreScreen> createState() => _ExploreScreenState();
+}
+
+class _ExploreScreenState extends State<ExploreScreen> {
+  List<PlanModel> allPlans = [];
+  List<PlanModel> filteredPlans = [];
+  List<CategoryModel> categories = [];
+  String? selectedCategory;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final fetchedPlans = await ApiService().getAllPlans();
+      final fetchedCategories = await ApiService().getCategories();
+
+      setState(() {
+        allPlans = fetchedPlans;
+        filteredPlans = fetchedPlans;
+        categories = fetchedCategories;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _filterByCategory(String? categoryName) {
+    setState(() {
+      selectedCategory = categoryName;
+      if (categoryName == null) {
+        filteredPlans = allPlans;
+      } else {
+        filteredPlans = allPlans.where((plan) {
+          return plan.categories.any((cat) =>
+              cat['name'].toString().toLowerCase() ==
+              categoryName.toLowerCase());
+        }).toList();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Dummy data
-    final List<Map<String, dynamic>> places = [
-      {
-        'title': 'Trip of Health',
-        'author': 'Thomas A.',
-        'imageUrl': 'assets/icons/trip_of_health.jpg',
-        'rating': 4.0
-      },
-      {
-        'title': 'Culture Trip',
-        'author': 'Horas B.',
-        'imageUrl': 'assets/icons/culture_trip.jpg',
-        'rating': 5.0
-      },
-      {
-        'title': 'Trip of Health',
-        'author': 'Thomas A.',
-        'imageUrl': 'assets/icons/trip_of_health.jpg',
-        'rating': 4.0
-      },
-      {
-        'title': 'Culture Trip',
-        'author': 'Horas B.',
-        'imageUrl': 'assets/icons/culture_trip.jpg',
-        'rating': 5.0
-      },
-      {
-        'title': 'Trip of Health',
-        'author': 'Thomas A.',
-        'imageUrl': 'assets/icons/trip_of_health.jpg',
-        'rating': 4.0
-      },
-      {
-        'title': 'Culture Trip',
-        'author': 'Horas B.',
-        'imageUrl': 'assets/icons/culture_trip.jpg',
-        'rating': 5.0
-      },
-    ];
-
-    final List<Map<String, dynamic>> categories = [
-      {'label': 'Culture'},
-      {'label': 'Eatery'},
-      {'label': 'Health'},
-      {'label': 'Craft\'s'},
-    ];
-
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
@@ -92,40 +98,48 @@ class ExploreScreen extends StatelessWidget {
               ),
             ),
 
-            // Category Chips
+            // Category Chips from API
             Container(
               height: 60,
               margin: const EdgeInsets.only(bottom: 8),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: categories.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 12),
+                itemCount: categories.length + 1,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
-                  final bool isFirst = index == 0;
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: isFirst ? Colors.black : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    child: Center(
-                      child: Text(
-                        categories[index]['label'],
-                        style: TextStyle(
-                          color: isFirst ? Colors.white : Colors.black,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
+                  final isSelected = index == 0
+                      ? selectedCategory == null
+                      : selectedCategory == categories[index - 1].name;
+                  final label =
+                      index == 0 ? 'All' : categories[index - 1].name;
+
+                  return GestureDetector(
+                    onTap: () => _filterByCategory(index == 0 ? null : label),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isSelected ? Colors.black : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : Colors.black,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
@@ -136,22 +150,27 @@ class ExploreScreen extends StatelessWidget {
 
             // Grid of Places
             Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16.0),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75,
-                ),
-                itemCount: places.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () => context.push('/plan-detail'),
-                    child: _buildPlaceCard(places[index]),
-                  );
-                },
-              ),
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : GridView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 16,
+                        childAspectRatio: 0.75,
+                      ),
+                      itemCount: filteredPlans.length,
+                      itemBuilder: (context, index) {
+                        final plan = filteredPlans[index];
+                        return GestureDetector(
+                          onTap: () =>
+                              context.push('/plan-opened/${plan.planId}'),
+                          child: _buildPlaceCard(plan),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
@@ -159,7 +178,12 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceCard(Map<String, dynamic> place) {
+  Widget _buildPlaceCard(PlanModel plan) {
+    Uint8List? imageBytes;
+    if (plan.bannerBase64.isNotEmpty) {
+      imageBytes = base64Decode(plan.bannerBase64);
+    }
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
@@ -173,17 +197,21 @@ class ExploreScreen extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          // Image
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              place['imageUrl'],
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-            ),
+            child: imageBytes != null
+                ? Image.memory(
+                    imageBytes,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                  )
+                : Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    color: Colors.grey[300],
+                  ),
           ),
-          // Gradient overlay
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
@@ -198,17 +226,15 @@ class ExploreScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Content
           Positioned(
             left: 12,
             right: 12,
             bottom: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  place['title'],
+                  plan.title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -219,7 +245,7 @@ class ExploreScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  place['author'],
+                  plan.authorName.isNotEmpty ? plan.authorName : 'Anonymous',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.9),
                     fontSize: 12,
@@ -231,7 +257,7 @@ class ExploreScreen extends StatelessWidget {
                     return Icon(
                       Icons.star,
                       size: 14,
-                      color: starIndex < place['rating']
+                      color: starIndex < plan.rating.round()
                           ? Colors.amber
                           : Colors.grey[400],
                     );
