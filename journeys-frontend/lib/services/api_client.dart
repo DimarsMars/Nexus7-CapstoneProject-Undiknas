@@ -72,5 +72,33 @@ Future<Map<String, dynamic>> get(
       }
     }
   }
+
+  // Metode untuk request DELETE
+  Future<Map<String, dynamic>> delete(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    final response = await _client.delete(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        ...?headers,
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (response.body.isNotEmpty && response.headers['content-type']?.contains('application/json') == true) {
+        return jsonDecode(response.body);
+      }
+      return {}; // Respons sukses tanpa body JSON
+    } else {
+      try {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Unknown error');
+      } catch (e) {
+        throw Exception('Error ${response.statusCode}: ${response.body}');
+      }
+    }
+  }
 }
 

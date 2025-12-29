@@ -1,13 +1,99 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert'; 
+import 'package:journeys/models/my_trip_review_model.dart';
+import 'package:journeys/models/review_on_my_plan_model.dart';
+import 'package:journeys/services/api_service.dart';
 
-class LevelProgressBottomSheet extends StatelessWidget {
-  const LevelProgressBottomSheet({super.key});
+class LevelProgressBottomSheet extends StatefulWidget {
+  final List<ReviewOnMyPlanModel> reviewsOnMyPlans;
+
+  const LevelProgressBottomSheet({
+    super.key,
+    required this.reviewsOnMyPlans,
+  });
+
+  @override
+  State<LevelProgressBottomSheet> createState() => _LevelProgressBottomSheetState();
+}
+
+
+class _LevelProgressBottomSheetState extends State<LevelProgressBottomSheet> {
+  List<MyTripReviewModel> _myReviews = [];
+  bool _isLoadingMyReviews = true;
+  String? _errorMyReviews;
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMyReviews();
+  }
+
+  Future<void> _fetchMyReviews() async {
+    setState(() {
+      _isLoadingMyReviews = true;
+      _errorMyReviews = null;
+    });
+    try {
+      final reviews = await _apiService.getMyTripReviews();
+      setState(() {
+        _myReviews = reviews;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMyReviews = 'Failed to load your reviews: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoadingMyReviews = false;
+      });
+    }
+  }
+
+  Future<void> _onDeleteMyReview(int reviewId) async {
+    final bool confirmDelete = await showCupertinoDialog(
+      context: context,
+      builder: (BuildContext context) => CupertinoAlertDialog(
+        title: const Text("Delete Review"),
+        content: const Text("Are you sure you want to delete this review?"),
+        actions: <CupertinoDialogAction>[
+          CupertinoDialogAction(
+            child: const Text("No"),
+            onPressed: () {
+              Navigator.pop(context, false);
+            },
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () {
+              Navigator.pop(context, true);
+            },
+            child: const Text("Yes"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmDelete) {
+      try {
+        await _apiService.deleteReviewTrips(reviewId);
+        _fetchMyReviews(); // Refresh the list after deletion
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Review deleted successfully!')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to delete review: $e')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85, // Tinggi 85% layar
+      height: MediaQuery.of(context).size.height * 0.85, 
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
@@ -17,7 +103,7 @@ class LevelProgressBottomSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // --- Handle Bar (Garis kecil di atas) ---
+          // --- Handle Bar ---
           const SizedBox(height: 12),
           Container(
             width: 60,
@@ -49,13 +135,13 @@ class LevelProgressBottomSheet extends StatelessWidget {
                             size: 80,
                             color: Color(0xFF1C314A),
                           ),
-                          Text(
+                          const Text(
                             "1",
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              fontFamily: 'Roboto', // Pastikan font tebal
+                              fontFamily: 'Roboto', 
                             ),
                           ),
                         ],
@@ -67,7 +153,7 @@ class LevelProgressBottomSheet extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              "My Scoe", // Sesuai typo di gambar "Scoe" -> Score
+                              "My Score",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -135,33 +221,39 @@ class LevelProgressBottomSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Card Your Review
-                  _buildReviewCard(
-                    image: 'assets/images/placeholder_nature.jpg', // Ganti dengan URL/Asset Anda
-                    title: "The Getaway",
-                    desc: "My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...",
-                    location: "Bedugul - Gianyar",
-                    stars: 5,
-                    isDeletable: true,
-                  ),
-                  // Card Duplicate (Sesuai gambar ada potongan card di bawahnya)
-                  Transform.translate(
-                    offset: const Offset(0, -10), // Efek tumpuk sedikit
-                    child: Opacity(
-                      opacity: 0.5,
-                      child: _buildReviewCard(
-                        image: 'assets/images/placeholder_nature.jpg',
-                        title: "The Getaway",
-                        desc: "My own schedule trip to get to somewhere full with",
-                        location: "",
-                        stars: 0,
-                        isDeletable: false,
-                        mini: true,
-                      ),
-                    ),
-                  ),
                   
-                  const SizedBox(height: 10),
+                  // List Your Reviews
+                  _isLoadingMyReviews
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorMyReviews != null
+                          ? Center(child: Text(_errorMyReviews!))
+                          : _myReviews.isEmpty
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    child: Text('You have not made any reviews yet.'),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _myReviews.length,
+                                  itemBuilder: (context, index) {
+                                    final review = _myReviews[index];
+                                    return _buildReviewCard(
+                                      reviewId: review.reviewId,
+                                      image: review.plan.banner ?? "", // Handle null safety
+                                      title: review.plan.title,
+                                      desc: review.comment,
+                                      location: review.plan.description ?? "", // Assuming plan description can be location
+                                      stars: review.rating.toInt(),
+                                      isDeletable: true,
+                                      onDelete: _onDeleteMyReview,
+                                    );
+                                  },
+                                ),
+                  
+                  const SizedBox(height: 24),
 
                   // --- SECTION: Those Who Review You ---
                   const Text(
@@ -173,7 +265,24 @@ class LevelProgressBottomSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildReviewerCard(),
+                  
+                  // List Reviewers
+                  widget.reviewsOnMyPlans.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(vertical: 20.0),
+                            child: Text('No one has reviewed your plans yet.'),
+                          ),
+                        )
+                      : ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: widget.reviewsOnMyPlans.length,
+                          itemBuilder: (context, index) {
+                            final review = widget.reviewsOnMyPlans[index];
+                            return _buildReviewerCard(review: review);
+                          },
+                        ),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -184,18 +293,19 @@ class LevelProgressBottomSheet extends StatelessWidget {
     );
   }
 
-  // --- WIDGET: Card untuk "Your Review" ---
+  // --- WIDGET HELPER: Card "Your Review" ---
   Widget _buildReviewCard({
+    required int reviewId,
     required String image,
     required String title,
     required String desc,
     required String location,
     required int stars,
     required bool isDeletable,
-    bool mini = false,
+    Function(int)? onDelete,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 0),
+      margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -218,9 +328,14 @@ class LevelProgressBottomSheet extends StatelessWidget {
             child: Container(
               width: 60,
               height: 60,
-              color: Colors.grey[300], // Placeholder color
-              // child: Image.network(image, fit: BoxFit.cover), // Gunakan ini jika ada gambar asli
-              child: const Icon(Icons.image, color: Colors.grey),
+              color: Colors.grey[300],
+              child: image.isNotEmpty
+                  ? Image.memory(
+                      base64Decode(image.split(',').last),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image, color: Colors.grey),
+                    )
+                  : const Icon(Icons.image, color: Colors.grey),
             ),
           ),
           const SizedBox(width: 12),
@@ -237,52 +352,59 @@ class LevelProgressBottomSheet extends StatelessWidget {
                     color: Color(0xFF1C314A),
                   ),
                 ),
-                if (!mini) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    desc,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 4),
-                  if (location.isNotEmpty)
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 10, color: Colors.grey),
-                        const SizedBox(width: 2),
-                        Text(
+                const SizedBox(height: 4),
+                Text(
+                  desc,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                if (location.isNotEmpty)
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 10, color: Colors.grey),
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
                           location,
                           style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: List.generate(5, (index) {
-                      return Icon(
-                        Icons.star_rounded,
-                        size: 16,
-                        color: index < stars ? Colors.amber : Colors.grey[300],
-                      );
-                    }),
+                      ),
+                    ],
                   ),
-                ]
+                const SizedBox(height: 6),
+                Row(
+                  children: List.generate(5, (index) {
+                    return Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: index < stars ? Colors.amber : Colors.grey[300],
+                    );
+                  }),
+                ),
               ],
             ),
           ),
           // Delete Icon
-          if (isDeletable)
-            const Icon(Icons.delete_outline, size: 20, color: Color(0xFF1C314A)),
+          if (isDeletable && onDelete != null)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, size: 20, color: Color(0xFF1C314A)),
+              onPressed: () => onDelete(reviewId),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
         ],
       ),
     );
   }
 
-  // --- WIDGET: Card untuk "Those Who Review You" ---
-  Widget _buildReviewerCard() {
+  // --- WIDGET HELPER: Card "Those Who Review You" ---
+  Widget _buildReviewerCard({required ReviewOnMyPlanModel review}) {
     return Container(
       padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -301,23 +423,28 @@ class LevelProgressBottomSheet extends StatelessWidget {
           // Left Column: Avatar & Profile Info
           Column(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 35,
-                backgroundImage: AssetImage('assets/images/user_placeholder.png'), // Ganti dengan asset Anda
-                backgroundColor: Colors.grey, // Fallback
+                backgroundColor: Colors.grey,
+                backgroundImage: (review.user?.photo != null && review.user!.photo.isNotEmpty)
+                    ? MemoryImage(base64Decode(review.user!.photo.split(',').last))
+                    : null,
+                child: (review.user.photo == null || review.user!.photo.isEmpty)
+                    ? const Icon(CupertinoIcons.person_fill, color: Colors.white, size: 30)
+                    : null,
               ),
               const SizedBox(height: 8),
-              const Text(
-                "Jackson",
-                style: TextStyle(
+              Text(
+                review.user.username,
+                style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                   color: Color(0xFF1C314A),
                 ),
               ),
-              const Text(
-                "Traveller",
-                style: TextStyle(
+              Text(
+                review.user.rank,
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1C314A),
@@ -351,15 +478,14 @@ class LevelProgressBottomSheet extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: List.generate(5, (index) => const Icon(Icons.star_rounded, size: 18, color: Colors.amber)),
+                      children: List.generate(5, (index) => Icon(Icons.star_rounded, size: 18, color: index < (review.rating ?? 0) ? Colors.amber : Colors.grey[300])),
                     ),
-                    const Icon(Icons.delete, size: 18, color: Color(0xFF1C314A)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  "The Scenery is cute, the place is comfy, the people are very friendly, i came here with my family, and we feel very nice being here",
-                  style: TextStyle(
+                Text(
+                  review.comment,
+                  style: const TextStyle(
                     fontSize: 13,
                     color: Color(0xFF1C314A),
                     height: 1.4,

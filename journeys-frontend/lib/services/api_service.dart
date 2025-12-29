@@ -8,7 +8,9 @@ import '../models/plan_model.dart';
 import '../models/route_model.dart';
 import '../models/traveller_model.dart';
 import '../models/traveller_recomen_model.dart';
-import '../models/most_active_traveller_model.dart';
+import 'package:journeys/models/most_active_traveller_model.dart';
+import 'package:journeys/models/my_trip_review_model.dart';
+import 'package:journeys/models/review_on_my_plan_model.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
@@ -250,5 +252,43 @@ Future<List<PlanModel>> getMyPlans() async {
       },
       file: photoFile,
     );
+  }
+
+  Future<void> deleteReviewTrips(int reviewId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    await _client.delete(
+      'http://192.168.1.7:8080/reviews/my/$reviewId',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+  }
+
+
+  Future<List<MyTripReviewModel>> getMyTripReviews() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/reviews/trip/me',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => MyTripReviewModel.fromJson(json)).toList();
+  }
+
+  Future<List<ReviewOnMyPlanModel>> getReviewsOnMyPlans() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/reviews/trip/my-plans',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => ReviewOnMyPlanModel.fromJson(json)).toList();
   }
 }
