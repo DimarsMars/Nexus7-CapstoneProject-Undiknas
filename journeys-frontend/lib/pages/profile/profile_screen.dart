@@ -184,13 +184,16 @@ class _MyProfileScreen extends State<ProfileScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 90.0),
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
+                                  onPressed: () async {
+                                    final result = await Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                           builder: (context) =>
                                               const EditProfileScreen()),
                                     );
+                                    if (result == true) {
+                                      _fetchData();
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     elevation: 5,
