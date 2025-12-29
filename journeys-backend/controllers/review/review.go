@@ -116,7 +116,7 @@ func GetTripReviews(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": reviews})
 }
 
-func DeleteTripReview(c *gin.Context) {
+func DeleteMyTripReview(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	reviewIDParam := c.Param("review_id")
 
@@ -132,13 +132,7 @@ func DeleteTripReview(c *gin.Context) {
 		return
 	}
 
-	var plan models.Plan
-	if err := config.DB.First(&plan, "plan_id = ?", review.PlanID).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data plan"})
-		return
-	}
-
-	if plan.UserID != userID {
+	if review.UserID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Kamu tidak memiliki izin untuk menghapus review ini"})
 		return
 	}
@@ -150,6 +144,7 @@ func DeleteTripReview(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Review berhasil dihapus"})
 }
+
 
 func CreatePlaceReview(c *gin.Context) {
 	userID := c.GetUint("user_id")

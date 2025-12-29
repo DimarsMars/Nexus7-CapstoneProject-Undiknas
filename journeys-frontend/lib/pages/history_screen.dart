@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:journeys/models/past_trip_model.dart';
+import 'package:journeys/models/favorite_trip_model.dart';
+import 'package:journeys/services/api_service.dart';
+import 'dart:convert';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -8,6 +12,191 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _MyHistoryScreen extends State<HistoryScreen> {
+  final ApiService _apiService = ApiService();
+  
+  // State for Past Trips
+  List<PastTripModel> _pastTrips = [];
+  bool _isLoadingPastTrips = true;
+  String? _errorPastTrips;
+
+  // State for Favorite Trips
+  List<FavoriteTripModel> _favoriteTrips = [];
+  bool _isLoadingFavorites = true;
+  String? _errorFavorites;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPastTrips();
+    _fetchFavoriteTrips();
+  }
+
+  Future<void> _fetchPastTrips() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingPastTrips = true;
+        _errorPastTrips = null;
+      });
+      final trips = await _apiService.getPastTrips();
+      if (mounted) {
+        setState(() {
+          _pastTrips = trips;
+          _isLoadingPastTrips = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorPastTrips = 'Failed to load past trips: $e';
+          _isLoadingPastTrips = false;
+        });
+      }
+    }
+  }
+
+    Future<void> _fetchFavoriteTrips() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingFavorites = true;
+        _errorFavorites = null;
+      });
+      final trips = await _apiService.getFavoriteTrips();
+      if (mounted) {
+        setState(() {
+          _favoriteTrips = trips;
+          _isLoadingFavorites = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorFavorites = 'Failed to load favorite trips: $e';
+          _isLoadingFavorites = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleDeleteHistory(int progressId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete History'),
+        content: const Text('Are you sure you want to delete this trip history?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _apiService.deletePastTrip(progressId);
+        _fetchPastTrips(); // Refresh the list
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trip history deleted successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete history: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleRemoveFavorite(int favoriteId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Favorite'),
+        content: const Text('Are you sure you want to remove this from your favorites?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await _apiService.removeFavoriteTrip(favoriteId);
+        _fetchFavoriteTrips(); // Refresh the list
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Removed from favorites')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to remove favorite: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleRemoveAllFavorites() async {
+     final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove All Favorites'),
+        content: const Text('Are you sure you want to remove all your favorite trips?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove All', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+     if (confirm == true) {
+        try {
+          // Create a list of futures to delete each favorite
+          final List<Future> deleteFutures = _favoriteTrips.map((trip) {
+            return _apiService.removeFavoriteTrip(trip.favoriteId);
+          }).toList();
+
+          // Wait for all delete operations to complete
+          await Future.wait(deleteFutures);
+
+          _fetchFavoriteTrips(); // Refresh the list
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('All favorites have been removed')),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('An error occurred while removing favorites: $e')),
+            );
+          }
+        }
+    }
+  }
 
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
@@ -63,64 +252,82 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                   const SizedBox(height: 32),
 
                   // --- SECTION 2: FAVOURITES ---
-                  _buildSectionHeader('Favourites', 'Remove all'),
+                  _buildSectionHeader('Favourites', 'Remove all', onPressed: _handleRemoveAllFavorites),
                   const SizedBox(height: 16),
-                  // Daftar kartu
-                  _buildTripCard(
-                    title: 'The Getaway',
-                    description:
-                        'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                    location: 'Bedugul - Gianyar',
-                    icon: Icons.bookmark,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTripCard(
-                    title: 'My Life My Rule',
-                    description:
-                        'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                    location: 'Bedugul - Gianyar',
-                    icon: Icons.bookmark,
-                  ),
+                  _isLoadingFavorites
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorFavorites != null
+                          ? Center(child: Text(_errorFavorites!))
+                          : _favoriteTrips.isEmpty
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    child: Text('You haven\'t favorited any trips yet.'),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _favoriteTrips.length,
+                                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final fav = _favoriteTrips[index];
+                                    return _buildTripCard(
+                                      title: fav.plan.title,
+                                      description: fav.plan.description,
+                                      location: fav.plan.routes.isNotEmpty ? fav.plan.routes.first.address : 'No location',
+                                      icon: Icons.favorite,
+                                      banner: fav.plan.bannerBase64,
+                                      onIconPressed: () => _handleRemoveFavorite(fav.favoriteId),
+                                      iconColor: Colors.red,
+                                    );
+                                  },
+                                ),
 
                   const SizedBox(height: 32),
 
                   // --- SECTION 3: YOUR PAST TRIP'S ---
                   _buildSectionHeader('Your past trip\'s', 'Remove all'),
                   const SizedBox(height: 16),
-                  // Daftar kartu...
-                  _buildTripCard(
-                    title: 'The Getaway',
-                    description:
-                        'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                    location: 'Bedugul - Gianyar',
-                    icon: Icons.delete_outline, // Ikon Delete
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTripCard(
-                    title: 'My Life My Rule',
-                    description:
-                        'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                    location: 'Bedugul - Gianyar',
-                    icon: Icons.delete_outline, // Ikon Delete
-                  ),
-                  const SizedBox(height: 12),
-                  _buildTripCard(
-                    title: 'The Getaway',
-                    description:
-                        'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                    location: 'Bedugul - Gianyar',
-                    icon: Icons.delete_outline, // Ikon Delete
-                  ),
-                ],
+                  _isLoadingPastTrips
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorPastTrips != null
+                          ? Center(child: Text(_errorPastTrips!))
+                          : _pastTrips.isEmpty
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    child: Text('No travel history found.'),
+                                  ),
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: _pastTrips.length,
+                                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final trip = _pastTrips[index];
+                                    return _buildTripCard(
+                                      title: trip.title,
+                                      description: trip.description,
+                                      location: trip.routes.isNotEmpty ? trip.routes.first.address : 'No location',
+                                      icon: Icons.delete_outline,
+                                      banner: trip.banner,
+                                      onIconPressed: () => _handleDeleteHistory(trip.progressId),
+                                      iconColor: _darkGrey,
+                                    );
+                                  },
+                                ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
-  Widget _buildSectionHeader(String title, String buttonText) {
+  Widget _buildSectionHeader(String title, String buttonText, {VoidCallback? onPressed}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -136,7 +343,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ),
         // Tombol Aksi
         ElevatedButton(
-          onPressed: () {},
+          onPressed: onPressed,
           style: ElevatedButton.styleFrom(
             backgroundColor: _darkGrey,
             foregroundColor: Colors.white,
@@ -242,6 +449,9 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     required String description,
     required String location,
     required IconData icon,
+    String? banner,
+    VoidCallback? onIconPressed,
+    Color? iconColor,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -259,17 +469,24 @@ class _MyHistoryScreen extends State<HistoryScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 80,
+              height: 80,
               color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.image_not_supported_outlined,
-              color: Colors.grey[500],
-              size: 40,
+              child: banner != null && banner.isNotEmpty
+                  ? Image.memory(
+                      base64Decode(banner.split(',').last),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+                    )
+                  : const Icon(
+                      Icons.image_not_supported_outlined,
+                      color: Colors.grey,
+                      size: 40,
+                    ),
             ),
           ),
           const SizedBox(width: 12),
@@ -298,9 +515,12 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                   children: [
                     Icon(Icons.location_on, size: 14, color: _lightGreyText),
                     const SizedBox(width: 4),
-                    Text(
-                      location,
-                      style: TextStyle(fontSize: 12, color: _lightGreyText),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: TextStyle(fontSize: 12, color: _lightGreyText),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -310,8 +530,8 @@ class _MyHistoryScreen extends State<HistoryScreen> {
           const SizedBox(width: 8),
           // Ikon (Bookmark/Delete)
           IconButton(
-            onPressed: () {},
-            icon: Icon(icon, color: _darkGrey, size: 24),
+            onPressed: onIconPressed,
+            icon: Icon(icon, color: iconColor ?? _darkGrey, size: 24),
           ),
         ],
       ),

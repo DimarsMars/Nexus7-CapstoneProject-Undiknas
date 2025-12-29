@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'pages/main_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:journeys/router/app_router.dart';
+import 'package:journeys/theme/app_theme.dart';
+import 'firebase_options.dart';
 
-
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -11,21 +17,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Journeys',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          foregroundColor: Colors.black87,
-        ),
-      ),
-      home: 
-        MainScreen(),
-        // OtherProfileScreen(),
-    );
+    return MaterialApp.router(
+  title: 'Journeys',
+  debugShowCheckedModeBanner: false,
+  theme: AppTheme.lightTheme,
+  routerConfig: appRouter,
+);
   }
 }

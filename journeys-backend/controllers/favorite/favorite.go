@@ -50,7 +50,8 @@ func GetFavorites(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	var favorites []models.Favorite
 
-	if err := config.DB.Preload("Plan.Categories").
+	if err := config.DB.
+		Preload("Plan.Routes").
 		Where("user_id = ?", userID).
 		Find(&favorites).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil favorites"})
