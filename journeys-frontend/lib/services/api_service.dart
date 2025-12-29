@@ -11,6 +11,9 @@ import '../models/traveller_recomen_model.dart';
 import 'package:journeys/models/most_active_traveller_model.dart';
 import 'package:journeys/models/my_trip_review_model.dart';
 import 'package:journeys/models/review_on_my_plan_model.dart';
+import 'package:journeys/models/user_xp_model.dart';
+import 'package:journeys/models/past_trip_model.dart';
+import 'package:journeys/models/favorite_trip_model.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
@@ -96,6 +99,19 @@ Future<ProfileModel> getProfile() async {
   final data = response['data'];
   return ProfileModel.fromJson(data);
 }
+
+Future<UserXpModel> getUserXP() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/user/xp',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    
+    return UserXpModel.fromJson(response);
+  }
 
 Future<List<CategoryModel>> getCategories() async {
   final user = _auth.currentUser;
@@ -290,5 +306,53 @@ Future<List<PlanModel>> getMyPlans() async {
     );
     final data = response['data'] as List<dynamic>;
     return data.map((json) => ReviewOnMyPlanModel.fromJson(json)).toList();
+  }
+
+  Future<List<PastTripModel>> getPastTrips() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/plans/history',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => PastTripModel.fromJson(json)).toList();
+  }
+
+  Future<void> deletePastTrip(int progressId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    await _client.delete(
+      'http://192.168.1.7:8080/plans/history/$progressId',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+  }
+
+  Future<List<FavoriteTripModel>> getFavoriteTrips() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/favorites/',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => FavoriteTripModel.fromJson(json)).toList();
+  }
+
+  Future<void> removeFavoriteTrip(int favoriteId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    await _client.delete(
+      'http://192.168.1.7:8080/favorites/$favoriteId',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
   }
 }
