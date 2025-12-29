@@ -1,5 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:journeys/models/category_model.dart';
+import 'package:journeys/services/api_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -13,6 +17,107 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
   static const Color _lightGreyText = Color(0xFF6C7B8A);
   static const Color _borderColor = Color(0xFFCBD2D9);
 
+  // Api Service
+  final ApiService _apiService = ApiService();
+
+  // State untuk gambar profil
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
+
+  // State untuk tanggal lahir
+  DateTime? _selectedDate;
+  final TextEditingController _birthDateController = TextEditingController();
+
+  // State untuk status dropdown
+  String? _selectedStatus;
+  final List<String> _statusOptions = [
+    'Married',
+    'Single',
+    'In Relationship',
+    'Adult',
+    'Family Friendly'
+  ];
+
+  // State untuk description (categories)
+  bool _isDescriptionDropdownOpen = false;
+  List<CategoryModel> _allCategories = [];
+  List<CategoryModel> _selectedCategories = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+    // Inisialisasi tanggal awal atau biarkan kosong
+    // _selectedDate = DateTime(2000, 12, 20);
+    // _birthDateController.text = "${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}";
+  }
+
+  Future<void> _fetchCategories() async {
+    try {
+      final categories = await _apiService.getCategories();
+      if (mounted) {
+        setState(() {
+          _allCategories = categories;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load preferences: $e')),
+        );
+      }
+    }
+  }
+
+  // Fungsi untuk memilih gambar dari galeri
+  Future<void> _pickImage() async {
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _birthDateController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk menampilkan date picker
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: _darkBlue, // Warna header
+              onPrimary: Colors.white, // Warna teks di header
+              onSurface: _darkBlue, // Warna teks tanggal
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: _darkBlue, // Warna tombol OK dan Cancel
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _birthDateController.text =
+            "${picked.day}/${picked.month}/${picked.year}";
+      });
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,8 +148,46 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     
-                    const CircleAvatar(
-                      radius: 60,
+                    Stack(
+                      children: [
+                        // --- Foto Profil ---
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundColor: Colors.grey[200], // Placeholder color
+                          backgroundImage: _imageFile != null
+                              ? FileImage(_imageFile!)
+                              : null,
+                          child: _imageFile == null
+                              ? const Icon(CupertinoIcons.person_fill, size: 60, color: Colors.grey)
+                              : null,
+                        ),
+
+                        // --- Tombol Edit (Pensil) Custom ---
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              width: 35, // Ukuran kotak
+                              height: 35,
+                              decoration: BoxDecoration(
+                                color: Colors.white, // Background Putih
+                                borderRadius: BorderRadius.circular(10), // Sudut melengkung (Rounded)
+                                border: Border.all(
+                                  color: const Color(0xFF2196F3), // Warna Biru terang sesuai gambar
+                                  width: 1.5, // Ketebalan garis biru
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.edit, // Icon Pensil Solid
+                                color: Color(0xFF2196F3), // Warna Icon Biru
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 30),
 
@@ -53,7 +196,7 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                     const SizedBox(height: 8),
 
                     // --- Text Field "Name" ---
-                    _buildTextField(hint: 'ELALALANG'),
+                    _buildTextField(hint: 'ELALALANG', textAlign: TextAlign.center),
                     const SizedBox(height: 20),
 
                     // --- Rank ---
@@ -65,7 +208,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                           Stack(
                             alignment: Alignment.center,
                             children: [
-                              // Icon Lencana Solid Polos (Cupertino)
                               const Icon(
                                 CupertinoIcons.shield_fill, 
                                 color: Color(0xFF1C314A),
@@ -100,15 +242,18 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                     _buildLabel('Birth Date'),
                     const SizedBox(height: 8),
                     _buildTextField(
-                      hint: '20/12/2000',
+                      hint: 'Select your birth date',
                       icon: Icons.calendar_today_outlined,
+                      controller: _birthDateController,
+                      readOnly: true,
+                      onTap: () => _selectDate(context),
                     ),
                     const SizedBox(height: 20),
 
                     // --- Description ---
                     _buildLabel('Description (likes)'),
                     const SizedBox(height: 8),
-                    _buildTextField(hint: 'Adventure, Food, Health, Bike'),
+                    _buildDescriptionField(),
                     const SizedBox(height: 20),
 
                     // --- Status ---
@@ -173,10 +318,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  /// --- WIDGET HELPER DI BAWAH INI ---
-  /// (Diletakkan di dalam class _MyProfileScreen, di luar method build)
-
-  // Fungsi _buildAvatar() telah dihapus sesuai permintaan
   
   /// Helper untuk label (Birth Date, Status, dll)
   Widget _buildLabel(String text, {bool center = false}) {
@@ -193,16 +334,27 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
   }
 
   /// Helper untuk Text Field
-  Widget _buildTextField({required String hint, IconData? icon}) {
+  Widget _buildTextField({
+    required String hint,
+    IconData? icon,
+    TextEditingController? controller,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    TextAlign textAlign = TextAlign.start, // Tambahkan parameter ini
+  }) {
     return TextField(
+      controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
+      textAlign: textAlign, // Gunakan parameter ini
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(color: _darkBlue, fontWeight: FontWeight.bold),
-        suffixIcon: icon != null
-            ? Icon(icon, color: _lightGreyText)
-            : null,
+        suffixIcon: icon != null ? Icon(icon, color: _lightGreyText) : null,
         contentPadding:
             const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        filled: true, // Tambahkan ini
+        fillColor: Colors.white, // Tambahkan ini
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8.0),
           borderSide: const BorderSide(color: _borderColor, width: 1.0),
@@ -215,26 +367,135 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  /// Helper khusus untuk field "Status"
+  /// Helper untuk field "Description" (Multi-select Dropdown)
+  Widget _buildDescriptionField() {
+    // Filter kategori yang belum dipilih
+    final availableCategories = _allCategories
+        .where((cat) =>
+            !_selectedCategories.any((selected) => selected.id == cat.id))
+        .toList();
+
+    return Column(
+      children: [
+        // --- Kotak input palsu yang menampilkan chips ---
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _isDescriptionDropdownOpen = !_isDescriptionDropdownOpen;
+            });
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: _borderColor, width: 1.0),
+              color: Colors.white, // Background putih agar sama dengan TextField
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _selectedCategories.isEmpty
+                      ? const Text(
+                          'Select Preference',
+                          style: TextStyle(color: _darkBlue, fontWeight: FontWeight.bold),
+                        )
+                      : Wrap(
+                          spacing: 6.0,
+                          runSpacing: 6.0,
+                          children: _selectedCategories.map((category) {
+                            return Chip(
+                              label: Text(category.name.trim(), style: const TextStyle(fontSize: 12)),
+                              onDeleted: () {
+                                setState(() {
+                                  _selectedCategories.removeWhere(
+                                      (c) => c.id == category.id);
+                                });
+                              },
+                              deleteIcon: const Icon(CupertinoIcons.xmark_circle_fill, size: 16),
+                              backgroundColor: Colors.grey[200],
+                              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                            );
+                          }).toList(),
+                        ),
+                ),
+                Icon(
+                  _isDescriptionDropdownOpen
+                      ? Icons.arrow_drop_up // Panah ke atas saat terbuka
+                      : Icons.arrow_drop_down, // Panah ke bawah saat tertutup
+                  color: _lightGreyText,
+                  size: 24, // Ukuran ikon default untuk DropdownButtonFormField
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // --- Daftar dropdown yang bisa muncul/hilang ---
+        if (_isDescriptionDropdownOpen)
+          Container(
+            height: 200, // Batasi tinggi agar bisa di-scroll
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(color: _borderColor, width: 1.0),
+              color: Colors.white,
+            ),
+            child: availableCategories.isEmpty
+                ? const Center(child: Text('All categories selected or none available.'))
+                : ListView.builder(
+                    itemCount: availableCategories.length,
+                    itemBuilder: (context, index) {
+                      final category = availableCategories[index];
+                      return ListTile(
+                        title: Text(category.name.trim()),
+                        onTap: () {
+                          setState(() {
+                            _selectedCategories.add(category);
+                            _isDescriptionDropdownOpen = false; // Tutup dropdown setelah memilih
+                          });
+                        },
+                      );
+                    },
+                  ),
+          ),
+      ],
+    );
+  }
+
+  /// Helper khusus untuk field "Status" yang sekarang menjadi Dropdown
   Widget _buildStatusField() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: _borderColor, width: 1.0),
+    return DropdownButtonFormField<String>(
+      value: _selectedStatus,
+      hint: const Text(
+        'Select Status',
+        style: TextStyle(color: _darkBlue, fontWeight: FontWeight.bold),
       ),
-      child: const Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Family',
-            style: TextStyle(color: _darkBlue, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            '(0) Child',
-            style: TextStyle(color: _lightGreyText),
-          ),
-        ],
+      isExpanded: true,
+      onChanged: (String? newValue) {
+        setState(() {
+          _selectedStatus = newValue;
+        });
+      },
+      items: _statusOptions.map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(value, style: const TextStyle(color: _darkBlue, fontWeight: FontWeight.bold)),
+        );
+      }).toList(),
+      decoration: InputDecoration(
+        contentPadding:
+            const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        filled: true, // Tambahkan ini
+        fillColor: Colors.white, // Tambahkan ini
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: _borderColor, width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8.0),
+          borderSide: const BorderSide(color: _darkBlue, width: 1.5),
+        ),
       ),
     );
   }
