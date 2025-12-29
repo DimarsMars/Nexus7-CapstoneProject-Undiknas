@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:journeys/models/profile_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'api_client.dart';
@@ -56,6 +57,40 @@ class ApiService {
   await prefs.setString('username', user.username);
 
   return user;
+}
+
+Future<UserModel> getUserMe() async {
+  final user = _auth.currentUser;
+  if (user == null) throw Exception("User not logged in");
+
+  final idToken = await user.getIdToken();
+
+  final response = await _client.get(
+    'http://192.168.1.7:8080/user/me',
+    headers: {
+      'Authorization': 'Bearer $idToken',
+    },
+  );
+
+  final data = response['data'];
+  return UserModel.fromJson(data);
+}
+
+Future<ProfileModel> getProfile() async {
+  final user = _auth.currentUser;
+  if (user == null) throw Exception("User not logged in");
+
+  final idToken = await user.getIdToken();
+
+  final response = await _client.get(
+    'http://192.168.1.7:8080/profile/me',
+    headers: {
+      'Authorization': 'Bearer $idToken',
+    },
+  );
+
+  final data = response['data'];
+  return ProfileModel.fromJson(data);
 }
 
 Future<List<CategoryModel>> getCategories() async {
@@ -163,6 +198,24 @@ Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
       .map((json) => MostActiveTravellerModel.fromJson(json))
       .toList();
 }
+
+Future<List<PlanModel>> getMyPlans() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.7:8080/plans/',
+      headers: {
+        'Authorization': 'Bearer $idToken',
+      },
+    );
+
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => PlanModel.fromJson(json)).toList();
+  }
 
 
 
