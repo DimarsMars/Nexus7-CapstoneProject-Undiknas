@@ -237,7 +237,7 @@ Future<List<PlanModel>> getMyPlans() async {
     }
 
     await _client.putMultipart(
-      'http://192.168.1.7:8080/profile/update', // Endpoint yang benar
+      'http://192.168.1.7:8080/profile/update',
       headers: {
         'Authorization': 'Bearer $idToken',
       },
