@@ -9,6 +9,8 @@ import '../models/route_model.dart';
 import '../models/traveller_model.dart';
 import '../models/traveller_recomen_model.dart';
 import '../models/most_active_traveller_model.dart';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -217,7 +219,36 @@ Future<List<PlanModel>> getMyPlans() async {
     return data.map((json) => PlanModel.fromJson(json)).toList();
   }
 
+  Future<void> updateUserProfile({
+    required String birthDate,
+    required String description,
+    required String status,
+    File? photo,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+    final idToken = await user.getIdToken();
 
+    http.MultipartFile? photoFile;
+    if (photo != null) {
+      photoFile = await http.MultipartFile.fromPath('photo', photo.path);
+    }
 
+    await _client.putMultipart(
+      'http://192.168.1.7:8080/profile/update', // Endpoint yang benar
+      headers: {
+        'Authorization': 'Bearer $idToken',
+      },
+      fields: {
+        'birth_date': birthDate,
+        'description': description,
+        'status': status,
+        'location': 'Solo',
+        'languages': 'ID',
+      },
+      file: photoFile,
+    );
+  }
 }
-
