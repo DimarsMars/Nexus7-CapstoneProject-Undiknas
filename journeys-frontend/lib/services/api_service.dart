@@ -267,6 +267,116 @@ Future<List<PlaceReview>> getPlaceReviews(int routeId) async {
   return data.map((e) => PlaceReview.fromJson(e)).toList();
 }
 
+// Tambah ke Favorite
+Future<bool> addFavorite(int planId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.post(
+    'http://172.20.10.2:8080/favorites/$planId',
+    {},
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response['message'] != null;
+}
+
+// Hapus dari Favorite
+Future<bool> removeFavorite(int favoriteId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.delete(
+    'http://172.20.10.2:8080/favorites/$favoriteId',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response['message'] != null;
+}
+
+// Cek apakah plan sudah difavoritkan
+Future<int?> getFavoriteIdForPlan(int planId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/favorites/',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  final favorites = response['data'] as List<dynamic>;
+  for (final fav in favorites) {
+    final favPlan = fav['plan'];
+    if (favPlan != null && favPlan['plan_id'] == planId) {
+      return fav['favorite_id'];
+    }
+  }
+
+  return null;
+}
+
+Future<bool> submitTripReview(int planId, int rating, String comment) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.post(
+    'http://172.20.10.2:8080/reviews/trip',
+    {
+      'plan_id': planId,
+      'rating': rating,
+      'comment': comment,
+    },
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response['message'] == 'Review berhasil ditambahkan';
+}
+
+
+Future<int?> getBookmarkIdForRoute(int routeId) async {
+  final user = _auth.currentUser;
+  final idToken = await user?.getIdToken();
+
+  final response = await _client.get(
+    'http://172.20.10.2:8080/bookmarks/',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  if (response['data'] == null) return null;
+
+  final bookmarks = List<Map<String, dynamic>>.from(response['data']);
+  final found = bookmarks.firstWhere(
+    (b) => b['route']['route_id'] == routeId,
+    orElse: () => {},
+  );
+
+  return found.isNotEmpty ? found['bookmark_id'] : null;
+}
+
+Future<bool> addBookmark(int routeId) async {
+  final user = _auth.currentUser;
+  final idToken = await user?.getIdToken();
+
+  final response = await _client.post(
+    'http://172.20.10.2:8080/bookmarks/$routeId',
+    {},
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response != null && response['message'] != null;
+}
+
+Future<bool> removeBookmark(int bookmarkId) async {
+  final user = _auth.currentUser;
+  final idToken = await user?.getIdToken();
+
+  final response = await _client.delete(
+    'http://172.20.10.2:8080/bookmarks/$bookmarkId',
+    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
+  );
+
+  return response != null && response['message'] != null;
+}
 
 
 }

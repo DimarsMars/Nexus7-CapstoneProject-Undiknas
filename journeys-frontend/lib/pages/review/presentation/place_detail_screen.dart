@@ -1,4 +1,3 @@
-// TOP: Tetap sama (tidak berubah)
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
@@ -21,31 +20,46 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
 
+int? _bookmarkId;
+
   PlaceDetail? _place;
   List<PlaceReview> _reviews = [];
   bool _isLoading = true;
+  bool _isBookmarked = false;
+
+  // DATA DUMMY UNTUK MORE PICTURES
+  final List<String> _dummyMorePictures = [
+    'assets/icons/review.jpg',
+    'assets/icons/review.jpg',
+    'assets/icons/review.jpg',
+  ];
 
   @override
-  void initState() {
-    super.initState();
-    _loadData();
-  }
+void initState() {
+  super.initState();
+  _loadData();
+}
+
 
   Future<void> _loadData() async {
-    try {
-      final place = await ApiService().getPlaceDetail(widget.routeId);
-      final reviews = await ApiService().getPlaceReviews(widget.routeId);
+  try {
+    final place = await ApiService().getPlaceDetail(widget.routeId);
+    final reviews = await ApiService().getPlaceReviews(widget.routeId);
+    final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
 
-      setState(() {
-        _place = place;
-        _reviews = reviews;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint("Error loading place detail: $e");
-      setState(() => _isLoading = false);
-    }
+    setState(() {
+      _place = place;
+      _reviews = reviews;
+      _bookmarkId = bookmarkId;
+      _isBookmarked = bookmarkId != null;
+      _isLoading = false;
+    });
+  } catch (e) {
+    debugPrint("Error loading place detail: $e");
+    setState(() => _isLoading = false);
   }
+}
+
 
   @override
   void dispose() {
@@ -74,7 +88,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Add Review', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const Text('Add Review',
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold)),
                         IconButton(
                           onPressed: () {
                             Navigator.of(context).pop();
@@ -89,7 +105,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     GestureDetector(
                       onTap: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Image picker will be implemented')),
+                          const SnackBar(
+                              content: Text('Image picker will be implemented')),
                         );
                       },
                       child: Container(
@@ -104,7 +121,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                             children: [
                               Icon(Icons.add, size: 48, color: Colors.grey[400]),
                               const SizedBox(height: 8),
-                              Text('Add Image', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+                              Text('Add Image',
+                                  style: TextStyle(
+                                      fontSize: 16, color: Colors.grey[600])),
                             ],
                           ),
                         ),
@@ -130,27 +149,35 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         Row(
                           children: List.generate(5, (index) {
                             return GestureDetector(
-                              onTap: () => setModalState(() => _rating = index + 1),
+                              onTap: () =>
+                                  setModalState(() => _rating = index + 1),
                               child: Icon(
                                 Icons.star,
                                 size: 32,
-                                color: index < _rating ? Colors.amber : Colors.grey[300],
+                                color: index < _rating
+                                    ? Colors.amber
+                                    : Colors.grey[300],
                               ),
                             );
                           }),
                         ),
                         ElevatedButton(
                           onPressed: () {
-                            if (_reviewController.text.isNotEmpty && _rating > 0) {
+                            if (_reviewController.text.isNotEmpty &&
+                                _rating > 0) {
                               Navigator.of(context).pop();
                               _reviewController.clear();
                               setState(() => _rating = 0);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Review submitted successfully!')),
+                                const SnackBar(
+                                    content:
+                                        Text('Review submitted successfully!')),
                               );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please add a review and rating')),
+                                const SnackBar(
+                                    content:
+                                        Text('Please add a review and rating')),
                               );
                             }
                           },
@@ -170,14 +197,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = _place != null && _place!.imageBase64.isNotEmpty
-        ? [_place!.imageBase64]
-        : ['assets/icons/serenity-oasis.jpg'];
-
-    final List<String> reviewImages = _reviews
-        .where((r) => r.imageBase64.isNotEmpty)
-        .map((r) => r.imageBase64)
-        .toList();
+    final List<String> images =
+        _place != null && _place!.imageBase64.isNotEmpty
+            ? [_place!.imageBase64]
+            : ['assets/icons/serenity-oasis.jpg'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -186,7 +209,6 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
             ? const Center(child: CircularProgressIndicator())
             : Column(
                 children: [
-                  // Search bar
                   Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: Container(
@@ -199,21 +221,21 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           hintText: 'Find a place...',
                           prefixIcon: Icon(Icons.search, color: Colors.grey),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
                         ),
                       ),
                     ),
                   ),
 
-                  // Content
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Header row with back and title
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
                               children: [
                                 GestureDetector(
@@ -224,12 +246,18 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                 Expanded(
                                   child: Text(
                                     _place?.title ?? 'Place Name',
-                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 Row(
                                   children: List.generate(5, (index) {
-                                    return Icon(Icons.star, size: 20, color: index < 4 ? Colors.amber : Colors.grey[300]);
+                                    return Icon(Icons.star,
+                                        size: 20,
+                                        color: index < 4
+                                            ? Colors.amber
+                                            : Colors.grey[300]);
                                   }),
                                 ),
                               ],
@@ -238,9 +266,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
                           const SizedBox(height: 16),
 
-                          // Image carousel
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Stack(
                               children: [
                                 Container(
@@ -248,7 +276,10 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(20),
                                     boxShadow: [
-                                      BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                                      BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4)),
                                     ],
                                   ),
                                   child: ClipRRect(
@@ -258,9 +289,11 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                       itemCount: images.length,
                                       itemBuilder: (context, index) {
                                         final img = images[index];
-                                        return img.startsWith('/')
-                                            ? Image.memory(base64Decode(img), fit: BoxFit.cover)
-                                            : Image.asset(img, fit: BoxFit.cover);
+                                        return img.startsWith('/') || img.length > 100
+                                            ? Image.memory(base64Decode(img),
+                                                fit: BoxFit.cover)
+                                            : Image.asset(img,
+                                                fit: BoxFit.cover);
                                       },
                                     ),
                                   ),
@@ -282,150 +315,220 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                     ),
                                   ),
                                 ),
-                                Positioned(
-                                  bottom: 16,
-                                  right: 16,
-                                  child: ElevatedButton(
-                                    onPressed: _showAddReviewModal,
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF4A5B7A),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                    child: const Text('Add review', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
 
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 16),
 
-                          // Review section header
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: _showAddReviewModal,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(255, 74, 91, 122),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
+                                ),
+                                child: const Text('Add review',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: const [
-                                Text("Review from the people's", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                Icon(Icons.bookmark_border, size: 24),
+                              children: [
+                                const Text("Review from the people's",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold)),
+                                IconButton(
+  onPressed: () async {
+    if (_isBookmarked && _bookmarkId != null) {
+      // Remove bookmark
+      final success = await ApiService().removeBookmark(_bookmarkId!);
+      if (success) {
+        setState(() {
+          _isBookmarked = false;
+          _bookmarkId = null;
+        });
+      }
+    } else {
+      // Add bookmark
+      final success = await ApiService().addBookmark(widget.routeId);
+      if (success) {
+        final newId = await ApiService().getBookmarkIdForRoute(widget.routeId);
+        setState(() {
+          _isBookmarked = true;
+          _bookmarkId = newId;
+        });
+      }
+    }
+  },
+  icon: Icon(
+    _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+    color: _isBookmarked
+        ? const Color.fromARGB(255, 74, 91, 122)
+        : Colors.black,
+    size: 24,
+  ),
+),
+
                               ],
                             ),
                           ),
                           const SizedBox(height: 12),
 
-                          // Review card
+                          // --- REVIEW LIST SCROLL HORIZONTAL (KE SAMPING) ---
                           if (_reviews.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
-                                  border: Border.all(color: Colors.grey[200]!),
-                                ),
-                                child: Row(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(16),
-                                        bottomLeft: Radius.circular(16),
-                                      ),
-                                      child: _reviews[0].imageBase64.isNotEmpty
-                                          ? Image.memory(
-                                              base64Decode(_reviews[0].imageBase64),
-                                              width: 120,
-                                              height: 160,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : Image.asset(
-                                              'assets/icons/review.jpg',
-                                              width: 120,
-                                              height: 160,
-                                              fit: BoxFit.cover,
-                                            ),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: _reviews.map((review) {
+                                  return Container(
+                                    width: 320, // Lebar kotak review agar proporsional saat di-scroll
+                                    margin: const EdgeInsets.only(right: 16, bottom: 8),
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.black.withOpacity(0.05),
+                                            blurRadius: 8)
+                                      ],
+                                      border: Border.all(color: Colors.grey[200]!),
                                     ),
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(12),
-                                        child: Column(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Row(
-                                              children: List.generate(5, (index) {
-                                                return Icon(
-                                                  index < _reviews[0].rating ? Icons.star : Icons.star_border,
-                                                  size: 20,
-                                                  color: Colors.amber,
-                                                );
-                                              }),
+                                            ClipRRect(
+                                              borderRadius: const BorderRadius.only(
+                                                topLeft: Radius.circular(16),
+                                                bottomRight: Radius.circular(16),
+                                              ),
+                                              child: review.imageBase64.isNotEmpty
+                                                  ? Image.memory(
+                                                      base64Decode(review.imageBase64),
+                                                      width: 100,
+                                                      height: 120,
+                                                      fit: BoxFit.cover,
+                                                    )
+                                                  : Image.asset(
+                                                      'assets/icons/review.jpg',
+                                                      width: 100,
+                                                      height: 120,
+                                                      fit: BoxFit.cover,
+                                                    ),
                                             ),
-                                            const SizedBox(height: 8),
-                                            const Text('Review', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                            const SizedBox(height: 8),
-                                            Text(
-                                              _reviews[0].comment,
-                                              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                                              maxLines: 4,
-                                              overflow: TextOverflow.ellipsis,
+                                            Expanded(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(12),
+                                                child: Column(
+                                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: List.generate(5, (starIndex) {
+                                                        return Icon(
+                                                          starIndex < review.rating
+                                                              ? Icons.star
+                                                              : Icons.star_border,
+                                                          size: 18,
+                                                          color: Colors.amber,
+                                                        );
+                                                      }),
+                                                    ),
+                                                    const SizedBox(height: 6),
+                                                    const Text('Review',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight: FontWeight.bold)),
+                                                    const SizedBox(height: 4),
+                                                    Container(
+                                                      height: 50,
+                                                      width: double.infinity,
+                                                      padding: const EdgeInsets.all(6),
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(color: Colors.grey[300]!),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: SingleChildScrollView(
+                                                        child: Text(
+                                                          review.comment,
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey[600]),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
                                             ),
                                           ],
                                         ),
-                                      ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('More picture from the reviews',
+                                                  style: TextStyle(
+                                                      fontSize: 13,
+                                                      fontWeight: FontWeight.bold)),
+                                              const SizedBox(height: 8),
+                                              Row(
+                                                children: [
+                                                  ..._dummyMorePictures.map((path) => Container(
+                                                        margin: const EdgeInsets.only(right: 8),
+                                                        width: 50,
+                                                        height: 50,
+                                                        decoration: BoxDecoration(
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          image: DecorationImage(
+                                                            image: AssetImage(path),
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                        ),
+                                                      )),
+                                                  const Spacer(),
+                                                  TextButton(
+                                                    onPressed: () {},
+                                                    style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                                                    child: const Text('See More Picture',
+                                                        style: TextStyle(
+                                                            fontSize: 10,
+                                                            decoration: TextDecoration.underline)),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  );
+                                }).toList(),
                               ),
                             ),
-
-                          const SizedBox(height: 24),
-
-                          // More pictures section
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('More picture from the reviews', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                TextButton(
-                                  onPressed: () {},
-                                  child: const Text('See More Picture', style: TextStyle(decoration: TextDecoration.underline)),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-
-                          SizedBox(
-                            height: 80,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              itemCount: reviewImages.length,
-                              itemBuilder: (context, index) {
-                                return Container(
-                                  margin: const EdgeInsets.only(right: 10),
-                                  width: 80,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6, offset: const Offset(0, 2)),
-                                    ],
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Image.memory(
-                                      base64Decode(reviewImages[index]),
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
                           const SizedBox(height: 32),
                         ],
                       ),

@@ -18,15 +18,24 @@ class PlanOpenedScreen extends StatefulWidget {
 class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
+  bool _isFavorite = false; 
 
   PlanModel? _plan;
   bool _isLoading = true;
 
+  int? _favoriteId;
+
   @override
-  void initState() {
-    super.initState();
-    _loadPlan();
-  }
+void initState() {
+  super.initState();
+  _loadInitialData();
+}
+
+Future<void> _loadInitialData() async {
+  await _loadPlan();
+  await _loadFavoriteStatus();
+}
+
 
   Future<void> _loadPlan() async {
     final plan = await ApiService().getPlanDetail(widget.planId);
@@ -38,6 +47,15 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
       _isLoading = false;
     });
   }
+
+  Future<void> _loadFavoriteStatus() async {
+  final favId = await ApiService().getFavoriteIdForPlan(widget.planId);
+  setState(() {
+    _favoriteId = favId;
+    _isFavorite = favId != null;
+  });
+}
+
 
   @override
   void dispose() {
@@ -63,7 +81,6 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Review Text Field
                     TextField(
                       controller: _reviewController,
                       maxLines: 5,
@@ -96,12 +113,9 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // Star Rating and Add Review Button
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Star Rating
                         Row(
                           children: List.generate(5, (index) {
                             return GestureDetector(
@@ -123,33 +137,45 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                             );
                           }),
                         ),
-
-                        // Add Review Button
                         ElevatedButton(
-                          onPressed: () {
-                            if (_reviewController.text.isNotEmpty &&
-                                _rating > 0) {
-                              // TODO: Submit review
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Review submitted successfully!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              _reviewController.clear();
-                              setState(() {
-                                _rating = 0;
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Please add a review and rating'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
+                          onPressed: () async {
+  if (_reviewController.text.isNotEmpty && _rating > 0) {
+    final success = await ApiService().submitTripReview(
+      widget.planId,
+      _rating,
+      _reviewController.text.trim(),
+    );
+
+    if (success) {
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Review submitted successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _reviewController.clear();
+      setState(() {
+        _rating = 0;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to submit review.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please add a review and rating'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+},
+
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF4A5B7A),
                             foregroundColor: Colors.white,
@@ -218,10 +244,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button and title
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.white,
                 boxShadow: [
@@ -256,16 +280,12 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                 ],
               ),
             ),
-
-            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-
-                    // Main image card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Container(
@@ -283,7 +303,6 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Image
                             if (bannerBytes != null)
                               ClipRRect(
                                 borderRadius: const BorderRadius.only(
@@ -302,17 +321,13 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Title and Rate button
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               tripTitle,
@@ -340,8 +355,7 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                       ElevatedButton(
                                         onPressed: _showRateTripModal,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xFF4A5B7A),
+                                          backgroundColor: const Color(0xFF4A5B7A),
                                           foregroundColor: Colors.white,
                                           elevation: 0,
                                           padding: const EdgeInsets.symmetric(
@@ -349,8 +363,7 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                             vertical: 12,
                                           ),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
+                                            borderRadius: BorderRadius.circular(10),
                                           ),
                                         ),
                                         child: const Text(
@@ -364,23 +377,18 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // Action buttons
                                   Row(
                                     children: [
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () {},
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF1E3A5F),
+                                            backgroundColor: const Color(0xFF1E3A5F),
                                             foregroundColor: Colors.white,
                                             elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 12),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
+                                              borderRadius: BorderRadius.circular(10),
                                             ),
                                           ),
                                           child: const Text(
@@ -400,11 +408,9 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                             backgroundColor: Colors.red,
                                             foregroundColor: Colors.white,
                                             elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 12),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
+                                              borderRadius: BorderRadius.circular(10),
                                             ),
                                           ),
                                           child: const Text(
@@ -417,45 +423,47 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 10),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: Colors.grey[300]!,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: IconButton(
-                                          onPressed: () {},
-                                          icon: const Icon(
-                                              Icons.bookmark_border),
-                                          color: Colors.black,
-                                          iconSize: 22,
-                                          padding: const EdgeInsets.all(8),
-                                          constraints:
-                                              const BoxConstraints(),
-                                        ),
-                                      ),
+                                      // CONTAINER SUDAH DIHAPUS, HANYA ICONBUTTON SAJA
+                                     IconButton(
+  onPressed: () async {
+    if (_isFavorite && _favoriteId != null) {
+      // Hapus dari favorit
+      final success = await ApiService().removeFavorite(_favoriteId!);
+      if (success) {
+        setState(() {
+          _isFavorite = false;
+          _favoriteId = null;
+        });
+      }
+    } else {
+      // Tambah ke favorit
+      final success = await ApiService().addFavorite(widget.planId);
+      if (success) {
+        await _loadFavoriteStatus(); // refresh favoriteId
+      }
+    }
+  },
+  icon: Icon(
+    _isFavorite ? Icons.favorite : Icons.favorite_border,
+    color: _isFavorite ? Colors.red : Colors.black,
+  ),
+  iconSize: 26,
+  padding: EdgeInsets.zero,
+  constraints: const BoxConstraints(),
+),
+
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // Tags
                                   Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: tags.map((tag) {
                                       return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[200],
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
                                         child: Text(
                                           tag,
@@ -469,8 +477,6 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                     }).toList(),
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // Description
                                   Text(
                                     description,
                                     style: TextStyle(
@@ -487,98 +493,95 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-
-                    // Activities list
                     Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-  child: Column(
-    children: activities.map((activity) {
-      return GestureDetector(
-        onTap: () => context.push('/place-detail', extra: {
-          'routeId': activity.routeId,
-        }),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.grey[200]!,
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              if (activity.imageBase64.isNotEmpty)
-                ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(16),
-                    bottomLeft: Radius.circular(16),
-                  ),
-                  child: Image.memory(
-                    base64Decode(activity.imageBase64),
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        activity.title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        activity.description,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              activity.address,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey[500],
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Column(
+                        children: activities.map((activity) {
+                          return GestureDetector(
+                            onTap: () => context.push('/place-detail', extra: {
+                              'routeId': activity.routeId,
+                            }),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.grey[200]!,
+                                  width: 1,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  if (activity.imageBase64.isNotEmpty)
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(16),
+                                        bottomLeft: Radius.circular(16),
+                                      ),
+                                      child: Image.memory(
+                                        base64Decode(activity.imageBase64),
+                                        width: 100,
+                                        height: 100,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            activity.title,
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            activity.description,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  activity.address,
+                                                  style: TextStyle(
+                                                    fontSize: 13,
+                                                    color: Colors.grey[500],
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-            ],
-          ),
-        ),
-      );
-    }).toList(),
-  ),
-),
-
+                    ),
                     const SizedBox(height: 32),
                   ],
                 ),
