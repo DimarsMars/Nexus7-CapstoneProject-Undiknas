@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'dart:convert'; 
 import 'package:journeys/models/my_trip_review_model.dart';
 import 'package:journeys/models/review_on_my_plan_model.dart';
+import 'package:journeys/models/profile_model.dart';
+import 'package:journeys/models/user_xp_model.dart';
 import 'package:journeys/services/api_service.dart';
 
 class LevelProgressBottomSheet extends StatefulWidget {
@@ -19,15 +21,47 @@ class LevelProgressBottomSheet extends StatefulWidget {
 
 
 class _LevelProgressBottomSheetState extends State<LevelProgressBottomSheet> {
+  // State for Reviews
   List<MyTripReviewModel> _myReviews = [];
   bool _isLoadingMyReviews = true;
   String? _errorMyReviews;
+
+  // State for Profile & XP
+  ProfileModel? _profile;
+  UserXpModel? _userXP;
+  bool _isLoadingProfile = true;
+  String? _errorProfile;
+
   final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _fetchMyReviews();
+    _fetchProfileData();
+  }
+
+  Future<void> _fetchProfileData() async {
+    setState(() {
+      _isLoadingProfile = true;
+      _errorProfile = null;
+    });
+    try {
+      final profile = await _apiService.getProfile();
+      final userXP = await _apiService.getUserXP();
+      setState(() {
+        _profile = profile;
+        _userXP = userXP;
+      });
+    } catch (e) {
+      setState(() {
+        _errorProfile = 'Failed to load profile data: $e';
+      });
+    } finally {
+      setState(() {
+        _isLoadingProfile = false;
+      });
+    }
   }
 
   Future<void> _fetchMyReviews() async {
@@ -123,92 +157,112 @@ class _LevelProgressBottomSheetState extends State<LevelProgressBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // --- HEADER: Badge & XP ---
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Badge Besar
-                      Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(
-                            CupertinoIcons.shield_fill,
-                            size: 80,
-                            color: Color(0xFF1C314A),
-                          ),
-                          const Text(
-                            "1",
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'Roboto', 
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 16),
-                      // Info XP & Progress
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              "My Score",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1C314A),
-                              ),
-                            ),
-                            const Text(
-                              "XP 60",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              "Basic Planner",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1C314A),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            // Progress Bar Custom
-                            Stack(
-                              children: [
-                                Container(
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                FractionallySizedBox(
-                                  widthFactor: 0.6, // 60% Progress
-                                  child: Container(
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF1C314A),
-                                      borderRadius: BorderRadius.circular(4),
+                  _isLoadingProfile
+                      ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                      : _errorProfile != null
+                          ? Center(child: Text(_errorProfile!))
+                          : _profile == null || _userXP == null
+                              ? const Center(child: Text('Profile data is not available.'))
+                              : Column(
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Badge Besar
+                                        Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            const Icon(
+                                              CupertinoIcons.shield_fill,
+                                              size: 80,
+                                              color: Color(0xFF1C314A),
+                                            ),
+                                            Text(
+                                              _profile!.rank.split(' ').last,
+                                              style: const TextStyle(
+                                                fontSize: 30,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                                fontFamily: 'Roboto',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(width: 16),
+                                        // Info XP & Progress
+                                      Expanded(
+                                        // 1. HAPUS ConstrainedBox yang membatasi maxWidth: 50
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              "My Score",
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1C314A),
+                                              ),
+                                            ),
+                                            Text(
+                                              "XP ${_userXP!.xp}",
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _userXP!.rank,
+                                              // maxLines: 1, // Opsional: biar teks rank tidak turun ke bawah
+                                              // overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: Color(0xFF1C314A),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+
+                                            // --- PERBAIKAN DI SINI ---
+                                            // 2. Bungkus Stack (Progress Bar) dengan SizedBox yang punya width tertentu
+                                            SizedBox(
+                                              width: 140, // Atur panjang bar di sini (misal 140 atau 150 biar pas)
+                                              child: Stack(
+                                                children: [
+                                                  Container(
+                                                    height: 8,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.grey[300],
+                                                      borderRadius: BorderRadius.circular(4),
+                                                    ),
+                                                  ),
+                                                  FractionallySizedBox(
+                                                    // Pastikan progressPercentage nilainya 0.0 sampai 1.0
+                                                    widthFactor: _userXP!.progressPercentage.clamp(0.0, 1.0), 
+                                                    child: Container(
+                                                      height: 8,
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(0xFF1C314A),
+                                                        borderRadius: BorderRadius.circular(4),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            // -------------------------
+                                          ],
+                                        ),
+                                      )
+                                      ],
                                     ),
-                                  ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      "You need ${_userXP!.nextLevelXp - _userXP!.xp} more XP to up your Badge's!",
+                                      style: const TextStyle(color: Color(0xFF1C314A), fontSize: 14),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "You need 40 more XP to up your Badge's!",
-                    style: TextStyle(color: Color(0xFF1C314A), fontSize: 14),
-                  ),
                   const SizedBox(height: 24),
 
                   // --- SECTION: Your Review ---
