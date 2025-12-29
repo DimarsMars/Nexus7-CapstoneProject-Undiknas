@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'package:journeys/pages/bookmark_screen.dart';
 import 'package:journeys/pages/trip_schedule_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -18,14 +19,19 @@ class _RouteScreenState extends State<RouteScreen> {
   static const String orsApiKey =
       "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ1NmVlYzAzODhmMjQyYTU4YzNlYzFjNjcyZmJmOWNmIiwiaCI6Im11cm11cjY0In0=";
 
-  final MapController mapController = MapController();
+Future<String?> getFirebaseToken() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  return await user.getIdToken();
+}
 
-  // ================= CONTROLLERS =================
+  final MapController mapController = MapController();
+  
   final titleController = TextEditingController();
   final descController = TextEditingController();
   final addressController = TextEditingController();
   final doingController = TextEditingController();
-  final tagsController = TextEditingController();
+  
 
   // ================= STATE =================
   LatLng mapCenter = const LatLng(-8.436697, 115.279947);
@@ -55,7 +61,7 @@ Widget buildDropdown() {
     ),
     child: DropdownButtonHideUnderline(
       child: DropdownButton<String>(
-        hint: const Text("Select Category"),
+        hint: const Text("Status"),
         value: selectedValue,
         isExpanded: true,
         icon: const Icon(Icons.keyboard_arrow_down),
@@ -157,10 +163,13 @@ void showDeleteConfirmDialog(int index) {
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
           onPressed: () {
             setState(() {
-              routes.removeAt(index);
-              routePoints.removeAt(index);
-            });
-            fetchRoute();
+  routes.removeAt(index);
+  routePoints.clear();
+  routePoints.addAll(
+    routes.map((r) => r["latlng"] as LatLng),
+  );
+});
+fetchRoute();
             Navigator.pop(context);
           },
           child: const Text("Delete"),
@@ -215,48 +224,34 @@ void showDeleteConfirmDialog(int index) {
 
     final url = Uri.parse(
       "https://api.openrouteservice.org/geocode/search"
-      "?api_key=$orsApiKey"
-      "&text=${addressController.text}",
+      "?api_key=$orsApiKey&text=${addressController.text}",
     );
 
-    try {
-      final res = await http.get(url);
-      final data = jsonDecode(res.body);
-      final coords = data["features"][0]["geometry"]["coordinates"];
+    final res = await http.get(url);
+    final data = jsonDecode(res.body);
+    final coords = data["features"][0]["geometry"]["coordinates"];
 
-      setState(() {
-        previewPoint = LatLng(coords[1], coords[0]);
-        mapCenter = previewPoint!;
-      });
+    setState(() {
+      previewPoint = LatLng(coords[1], coords[0]);
+      mapCenter = previewPoint!;
+    });
 
-      mapController.move(mapCenter, 15);
-    } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Lokasi tidak ditemukan")),
-      );
-    }
+    mapController.move(mapCenter, 15);
   }
 
-  // ================= REVERSE GEOCODE =================
   Future<void> reverseGeocode(LatLng latlng) async {
     final url =
         "https://api.openrouteservice.org/geocode/reverse"
-        "?api_key=$orsApiKey"
-        "&point.lon=${latlng.longitude}"
-        "&point.lat=${latlng.latitude}";
+        "?api_key=$orsApiKey&point.lon=${latlng.longitude}&point.lat=${latlng.latitude}";
 
-    try {
-      final res = await http.get(Uri.parse(url));
-      final data = jsonDecode(res.body);
-      final props = data["features"][0]["properties"];
+    final res = await http.get(Uri.parse(url));
+    final data = jsonDecode(res.body);
+    final props = data["features"][0]["properties"];
 
-      setState(() {
-        addressController.text = props["label"] ??
-            "${latlng.latitude.toStringAsFixed(5)}, ${latlng.longitude.toStringAsFixed(5)}";
-      });
-    } catch (_) {}
+    setState(() {
+      addressController.text = props["label"];
+    });
   }
-
   // ================= FETCH ROUTE =================
   Future<void> fetchRoute() async {
     if (routePoints.length < 2) return;
@@ -287,44 +282,21 @@ void showDeleteConfirmDialog(int index) {
 
   // ================= ADD ROUTE =================
   void addRoute() {
-  if (previewPoint == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Klik peta atau cari lokasi dulu")),
-    );
-    return;
-  }
+    if (previewPoint == null) return;
 
-  if (titleController.text.isEmpty ||
-      descController.text.isEmpty ||
-      selectedCategory == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Lengkapi data route")),
-    );
-    return;
-  }
+    setState(() {
+      routes.add({
+        "title": titleController.text,
+        "address": addressController.text,
+        "latlng": previewPoint!,
+      });
 
-  setState(() {
-    routes.add({
-      "title": titleController.text,
-      "address": addressController.text,
-      "latlng": previewPoint!,
+      routePoints.add(previewPoint!);
+      previewPoint = null;
     });
 
-    routePoints.add(previewPoint!);
-    mapCenter = previewPoint!;
-    previewPoint = null;
-  });
-
-  // 🔥 LETAKKAN DI SINI
-  fetchRoute();
-  clearRouteForm(); // ✅ title & description TIDAK KEHAPUS
-}
-void clearRouteForm() {
-  addressController.clear();
-  doingController.clear();
-  tagsController.clear();
-  selectedCategory = null;
-}
+    fetchRoute();
+  }
 
 
   // ================= POST ROUTE =================
@@ -351,7 +323,7 @@ void clearRouteForm() {
     descController.clear();
     addressController.clear();
     doingController.clear();
-    tagsController.clear();
+
     selectedCategory = null;
   }
 
@@ -389,40 +361,97 @@ void clearRouteForm() {
     );
   }
 
+Future<void> postRouteToBackend() async {
+    if (routes.isEmpty) return;
+
+    final token = await getFirebaseToken();
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User belum login")),
+      );
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse("https://api-kamu.com/routes"), // 🔥 GANTI URL
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+  "title": titleController.text,
+  "description": descController.text,
+  "category": selectedCategory,
+  "stops": routes.map((r) => {
+    "title": r["title"],
+    "address": r["address"],
+    "lat": r["latlng"].latitude,
+    "lng": r["latlng"].longitude,
+  }).toList(),
+  "geometry": routeGeometry.map((p) => {
+    "lat": p.latitude,
+    "lng": p.longitude,
+  }).toList(),
+}),
+
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Route berhasil disimpan")),
+      );
+    setState(() {
+  routes.clear();
+  routePoints.clear();
+  routeGeometry.clear();
+  previewPoint = null;
+  selectedCategory = null;
+});
+
+clearForm();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal menyimpan route")),
+      );
+    }
+  }
+
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xffF3F4F6),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        leading: const BackButton(color: Colors.black),
-        title: const Text(
-          "Forge Your Route",
-          style: TextStyle(color: Colors.black),
-        ),
+  return Scaffold(
+    backgroundColor: const Color(0xffF3F4F6),
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      leading: const BackButton(color: Colors.black),
+      title: const Text(
+        "Forge Your Route",
+        style: TextStyle(color: Colors.black),
       ),
+    ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            inputField(titleController, "Add title"),
-            inputField(descController, "Add Description"),
-            buildDropdown(),
-            buildMap(),
-            inputField(addressController, "Cari lokasi atau klik peta",
-                isRefresh: false),
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        children: [
+          inputField(titleController, "Add title"),
+          inputField(descController, "Add Description"),
+          buildDropdown(),
+          buildMap(),
 
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: searchLocation,
-              ),
+          // 🔍 input + search icon
+          inputField(
+            addressController,
+            "Cari lokasi atau klik peta",
+            isRefresh: false,
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: searchLocation,
             ),
-
+          ),
+        
+      
+    
             inputField(doingController, "What are you doing"),
-            inputField(tagsController, "#Tags"),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -540,32 +569,47 @@ void clearRouteForm() {
   },
 ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             buildCategoryDropdown(),
 
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: addMoreCategory,
-              icon: const Icon(Icons.add),
-              label: const Text("Add more Categories"),
-            ),
+            SizedBox(
+  width: double.infinity, // 🔥 bikin full lebar
+  child: OutlinedButton.icon(
+    onPressed: addMoreCategory,
+    icon: const Icon(Icons.add),
+    label: const Text("Add more Categories"),
+    style: OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(vertical: 14), // 🔥 tinggi tombol
+      side: const BorderSide(color: Color(0xff1A3250)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      textStyle: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),
+
 
             const SizedBox(height: 14),
 
             ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xff1A3250),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 14),
-              ),
-              onPressed: postRoute,
-              child: const Text("Post Route",
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xff1A3250),
+    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+  ),
+  onPressed: postRouteToBackend, // 🔥 WAJIB INI
+  child: const Text(
+    "Post Route",
+    style: TextStyle(color: Colors.white),
+  ),
+),
+        ],
       ),
-    );
+    ),
+  );
   }
 
   // ================= MAP =================
@@ -639,49 +683,60 @@ void clearRouteForm() {
 
   // ================= WIDGETS =================
   Widget buildCategoryDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 170, vertical: 0),
+    decoration: BoxDecoration(
+      color: Colors.grey.shade200,
+      borderRadius: BorderRadius.circular(10),
+      border: Border.all(
+        color: Colors.black, // 🔥 warna garis
+        width: 1,                    // 🔥 tebal garis
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          hint: const Text("Select Categories"),
-          value: selectedCategory,
-          items: categories
-              .map((e) =>
-                  DropdownMenuItem(value: e, child: Text(e)))
-              .toList(),
-          onChanged: (v) =>
-              setState(() => selectedCategory = v),
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        hint: const Text(
+          "Select Categories",
+          style: TextStyle(color: Colors.black), // 🔥 warna teks
         ),
+        value: selectedCategory,
+        isExpanded: true,
+        items: categories
+            .map(
+              (e) => DropdownMenuItem(
+                value: e,
+                child: Text(e),
+              ),
+            )
+            .toList(),
+        onChanged: (v) => setState(() => selectedCategory = v),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget inputField(TextEditingController c, String hint,
-      {bool isRefresh = true}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: TextField(
-        controller: c,
-        decoration: InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          hintText: hint,
-          suffixIcon: isRefresh
-              ? IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: c.clear,
-                )
-              : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
+
+  Widget inputField(
+  TextEditingController controller,
+  String hint, {
+  bool isRefresh = true,
+  Widget? suffixIcon,
+}) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
         ),
+        suffixIcon: suffixIcon,
       ),
+    ),
     );
   }
 
