@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:journeys/services/api_service.dart';
 import '../../../models/place_detail.dart';
@@ -20,12 +22,13 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
 
-int? _bookmarkId;
+  int? _bookmarkId;
 
   PlaceDetail? _place;
   List<PlaceReview> _reviews = [];
   bool _isLoading = true;
   bool _isBookmarked = false;
+  Uint8List? _selectedImageBytes;
 
   // DATA DUMMY UNTUK MORE PICTURES
   final List<String> _dummyMorePictures = [
@@ -35,31 +38,29 @@ int? _bookmarkId;
   ];
 
   @override
-void initState() {
-  super.initState();
-  _loadData();
-}
-
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
   Future<void> _loadData() async {
-  try {
-    final place = await ApiService().getPlaceDetail(widget.routeId);
-    final reviews = await ApiService().getPlaceReviews(widget.routeId);
-    final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
+    try {
+      final place = await ApiService().getPlaceDetail(widget.routeId);
+      final reviews = await ApiService().getPlaceReviews(widget.routeId);
+      final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
 
-    setState(() {
-      _place = place;
-      _reviews = reviews;
-      _bookmarkId = bookmarkId;
-      _isBookmarked = bookmarkId != null;
-      _isLoading = false;
-    });
-  } catch (e) {
-    debugPrint("Error loading place detail: $e");
-    setState(() => _isLoading = false);
+      setState(() {
+        _place = place;
+        _reviews = reviews;
+        _bookmarkId = bookmarkId;
+        _isBookmarked = bookmarkId != null;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint("Error loading place detail: $e");
+      setState(() => _isLoading = false);
+    }
   }
-}
-
 
   @override
   void dispose() {
@@ -95,7 +96,10 @@ void initState() {
                           onPressed: () {
                             Navigator.of(context).pop();
                             _reviewController.clear();
-                            setModalState(() => _rating = 0);
+                            setModalState(() {
+                              _rating = 0;
+                              _selectedImageBytes = null;
+                            });
                           },
                           icon: const Icon(Icons.close),
                         ),
@@ -103,11 +107,16 @@ void initState() {
                     ),
                     const SizedBox(height: 20),
                     GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Image picker will be implemented')),
-                        );
+                      onTap: () async {
+                        final picker = ImagePicker();
+                        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+                        if (pickedFile != null) {
+                          final bytes = await pickedFile.readAsBytes();
+                          setModalState(() {
+                            _selectedImageBytes = bytes;
+                          });
+                        }
                       },
                       child: Container(
                         height: 150,
@@ -115,18 +124,27 @@ void initState() {
                           border: Border.all(color: Colors.grey[300]!, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add, size: 48, color: Colors.grey[400]),
-                              const SizedBox(height: 8),
-                              Text('Add Image',
-                                  style: TextStyle(
-                                      fontSize: 16, color: Colors.grey[600])),
-                            ],
-                          ),
-                        ),
+                        child: _selectedImageBytes != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  _selectedImageBytes!,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            : Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add, size: 48, color: Colors.grey[400]),
+                                    const SizedBox(height: 8),
+                                    Text('Add Image',
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.grey[600])),
+                                  ],
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -162,22 +180,34 @@ void initState() {
                           }),
                         ),
                         ElevatedButton(
-                          onPressed: () {
-                            if (_reviewController.text.isNotEmpty &&
-                                _rating > 0) {
+                          onPressed: () async {
+                            if (_reviewController.text.isNotEmpty && _rating > 0) {
                               Navigator.of(context).pop();
+
+                              final success = await ApiService().submitPlaceReview(
+                                routeId: widget.routeId,
+                                rating: _rating,
+                                comment: _reviewController.text,
+                                imageBytes: _selectedImageBytes,
+                              );
+
                               _reviewController.clear();
                               setState(() => _rating = 0);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('Review submitted successfully!')),
-                              );
+                              _selectedImageBytes = null;
+
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Review submitted successfully!')),
+                                );
+                                await _loadData(); // refresh review list
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Failed to submit review')),
+                                );
+                              }
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content:
-                                        Text('Please add a review and rating')),
+                                const SnackBar(content: Text('Please add a review and rating')),
                               );
                             }
                           },
@@ -227,7 +257,6 @@ void initState() {
                       ),
                     ),
                   ),
-
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
@@ -263,9 +292,7 @@ void initState() {
                               ],
                             ),
                           ),
-
                           const SizedBox(height: 16),
-
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16.0),
@@ -318,34 +345,30 @@ void initState() {
                               ],
                             ),
                           ),
-
                           const SizedBox(height: 16),
-
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16.0),
                             child: Align(
                               alignment: Alignment.centerRight,
-                              child: ElevatedButton(
-                                onPressed: _showAddReviewModal,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color.fromARGB(255, 74, 91, 122),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 20, vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10)),
+                                child: ElevatedButton(
+                                  onPressed: _showAddReviewModal,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color.fromARGB(255, 74, 91, 122),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                  child: const Text('Add review',
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600)),
                                 ),
-                                child: const Text('Add review',
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600)),
-                              ),
                             ),
                           ),
-
                           const SizedBox(height: 8),
-
                           Padding(
                             padding:
                                 const EdgeInsets.symmetric(horizontal: 16.0),
@@ -357,43 +380,36 @@ void initState() {
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold)),
                                 IconButton(
-  onPressed: () async {
-    if (_isBookmarked && _bookmarkId != null) {
-      // Remove bookmark
-      final success = await ApiService().removeBookmark(_bookmarkId!);
-      if (success) {
-        setState(() {
-          _isBookmarked = false;
-          _bookmarkId = null;
-        });
-      }
-    } else {
-      // Add bookmark
-      final success = await ApiService().addBookmark(widget.routeId);
-      if (success) {
-        final newId = await ApiService().getBookmarkIdForRoute(widget.routeId);
-        setState(() {
-          _isBookmarked = true;
-          _bookmarkId = newId;
-        });
-      }
-    }
-  },
-  icon: Icon(
-    _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-    color: _isBookmarked
-        ? const Color.fromARGB(255, 74, 91, 122)
-        : Colors.black,
-    size: 24,
-  ),
-),
-
+                                  onPressed: () async {
+                                    if (_isBookmarked && _bookmarkId != null) {
+                                      final success = await ApiService().removeBookmark(_bookmarkId!);
+                                      if (success) {
+                                        setState(() {
+                                          _isBookmarked = false;
+                                          _bookmarkId = null;
+                                        });
+                                      }
+                                    } else {
+                                      final success = await ApiService().addBookmark(widget.routeId);
+                                      if (success) {
+                                        final newId = await ApiService().getBookmarkIdForRoute(widget.routeId);
+                                        setState(() {
+                                          _isBookmarked = true;
+                                          _bookmarkId = newId;
+                                        });
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(
+                                    _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                    color: _isBookmarked ? const Color.fromARGB(255, 74, 91, 122) : Colors.black,
+                                    size: 24,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 12),
-
-                          // --- REVIEW LIST SCROLL HORIZONTAL (KE SAMPING) ---
                           if (_reviews.isNotEmpty)
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
@@ -401,7 +417,7 @@ void initState() {
                               child: Row(
                                 children: _reviews.map((review) {
                                   return Container(
-                                    width: 320, // Lebar kotak review agar proporsional saat di-scroll
+                                    width: 320,
                                     margin: const EdgeInsets.only(right: 16, bottom: 8),
                                     padding: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(

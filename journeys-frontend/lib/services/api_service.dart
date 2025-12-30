@@ -11,6 +11,8 @@ import '../models/most_active_traveller_model.dart';
 import '../models/traveller_profile_model.dart';
 import '../models/place_review.dart';
 import '../models/place_detail.dart';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -376,6 +378,42 @@ Future<bool> removeBookmark(int bookmarkId) async {
   );
 
   return response != null && response['message'] != null;
+}
+
+Future<bool> submitPlaceReview({
+  required int routeId,
+  required int rating,
+  required String comment,
+  Uint8List? imageBytes,
+}) async {
+  final user = _auth.currentUser;
+  final idToken = await user?.getIdToken();
+
+  final uri = Uri.parse('http://172.20.10.2:8080/reviews/place');
+
+  final request = http.MultipartRequest('POST', uri)
+    ..headers['Authorization'] = 'Bearer $idToken'
+    ..fields['route_id'] = routeId.toString()
+    ..fields['rating'] = rating.toString()
+    ..fields['comment'] = comment;
+
+  if (imageBytes != null) {
+    request.files.add(http.MultipartFile.fromBytes(
+      'image',
+      imageBytes,
+      filename: 'review.jpg',
+    ));
+  }
+
+  final streamedResponse = await request.send();
+  final response = await http.Response.fromStream(streamedResponse);
+
+  if (response.statusCode == 200) {
+    return true;
+  } else {
+    print("Review error: ${response.body}");
+    return false;
+  }
 }
 
 
