@@ -76,8 +76,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
                     prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
                     border: InputBorder.none,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
@@ -109,8 +108,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   const SizedBox(width: 12),
                   const Text(
                     'Categories',
-                    style:
-                        TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -125,14 +123,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   : _error != null
                       ? Center(child: Text(_error!))
                       : GridView.builder(
-                          padding:
-                              const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           gridDelegate:
                               const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
-                            childAspectRatio: 0.85,
+                            childAspectRatio: 0.75, // ← lebih kotak
                           ),
                           itemCount: filteredCategories.length,
                           itemBuilder: (context, index) {
@@ -144,7 +141,6 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           ],
         ),
       ),
-      // bottomNavigationBar sudah dihapus agar menggunakan milik MainWrapper
     );
   }
 
@@ -152,26 +148,26 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     Uint8List? imageBytes;
 
     if (category.imageBase64.isNotEmpty) {
-      imageBytes = const Base64Decoder()
-          .convert(category.imageBase64.split(',').last);
+      imageBytes =
+          const Base64Decoder().convert(category.imageBase64.split(',').last);
     }
 
-    return Container(
-      height: 180, // Ukuran tetap
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return Column(
+      children: [
+        Container(
+          height: 190, // ← gambar lebih tinggi
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
             child: SizedBox(
               width: double.infinity,
               height: double.infinity,
@@ -183,37 +179,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                   : Container(color: Colors.grey[300]),
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7)
-                ],
-              ),
-            ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          category.name,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
-          Positioned(
-            bottom: 12,
-            left: 8,
-            right: 8,
-            child: Text(
-              category.name,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
-  
-  // Fungsi _buildBottomNav dan _navItem telah dihapus sepenuhnya
 }
