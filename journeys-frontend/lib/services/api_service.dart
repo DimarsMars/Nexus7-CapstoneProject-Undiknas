@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:journeys/models/plan_rating.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import 'api_client.dart';
@@ -96,7 +98,7 @@ Future<List<PlanModel>> getAllPlans() async {
   return data.map((json) => PlanModel.fromJson(json)).toList();
 }
 
- Future<PlanModel?> getPlanDetail(int planId) async {
+ Future<PlanModelRating?> getPlanDetail(int planId) async {
   final user = _auth.currentUser;
   final idToken = user != null ? await user.getIdToken() : null;
 
@@ -107,18 +109,19 @@ Future<List<PlanModel>> getAllPlans() async {
         : null,
   );
 
-  if (response['data'] == null) return null;
+  final data = response['data'];
+  if (data == null) return null;
 
-  final planJson = response['data']['plan'];
-  final routesJson = response['data']['routes'] as List<dynamic>;
+  final planJson = data['plan'] ?? {};
+  final routesJson = data['routes'] as List<dynamic>? ?? [];
 
-  final plan = PlanModel.fromJson({
+  return PlanModelRating.fromJson({
     ...planJson,
     'routes': routesJson,
+    'rating': data['rating'] ?? 0,
   });
-
-  return plan;
 }
+
 
 Future<List<TravellerModel>> getAllTravellers() async {
   final user = _auth.currentUser;
@@ -384,7 +387,7 @@ Future<bool> submitPlaceReview({
   required int routeId,
   required int rating,
   required String comment,
-  Uint8List? imageBytes,
+  List<Uint8List> imageBytesList = const [],
 }) async {
   final user = _auth.currentUser;
   final idToken = await user?.getIdToken();
@@ -397,11 +400,11 @@ Future<bool> submitPlaceReview({
     ..fields['rating'] = rating.toString()
     ..fields['comment'] = comment;
 
-  if (imageBytes != null) {
+  for (int i = 0; i < imageBytesList.length; i++) {
     request.files.add(http.MultipartFile.fromBytes(
-      'image',
-      imageBytes,
-      filename: 'review.jpg',
+      'image', // harus disesuaikan dengan field array di backend
+      imageBytesList[i],
+      filename: 'review_$i.jpg',
     ));
   }
 
@@ -415,6 +418,7 @@ Future<bool> submitPlaceReview({
     return false;
   }
 }
+
 
 
 }
