@@ -110,12 +110,13 @@ const handleSubmitReview = async () => {
     );
   }
 
-  const { plan, routes } = tripData;
+  const { plan, routes, rating } = tripData;
   const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : 'placeholder-image-url';
 
   const handleCardClick = (id) => {
     navigate(`/mytripreview/${id}`);
   };
+
 
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center">
@@ -145,7 +146,7 @@ const handleSubmitReview = async () => {
                 
                 <div className="flex gap-1 mt-2 text-yellow-400 text-xl">
                     {[...Array(5)].map((_, i) => (
-                        <FaStar key={i} className={i < (plan.rating) ? "text-yellow-400" : "text-gray-200"} />
+                        <FaStar key={i} className={i < rating ? "text-yellow-400" : "text-gray-200"} />
                     ))}
                 </div>
             </div>
