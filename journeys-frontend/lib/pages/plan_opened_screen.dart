@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../models/plan_model.dart';
+import '../../models/plan_rating.dart';
 import '../../services/api_service.dart';
 
 class PlanOpenedScreen extends StatefulWidget {
@@ -20,7 +20,7 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   int _rating = 0;
   bool _isFavorite = false; 
 
-  PlanModel? _plan;
+  PlanModelRating? _plan;
   bool _isLoading = true;
 
   int? _favoriteId;
@@ -158,6 +158,7 @@ Future<void> _loadInitialData() async {
       setState(() {
         _rating = 0;
       });
+      await _loadPlan();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -337,17 +338,28 @@ Future<void> _loadInitialData() async {
                                               ),
                                             ),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              children: List.generate(5, (index) {
-                                                return Icon(
-                                                  Icons.star,
-                                                  size: 24,
-                                                  color: index < rating
-                                                      ? Colors.amber
-                                                      : Colors.grey[300],
-                                                );
-                                              }),
-                                            ),
+                                         Row(
+  children: List.generate(5, (index) {
+    double starFill = rating - index;
+
+    IconData icon;
+    if (starFill >= 1) {
+      icon = Icons.star;
+    } else if (starFill >= 0.5) {
+      icon = Icons.star_half;
+    } else {
+      icon = Icons.star_border;
+    }
+
+    return Icon(
+      icon,
+      size: 24,
+      color: Colors.amber,
+    );
+  }),
+),
+
+
                                           ],
                                         ),
                                       ),
