@@ -16,6 +16,7 @@ type Plan struct {
 	CreatedAt   time.Time      `gorm:"column:created_at" json:"created_at"`
 	Categories  []Category     `gorm:"many2many:plan_categories;joinForeignKey:PlanID;joinReferences:CategoryID" json:"categories"`
 	Status      string         `gorm:"column:status" json:"status"`
+	AuthorName  string         `gorm:"column:author_name" json:"author_name"`
 
 	Routes []Route `gorm:"foreignKey:PlanID" json:"routes"`
 }

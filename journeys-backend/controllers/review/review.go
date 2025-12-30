@@ -145,7 +145,6 @@ func DeleteMyTripReview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Review berhasil dihapus"})
 }
 
-
 func CreatePlaceReview(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
@@ -224,7 +223,7 @@ func GetPlaceReviews(c *gin.Context) {
 		return
 	}
 
-	var result []map[string]interface{}
+	result := []map[string]interface{}{}
 	for _, r := range reviews {
 		imageBase64 := ""
 		if len(r.Image) > 0 {

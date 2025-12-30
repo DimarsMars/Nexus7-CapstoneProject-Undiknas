@@ -30,6 +30,12 @@ type routeInput struct {
 func CreatePlan(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
+	var user models.User
+	if err := config.DB.First(&user, "user_id = ?", userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data user"})
+		return
+	}
+
 	title := c.PostForm("title")
 	description := c.PostForm("description")
 	tagsRaw := c.PostForm("tags")
@@ -66,6 +72,7 @@ func CreatePlan(c *gin.Context) {
 		}
 	}
 
+	// ✅ AuthorName disimpan di sini
 	plan := models.Plan{
 		UserID:      userID,
 		Title:       title,
@@ -74,6 +81,7 @@ func CreatePlan(c *gin.Context) {
 		Banner:      banner,
 		Categories:  categories,
 		Status:      status,
+		AuthorName:  user.Username,
 	}
 
 	if err := config.DB.Create(&plan).Error; err != nil {
@@ -118,11 +126,16 @@ func CreatePlan(c *gin.Context) {
 	}
 
 	var totalXP int64
-	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
+	config.DB.Model(&models.UserXP{}).
+		Where("user_id = ?", userID).
+		Select("SUM(xp_value)").
+		Scan(&totalXP)
 
 	newRank := helper.CalculateRank(int(totalXP))
 
-	config.DB.Model(&models.Profile{}).Where("user_id = ?", userID).Update("rank", newRank)
+	config.DB.Model(&models.Profile{}).
+		Where("user_id = ?", userID).
+		Update("rank", newRank)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Plan dan routes berhasil dibuat",
@@ -502,6 +515,24 @@ func GetAllPlans(c *gin.Context) {
 		return
 	}
 
+	// Ambil rata-rata rating per plan_id
+	type RatingResult struct {
+		PlanID uint
+		Rating float64
+	}
+
+	var ratings []RatingResult
+	config.DB.Table("trip_reviews").
+		Select("plan_id, AVG(rating) as rating").
+		Group("plan_id").
+		Scan(&ratings)
+
+	// Buat map untuk akses cepat rating berdasarkan plan_id
+	ratingMap := make(map[uint]float64)
+	for _, r := range ratings {
+		ratingMap[r.PlanID] = r.Rating
+	}
+
 	var response []map[string]interface{}
 	for _, p := range plans {
 		var bannerBase64 string
@@ -518,6 +549,8 @@ func GetAllPlans(c *gin.Context) {
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
 			"status":      p.Status,
+			"author_name": p.AuthorName,
+			"rating":      ratingMap[p.PlanID],
 		})
 	}
 
