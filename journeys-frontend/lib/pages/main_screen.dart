@@ -12,7 +12,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -32,71 +31,79 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_currentIndex],
-      
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-
-        currentIndex: _currentIndex,
-        onTap: _onTabTapped,
-        
-        items: [
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/icons/home_inactive.png',
-              width: 24,
-              height: 24,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
             ),
-            activeIcon: Image.asset(
-              'assets/icons/home_active.png',
-              width: 24,
-              height: 24,
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          showSelectedLabels: false,
+          showUnselectedLabels: false,
+          currentIndex: _currentIndex,
+          onTap: _onTabTapped,
+          items: [
+            BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/icons/home_inactive.png',
+                width: 24,
+                height: 24,
+              ),
+              activeIcon: Image.asset(
+                'assets/icons/home_active.png',
+                width: 24,
+                height: 24,
+              ),
+              label: 'Home',
             ),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/icons/route_inactive.png',
-              width: 24,
-              height: 24,
+            BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/icons/route_inactive.png',
+                width: 24,
+                height: 24,
+              ),
+              activeIcon: Image.asset(
+                'assets/icons/route_active.png',
+                width: 24,
+                height: 24,
+              ),
+              label: 'Route',
             ),
-            activeIcon: Image.asset(
-              'assets/icons/route_active.png',
-              width: 24,
-              height: 24,
+            BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/icons/history_inactive.png',
+                width: 24,
+                height: 24,
+              ),
+              activeIcon: Image.asset(
+                'assets/icons/history_active.png',
+                width: 24,
+                height: 24,
+              ),
+              label: 'History',
             ),
-            label: 'Route',
-          ),
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/icons/history_inactive.png',
-              width: 24,
-              height: 24,
+            BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/icons/profile_inactive.png',
+                width: 24,
+                height: 24,
+              ),
+              activeIcon: Image.asset(
+                'assets/icons/profile_active.png',
+                width: 24,
+                height: 24,
+              ),
+              label: 'Profile',
             ),
-            activeIcon: Image.asset(
-              'assets/icons/history_active.png',
-              width: 24,
-              height: 24,
-            ),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Image.asset(
-              'assets/icons/profile_inactive.png',
-              width: 24,
-              height: 24,
-            ),
-            activeIcon: Image.asset(
-              'assets/icons/profile_active.png',
-              width: 24,
-              height: 24,
-            ),
-            label: 'Profile',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
