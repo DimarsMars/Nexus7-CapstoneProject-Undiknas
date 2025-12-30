@@ -60,63 +60,84 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white, // Diubah ke white agar seragam dengan Home
       body: SafeArea(
         child: Column(
           children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
+            // SEARCH BAR AREA (Sudah disesuaikan dengan desain Home)
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(20, 30, 20, 15), // Turun sedikit
               child: Container(
+                height: 50,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12), // Bentuk Rectangle
                   border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 1,
+                    color: const Color.fromARGB(255, 235, 235, 235),
+                    width: 1.0,
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: TextField(
+                  textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
                     hintText: 'Find a place...',
                     hintStyle: TextStyle(
                       color: Colors.grey[400],
-                      fontSize: 15,
+                      fontSize: 16,
                     ),
                     prefixIcon: Icon(
-                      Icons.search,
+                      Icons.search_rounded,
                       color: Colors.grey[400],
-                      size: 22,
+                      size: 24,
                     ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                 ),
               ),
             ),
 
             // Category Chips Container
-          Container(
-  margin: const EdgeInsets.symmetric(horizontal: 16),
-  padding: const EdgeInsets.symmetric(vertical: 4),
-  decoration: BoxDecoration(
-    color: Colors.white,
-    borderRadius: BorderRadius.circular(25), // Tetap bulat sesuai desain awal
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.15), // Membuat shadow sedikit lebih gelap agar terlihat
-        blurRadius: 15, // Tingkat kelembutan shadow
-        spreadRadius: 1, // Jangkauan shadow
-        offset: const Offset(0, 4), // Bayangan mengarah ke bawah
-      ),
-    ],
-  ),
-  child: SizedBox(
-    height: 50,
-    child: ListView.builder(
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: SizedBox(
+                height: 50,
+                child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   itemCount: categories.length + 1,
@@ -130,11 +151,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     return GestureDetector(
                       onTap: () => _filterByCategory(index == 0 ? null : label),
                       child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color.fromARGB(255, 27, 38, 59) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(15),
+                          color: isSelected
+                              ? const Color.fromARGB(255, 27, 38, 59)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
                           child: Text(
@@ -142,7 +166,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             style: TextStyle(
                               color: isSelected ? Colors.white : Colors.black87,
                               fontSize: 14,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
                             ),
                           ),
                         ),
@@ -158,7 +184,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -191,14 +218,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Ditambahkan agar shadow muncul
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          // Tambahkan shadow di sini
           BoxShadow(
-            color: Colors.black.withOpacity(0.2), // Kepekatan bayangan
-            blurRadius: 6, // Kelembutan
-            offset: const Offset(0, 4), // Posisi bayangan (x, y)
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

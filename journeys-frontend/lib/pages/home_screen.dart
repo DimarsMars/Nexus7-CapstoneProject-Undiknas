@@ -65,7 +65,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCategories() async {
     try {
       final result = await ApiService().getCategories();
-      // Mengacak urutan kategori setiap kali dipanggil
       result.shuffle(Random());
       setState(() {
         categories = result;
@@ -78,15 +77,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> planCategories = [
-      {'image': 'assets/icons/tamples.jpg', 'label': 'Temple'},
-      {'image': 'assets/icons/beaches.jpg', 'label': 'Beach'},
-      {'image': 'assets/icons/hidden_cafe.jpg', 'label': 'Mini Resto'},
-      {'image': 'assets/icons/villa.jpg', 'label': 'Store\'s'},
-    ];
-
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Colors.white,
       appBar: AppBar(
         toolbarHeight: 0,
         backgroundColor: Colors.transparent,
@@ -96,56 +88,74 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SEARCH BAR
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            // SEARCH BAR AREA (Disamakan dengan ExploreScreen)
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.fromLTRB(20, 30, 20, 15),
               child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color.fromARGB(255, 235, 235, 235),
+                    width: 1.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  textAlignVertical: TextAlignVertical.center,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Find a place...',
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 16,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      color: Colors.grey[400],
+                      size: 24,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // KATEGORI ATAS
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 55,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Find a place...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 15,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey[400],
-                      size: 22,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // KATEGORI ATAS (Static & Random)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                height: 60,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 12,
                       spreadRadius: 1,
                       offset: const Offset(0, 4),
@@ -156,10 +166,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         itemCount: categories.length,
                         itemBuilder: (context, index) {
                           final category = categories[index];
-
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 15),
                             child: Center(
@@ -167,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 category.name,
                                 style: TextStyle(
                                   color: Colors.grey[600],
-                                  fontWeight: FontWeight.normal,
+                                  fontWeight: FontWeight.w500,
                                   fontSize: 14,
                                 ),
                               ),
@@ -197,8 +207,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         }
 
                         return GestureDetector(
-                          onTap: () {
-                            context.push('/plan-opened/${plan.planId}');
+                          onTap: () async {
+                            final result = await context
+                                .push('/plan-opened/${plan.planId}');
+                            if (result == true) {
+                              _loadPlans();
+                            }
                           },
                           child: Container(
                             width: 180,
@@ -238,7 +252,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   right: 12,
                                   bottom: 12,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
@@ -253,7 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        plan.authorName.isNotEmpty ? plan.authorName : "Anonymous",
+                                        plan.authorName.isNotEmpty
+                                            ? plan.authorName
+                                            : "Anonymous",
                                         style: TextStyle(
                                           color: Colors.white.withOpacity(0.85),
                                           fontSize: 11,
@@ -262,14 +279,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       const SizedBox(height: 6),
                                       Row(
-                                        children: List.generate(5, (starIndex) {
-                                          return Icon(
-                                            Icons.star,
-                                            size: 14,
-                                            color: starIndex < plan.rating.round()
-                                                ? Colors.amber
-                                                : Colors.grey[400],
-                                          );
+                                        children: List.generate(5, (index) {
+                                          double starFill = plan.rating - index;
+                                          IconData icon;
+                                          if (starFill >= 1) {
+                                            icon = Icons.star;
+                                          } else if (starFill >= 0.5) {
+                                            icon = Icons.star_half;
+                                          } else {
+                                            icon = Icons.star_border;
+                                          }
+                                          return Icon(icon,
+                                              size: 14, color: Colors.amber);
                                         }),
                                       ),
                                     ],
@@ -404,67 +425,69 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
 
             Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-  child: isCategoryLoading
-      ? const Center(child: CircularProgressIndicator())
-      : Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(
-            categories.length.clamp(0, 4), // Maksimal 4 kategori saja
-            (index) {
-              final category = categories[index];
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: isCategoryLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(
+                        categories.length.clamp(0, 4),
+                        (index) {
+                          final category = categories[index];
 
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: index < 3 ? 12 : 0),
-                  child: Column(
-                    children: [
-                      Container(
-                        height: 75,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                          return Expanded(
+                            child: Padding(
+                              padding:
+                                  EdgeInsets.only(right: index < 3 ? 12 : 0),
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 75,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.08),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: category.imageBase64.isNotEmpty
+                                          ? Image.memory(
+                                              base64Decode(
+                                                  category.imageBase64),
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                            )
+                                          : Image.asset(
+                                              'assets/icons/forge_your_route.jpg',
+                                              fit: BoxFit.cover,
+                                              width: double.infinity,
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    category.name,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: category.imageBase64.isNotEmpty
-                              ? Image.memory(
-                                  base64Decode(category.imageBase64),
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                )
-                              : Image.asset(
-                                  'assets/icons/forge_your_route.jpg',
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
-                        ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        category.name,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-),
+                    ),
+            ),
 
             const SizedBox(height: 24),
 
@@ -514,45 +537,34 @@ class _HomeScreenState extends State<HomeScreen> {
                         Uint8List? imageBytes;
                         if (traveller.photoBase64.isNotEmpty) {
                           try {
-                            final base64String = traveller.photoBase64.split(',').last;
+                            final base64String =
+                                traveller.photoBase64.split(',').last;
                             imageBytes = base64Decode(base64String);
-                          } catch (_) {
-                            imageBytes = null;
-                          }
+                          } catch (_) {}
                         }
 
-                        return Container(
-                          width: 90,
-                          margin: const EdgeInsets.only(right: 20),
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 20),
                           child: Column(
                             children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: CircleAvatar(
-                                  radius: 35,
-                                  backgroundColor: AppColors.lightGrey,
-                                  backgroundImage: imageBytes != null
-                                      ? MemoryImage(imageBytes)
-                                      : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
-                                ),
+                              CircleAvatar(
+                                radius: 35,
+                                backgroundColor: Colors.grey[200],
+                                backgroundImage: imageBytes != null
+                                    ? MemoryImage(imageBytes)
+                                    : null,
+                                child: imageBytes == null
+                                    ? const Icon(Icons.person,
+                                        size: 35, color: Colors.grey)
+                                    : null,
                               ),
-                              const SizedBox(height: 10),
+                              const SizedBox(height: 8),
                               Text(
                                 traveller.username,
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                textAlign: TextAlign.center,
                               ),
                             ],
                           ),
@@ -560,7 +572,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 30),
           ],
         ),
       ),
