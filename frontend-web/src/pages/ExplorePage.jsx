@@ -1,20 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TripCard from '../components/TripCard';
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import apiService from '../services/apiService';
 
 const ExplorePage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("Culture");
+  const [activeTab, setActiveTab] = useState("");
+  const [categories, setCategories] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
   const { plans, fetchAllPlan, searchQuery } = useData();
   const { user } = useAuth();
 
-  const categories = ["Culture", "Eatery", "Health", "Craft's"];
+  useEffect(() => {
+    const fetchCategories = async () => {
+        try {
+            const response = await apiService.getCategories();
+            if (response.data) {
+                setCategories(response.data);
+                if (response.data.length > 0) {
+                    setActiveTab(response.data[0].name);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to fetch categories:", error);
+        }
+    };
+    if (user) {
+        fetchCategories();
+    }
+  }, [user]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -45,6 +64,11 @@ const ExplorePage = () => {
   const currentTrips = filteredPlans.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPlans.length / itemsPerPage);
 
+  const scrollRef = useRef(null); 
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
   const goToNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(prev => prev + 1);
   };
@@ -56,22 +80,55 @@ const ExplorePage = () => {
     navigate(`/trip/${id}`);
   };
 
+  // 3. FUNGSI LOGIKA DRAG (GESER PAKAI MOUSE)
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setStartX(e.pageX - scrollRef.current.offsetLeft);
+    setScrollLeft(scrollRef.current.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX) * 1;
+    scrollRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 px-5">
       <div className="max-w-7xl mx-auto">
         
-        <div className="bg-white rounded-xl shadow-sm p-2 mb-10 flex justify-between md:justify-around items-center overflow-x-auto">
+        <div
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          className={`bg-white rounded-xl shadow-sm p-2 mb-10 flex justify-start items-center overflow-x-auto space-x-2 no-scrollbar ${
+                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}>
             {categories.map((cat) => (
                 <button
-                    key={cat}
-                    onClick={() => setActiveTab(cat)}
-                    className={`px-6 py-3 rounded-lg text-sm md:text-base font-medium transition-all duration-300 whitespace-nowrap ${
-                        activeTab === cat 
+                    key={cat.id}
+                    className={`px-6 py-3 rounded-lg text-sm md:text-base font-medium transition-all duration-300 whitespace-nowrap select-none ${
+                        activeTab === cat.name 
                         ? "text-black font-bold" 
                         : "text-gray-500 hover:text-gray-800"
                     }`}
+                    onClick={() => {
+                        if(!isDragging) setActiveTab(cat.name)
+                    }}
                 >
-                    {cat}
+                    {cat.name}
                 </button>
             ))}
         </div>
