@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-// import 'package:go_router/go_router.dart'; // Hapus/Comment jika belum pakai MaterialApp.router
 import 'dart:async';
 import '../../../theme/app_theme.dart';
-import 'login_screen.dart'; // Pastikan import ini ada
+import 'login_screen.dart'; 
 
 enum _IntroState { blank, logoVisible, welcomeVisible }
 
@@ -47,7 +46,6 @@ class _IntroScreenState extends State<IntroScreen> {
   }
 
   void _navigateToLogin() {
-    // Menggunakan Navigator biasa karena main.dart kamu belum mendukung GoRouter
     context.go('/login');
   }
 
@@ -55,7 +53,7 @@ class _IntroScreenState extends State<IntroScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center( // GestureDetector dihapus agar tidak perlu diklik
+      body: Center( 
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -64,28 +62,25 @@ class _IntroScreenState extends State<IntroScreen> {
               duration: const Duration(seconds: 1),
               child: Image.asset('assets/icons/logo.png', height: 350),
             ),
-            const SizedBox(height: 40),
-            AnimatedOpacity(
-              opacity: _currentState == _IntroState.welcomeVisible ? 1.0 : 0.0,
-              duration: const Duration(seconds: 1),
-              child: Column(
-                children: [
-                  Text(
-                    'WELCOME',
-                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Teks "klik layar" bisa dihapus atau diganti
-                  Text(
-                    'Memuat aplikasi...', 
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                ],
+            
+            // Menggunakan Transform.translate dengan nilai negatif 
+            // untuk memaksa teks naik dan mendekat ke logo
+            Transform.translate(
+              offset: const Offset(0, -30), 
+              child: AnimatedOpacity(
+                opacity: _currentState == _IntroState.welcomeVisible ? 1.0 : 0.0,
+                duration: const Duration(seconds: 1),
+                child: Column(
+                  children: [
+                    Text(
+                      'WELCOME',
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],

@@ -17,22 +17,42 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _showError = false;
+  String _errorMessage = ''; // Menambahkan variabel untuk pesan error custom
 
   Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    // Validasi: Cek apakah field kosong
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        _errorMessage = "Email and password are required.";
+        _showError = true;
+      });
+      return;
+    }
+
+    // Validasi: Cek apakah mengandung '@'
+    if (!email.contains('@')) {
+      setState(() {
+        _errorMessage = "Invalid email format (must contain @)";
+        _showError = true;
+      });
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _showError = false;
     });
 
     try {
-      await _apiService.login(
-        _emailController.text.trim(),
-        _passwordController.text.trim(),
-      );
+      await _apiService.login(email, password);
       if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         setState(() {
+          _errorMessage = "incorrect username or password";
           _showError = true;
         });
       }
@@ -61,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   tag: 'app-logo',
                   child: Image.asset(
                     'assets/icons/logo.png',
-                    height: 300, // Ukuran disamakan dengan Signup
+                    height: 300,
                   ),
                 ),
                 const SizedBox(height: 1),
@@ -104,8 +124,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
+                // Menampilkan error popup dengan pesan yang dinamis
                 if (_showError)
-                  _buildErrorPopup('incorrect username or password'),
+                  _buildErrorPopup(_errorMessage),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
