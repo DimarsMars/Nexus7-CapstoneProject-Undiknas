@@ -178,6 +178,19 @@ const handleSubmitReview = async () => {
                 </div>
             </div>
 
+            {plan.categories && plan.categories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                    {plan.categories.map((cat, index) => (
+                        <span 
+                            key={index} 
+                            className="text-slate-600 bg-slate-100 px-3 py-1 rounded-full text-sm font-medium hover:bg-slate-200 transition cursor-default"
+                        >
+                            #{cat.name || cat}
+                        </span>
+                    ))}
+                </div>
+            )}
+
             <div className="mb-5">
                 <p className="text-gray-600 text-base leading-relaxed text-justify">
                     {plan.description || "No description available for this trip."}
