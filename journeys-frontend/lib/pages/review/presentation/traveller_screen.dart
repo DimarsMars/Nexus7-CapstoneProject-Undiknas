@@ -15,7 +15,9 @@ class TravellerScreen extends StatefulWidget {
 }
 
 class _TravellerScreenState extends State<TravellerScreen> {
-  final Set<String> _followedTravellers = {};
+  // ⬅️ WAJIB: pakai userId
+  final Map<int, bool> _followedTravellers = {};
+
   List<TravellerRecommendationModel> youMayLike = [];
   List<MostActiveTravellerModel> mostActiveTravellers = [];
   bool isLoading = true;
@@ -31,13 +33,43 @@ class _TravellerScreenState extends State<TravellerScreen> {
       final result = await ApiService().getCategoryTravellers();
       final mostActiveResult = await ApiService().getMostActiveTravellers();
 
+      // ambil status follow dari backend
+      for (var t in result) {
+        final status = await ApiService().isFollowing(t.user.userId);
+        _followedTravellers[t.user.userId] = status;
+      }
+
+      for (var t in mostActiveResult) {
+        final status = await ApiService().isFollowing(t.userId);
+        _followedTravellers[t.userId] = status;
+      }
+
       setState(() {
         youMayLike = result;
         mostActiveTravellers = mostActiveResult;
         isLoading = false;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() => isLoading = false);
+    }
+  }
+
+  // ⬅️ LOGIKA FOLLOW / UNFOLLOW ASLI
+  Future<void> _toggleFollow(int userId) async {
+    final isFollowed = _followedTravellers[userId] ?? false;
+
+    try {
+      if (isFollowed) {
+        await ApiService().unfollowUser(userId);
+      } else {
+        await ApiService().followUser(userId);
+      }
+
+      setState(() {
+        _followedTravellers[userId] = !isFollowed;
+      });
+    } catch (e) {
+      debugPrint('Follow error: $e');
     }
   }
 
@@ -50,7 +82,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
           children: [
             // Search Bar
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -66,7 +98,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Find traveller...',
-                    hintStyle: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                    hintStyle: GoogleFonts.poppins(color: Colors.grey),
                     prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 15),
@@ -80,7 +112,6 @@ class _TravellerScreenState extends State<TravellerScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
-                    // Header You May Like - RATA TENGAH
                     Center(
                       child: Text(
                         'You may like (category)',
@@ -93,9 +124,9 @@ class _TravellerScreenState extends State<TravellerScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // List You May Like
+                    // YOU MAY LIKE
                     SizedBox(
-                      height: 260, // Sedikit ditambah agar shadow tidak terpotong
+                      height: 260,
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ListView.builder(
@@ -109,7 +140,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
                                   name: traveller.username,
                                   title: traveller.role,
                                   photoBase64: traveller.photoBase64,
-                                  isFollowed: _followedTravellers.contains(traveller.username),
+                                  isFollowed: _followedTravellers[traveller.userId] ?? false,
                                 );
                               },
                             ),
@@ -117,7 +148,6 @@ class _TravellerScreenState extends State<TravellerScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Header Most Active - RATA TENGAH
                     Center(
                       child: Text(
                         'Most Active Traveller',
@@ -130,9 +160,9 @@ class _TravellerScreenState extends State<TravellerScreen> {
                     ),
                     const SizedBox(height: 20),
 
-                    // List Most Active
+                    // MOST ACTIVE
                     SizedBox(
-                      height: 260, // Sedikit ditambah agar shadow tidak terpotong
+                      height: 260,
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ListView.builder(
@@ -146,7 +176,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
                                   name: traveller.username,
                                   title: traveller.role,
                                   photoBase64: traveller.photoBase64,
-                                  isFollowed: _followedTravellers.contains(traveller.username),
+                                  isFollowed: _followedTravellers[traveller.userId] ?? false,
                                 );
                               },
                             ),
@@ -162,7 +192,7 @@ class _TravellerScreenState extends State<TravellerScreen> {
     );
   }
 
-  // ===================== CARD RE-DESIGN DENGAN SHADOW TIMBUL =====================
+  // ================= CARD =================
   Widget _buildTravellerCard({
     required int userId,
     required String name,
@@ -171,83 +201,65 @@ class _TravellerScreenState extends State<TravellerScreen> {
     required bool isFollowed,
   }) {
     Widget imageWidget;
-    if (photoBase64.isNotEmpty) {
-      try {
-        Uint8List bytes = base64Decode(photoBase64.split(',').last);
-        imageWidget = Image.memory(bytes, width: 85, height: 85, fit: BoxFit.cover);
-      } catch (e) {
-        imageWidget = Image.asset('assets/icons/profile.jpg', width: 85, height: 85, fit: BoxFit.cover);
-      }
-    } else {
-      imageWidget = Image.asset('assets/icons/profile.jpg', width: 85, height: 85, fit: BoxFit.cover);
+    try {
+      imageWidget = photoBase64.isNotEmpty
+          ? Image.memory(base64Decode(photoBase64.split(',').last), fit: BoxFit.cover)
+          : Image.asset('assets/icons/profile.jpg', fit: BoxFit.cover);
+    } catch (_) {
+      imageWidget = Image.asset('assets/icons/profile.jpg', fit: BoxFit.cover);
     }
 
     return GestureDetector(
-      onTap: () => context.push('/traveller-detail', extra: {'userId': userId, 'name': name}),
+     onTap: () async {
+  await context.push('/traveller-detail', extra: {'userId': userId});
+  _loadRecommendations(); // refresh data setelah kembali
+},
+
       child: Container(
         width: 155,
-        margin: const EdgeInsets.only(right: 16, bottom: 20, top: 5), // Bottom margin ditambah untuk ruang shadow
+        margin: const EdgeInsets.only(right: 16, bottom: 20, top: 5),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12), // Lebih pekat sedikit
-              blurRadius: 15, // Efek sebaran bayangan lebih luas
-              spreadRadius: 1, // Bayangan sedikit melebar
-              offset: const Offset(0, 8), // Shadow jatuh ke bawah untuk efek timbul melayang
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey[100]!, width: 2),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: imageWidget,
-              ),
-            ),
+            CircleAvatar(
+  radius: 42,
+  backgroundImage: photoBase64.isNotEmpty
+      ? MemoryImage(base64Decode(photoBase64.split(',').last))
+      : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
+),
             const SizedBox(height: 12),
-            Text(
-              name,
-              style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1B263B)),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              title,
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey[500], fontWeight: FontWeight.w500),
-            ),
+            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text(title, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
             const SizedBox(height: 14),
             SizedBox(
               height: 32,
               width: 100,
               child: ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    if (isFollowed) {
-                      _followedTravellers.remove(name);
-                    } else {
-                      _followedTravellers.add(name);
-                    }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1B263B),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
+                onPressed: () => _toggleFollow(userId),
+              style: ElevatedButton.styleFrom(
+  backgroundColor: isFollowed ? Colors.grey[300] : const Color(0xFF1B263B),
+  foregroundColor: isFollowed ? Colors.black : Colors.white,
+  elevation: 0,
+  padding: EdgeInsets.zero,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8),
+  ),
+),
+
                 child: Text(
-                  isFollowed ? 'Followed' : 'Follow',
-                  style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600),
+                  isFollowed ? 'unfollow' : 'Follow',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
               ),
             ),

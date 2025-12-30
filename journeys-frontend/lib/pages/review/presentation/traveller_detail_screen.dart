@@ -18,7 +18,6 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
   TravellerProfileModel? profile;
   bool isFollowing = false;
   int followers = 0;
-  int following = 0;
   bool isLoading = true;
 
   @override
@@ -37,12 +36,10 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
         profile = prof;
         isFollowing = followStatus;
         followers = socials['followers'] ?? 0;
-        following = socials['following'] ?? 0;
         isLoading = false;
       });
     } catch (e) {
       setState(() => isLoading = false);
-      debugPrint('Failed load traveller profile: $e');
     }
   }
 
@@ -92,12 +89,13 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             children: [
+              // ================= PROFILE CARD =================
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -116,115 +114,119 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
                               as ImageProvider,
                     ),
                     const SizedBox(height: 16),
-                    // Label: Name
-const Text(
-  'Name',
-  style: TextStyle(
-    fontSize: 13,
-    color: Colors.grey,
-  ),
-),
-const SizedBox(height: 4),
 
-// Value: Username
-Text(
-  profile!.username,
-  style: const TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-  ),
-),
-const SizedBox(height: 12),
+                    // Label Name
+                    const Text(
+                      'Name',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 4),
 
-// Label: Rank
-const Text(
-  'Rank',
-  style: TextStyle(
-    fontSize: 13,
-    color: Colors.grey,
-  ),
-),
-const SizedBox(height: 4),
+                    Text(
+                      profile!.username,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-// Rank Value with icon
-Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    Stack(
-      alignment: Alignment.center,
-      children: [
-        const Icon(
-          Icons.brightness_7,
-          size: 34,
-          color: Color(0xFF1E3A5F),
-        ),
-        Text(
-          (int.tryParse(profile!.rank.split(' ').last) ?? 1).toString(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
-      ],
-    ),
-    const SizedBox(width: 8),
-    Text(
-      profile!.rank.split(' lvl').first,
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-        color: Color(0xFF1E3A5F),
-      ),
-    ),
-  ],
-),
+                    // Label Rank
+                    const Text(
+                      'Rank',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 4),
 
+                    // ✅ RANK DENGAN ICON (DIKEMBALIKAN)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            const Icon(
+                              Icons.brightness_7,
+                              size: 34,
+                              color: Color(0xFF1E3A5F),
+                            ),
+                            Text(
+                              (int.tryParse(
+                                          profile!.rank.split(' ').last) ??
+                                      1)
+                                  .toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          profile!.rank.split(' lvl').first,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Color(0xFF1E3A5F),
+                          ),
+                        ),
+                      ],
+                    ),
 
-
-                   Row(
-  mainAxisAlignment: MainAxisAlignment.spaceAround,
-  children: [
-    _buildStat('Followers', followers.toString()),
-    _buildStat('Reviews', profile!.reviews.toString()),
-    _buildStat('Routes', profile!.routes.toString()),
-  ],
-),
-
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        Expanded(
-                       child: ElevatedButton(
-  onPressed: _toggleFollow,
-  style: ElevatedButton.styleFrom(
-    backgroundColor: isFollowing ? Colors.grey : const Color.fromARGB(255, 15, 57, 92),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(6),
-    ),
-  ),
-  child: Text(isFollowing ? 'Unfollow' : 'Follow'),
-),
+                        _buildStat('Followers', followers.toString()),
+                        _buildStat('Reviews', profile!.reviews.toString()),
+                        _buildStat('Routes', profile!.routes.toString()),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
 
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          onPressed: _toggleFollow,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isFollowing
+                                ? Colors.grey[300]
+                                : const Color(0xFF1E3A5F),
+                            foregroundColor: isFollowing
+                                ? Colors.black
+                                : Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            isFollowing ? 'Unfollow' : 'Follow',
+                            style: const TextStyle(fontSize: 14),
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
-  child: ElevatedButton(
-    onPressed: () {},
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.red,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(6), // ⬅️ di SINI gantinya
-      ),
-    ),
-    child: const Text(
-      'Report',
-      style: TextStyle(color: Colors.white),
-    ),
-  ),
-),
-
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 24, vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Report',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -233,36 +235,94 @@ Row(
 
               const SizedBox(height: 24),
 
-              ...profile!.plans.map((plan) {
-                final base64Str = plan['banner'] ?? '';
-                Uint8List? planImg;
-                if (base64Str.isNotEmpty) {
-                  try {
-                    planImg = base64Decode(base64Str);
-                  } catch (_) {}
-                }
+              // ================= PLANS LIST =================
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: profile!.plans.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.75,
+                ),
+                itemBuilder: (context, index) {
+                  final plan = profile!.plans[index];
+                  Uint8List? planImg;
+                  if (plan['banner'] != null) {
+                    try {
+                      planImg =
+                          base64Decode(plan['banner']!.split(',').last);
+                    } catch (_) {
+                      planImg = null;
+                    }
+                  }
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    image: planImg != null
-                        ? DecorationImage(
-                            image: MemoryImage(planImg),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    color: planImg == null ? Colors.grey[300] : null,
-                  ),
-                  height: 140,
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  child: Text(plan['title'] ?? '',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold)),
-                );
-              }).toList(),
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      image: planImg != null
+                          ? DecorationImage(
+                              image: MemoryImage(planImg),
+                              fit: BoxFit.cover,
+                            )
+                          : null,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Container(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(10),
+    color: Colors.black.withOpacity(0.4),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(8),
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          plan['title'] ?? '',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'By ${plan['author_name'] ?? 'Unknown'}',
+          style: const TextStyle(
+            color: Colors.white70,
+            fontSize: 12,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: List.generate(5, (i) {
+            return Icon(
+              Icons.star,
+              size: 14,
+              color: i < (plan['rating'] ?? 0)
+                  ? Colors.amber
+                  : Colors.grey[400],
+            );
+          }),
+        ),
+      ],
+    ),
+  ),
+),
+
+                  );
+                },
+              ),
             ],
           ),
         ),
