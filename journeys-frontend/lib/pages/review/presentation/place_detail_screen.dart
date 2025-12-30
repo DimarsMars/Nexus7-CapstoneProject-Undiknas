@@ -221,50 +221,50 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                       ),
                       const SizedBox(height: 20),
                    Row(
-  crossAxisAlignment: CrossAxisAlignment.center,
-  children: [
-    Expanded(
-      child: Wrap(
-        spacing: 4,
-        children: List.generate(5, (index) {
-          return GestureDetector(
-            onTap: () {
-              setModalState(() => _rating = index + 1);
-            },
-            child: Icon(
-              Icons.star,
-              size: 24, // Ukuran lebih kecil, tidak overflow
-              color: index < _rating ? Colors.amber : Colors.grey[300],
-            ),
-          );
-        }),
-      ),
-    ),
-    ElevatedButton(
-      onPressed: () async {
-        if (_reviewController.text.isNotEmpty && _rating > 0) {
-          final success = await ApiService().submitPlaceReview(
-            routeId: widget.routeId,
-            rating: _rating,
-            comment: _reviewController.text,
-            imageBytesList: _selectedImages,
-          );
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 4,
+                              children: List.generate(5, (index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    setModalState(() => _rating = index + 1);
+                                  },
+                                  child: Icon(
+                                    Icons.star,
+                                    size: 24, // Ukuran lebih kecil, tidak overflow
+                                    color: index < _rating ? Colors.amber : Colors.grey[300],
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_reviewController.text.isNotEmpty && _rating > 0) {
+                                final success = await ApiService().submitPlaceReview(
+                                  routeId: widget.routeId,
+                                  rating: _rating,
+                                  comment: _reviewController.text,
+                                  imageBytesList: _selectedImages,
+                                );
 
-          _reviewController.clear();
-          _selectedImages.clear();
+                                _reviewController.clear();
+                                _selectedImages.clear();
 
-          Navigator.of(context).pop(success);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Please add a review and rating')),
-          );
-        }
-      },
-      child: const Text('Add review'),
-    ),
-  ],
-),
+                                Navigator.of(context).pop(success);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Please add a review and rating')),
+                                );
+                              }
+                            },
+                            child: const Text('Add review'),
+                          ),
+                        ],
+                      ),
 
                     ],
                   ),
@@ -640,71 +640,98 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                           ],
                                         ),
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 8),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                  'More picture from the reviews',
-                                                  style: TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.bold)),
-                                              const SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  ...review.imageBase64List
-                                                      .skip(1)
-                                                      .map((img) =>
-                                                          Container(
-                                                            margin:
-                                                                const EdgeInsets
-                                                                        .only(
-                                                                    right:
-                                                                        8),
-                                                            width: 50,
-                                                            height: 50,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          8),
-                                                              image:
-                                                                  DecorationImage(
-                                                                image:
-                                                                    MemoryImage(
-                                                                  base64Decode(
-                                                                      img),
-                                                                ),
-                                                                fit:
-                                                                    BoxFit.cover,
-                                                              ),
-                                                            ),
-                                                          ))
-                                                      .toList(),
-                                                  const Spacer(),
-                                                  TextButton(
-                                                    onPressed: () {},
-                                                    style: TextButton.styleFrom(
-                                                        padding:
-                                                            EdgeInsets.zero),
-                                                    child: const Text(
-                                                        'See More Picture',
-                                                        style: TextStyle(
-                                                            fontSize: 10,
-                                                            decoration:
-                                                                TextDecoration
-                                                                    .underline)),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'More picture from the reviews',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      Builder(
+        builder: (context) {
+          final allImages = review.imageBase64List.skip(1).toList();
+          final previewImages = allImages.take(3).toList();
+          final hasMore = allImages.length > 3;
+
+          return Row(
+            children: [
+              ...previewImages.map((img) => Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: MemoryImage(base64Decode(img)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )),
+              if (hasMore) ...[
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (_) {
+                        return DraggableScrollableSheet(
+                          expand: false,
+                          initialChildSize: 0.6,
+                          minChildSize: 0.4,
+                          maxChildSize: 0.95,
+                          builder: (_, controller) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: GridView.builder(
+                                controller: controller,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                ),
+                                itemCount: allImages.length,
+                                itemBuilder: (_, index) {
+                                  final imageBytes =
+                                      base64Decode(allImages[index]);
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.memory(imageBytes,
+                                        fit: BoxFit.cover),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  child: const Text(
+                    'See More Picture',
+                    style: TextStyle(
+                      fontSize: 10,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      ),
+    ],
+  ),
+),
+
                                       ],
                                     ),
                                   );
