@@ -8,7 +8,7 @@ import apiService from '../services/apiService';
 
 const ExplorePage = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("");
+  const [activeTab, setActiveTab] = useState("All"); // Default to 'All'
   const [categories, setCategories] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
@@ -21,13 +21,15 @@ const ExplorePage = () => {
         try {
             const response = await apiService.getCategories();
             if (response.data) {
-                setCategories(response.data);
-                if (response.data.length > 0) {
-                    setActiveTab(response.data[0].name);
-                }
+                const fetchedCategories = response.data;
+                const allCategory = { id: 'all', name: 'All' }; // Create 'All' category object
+                setCategories([allCategory, ...fetchedCategories]); // Prepend 'All'
+            } else {
+                setCategories([{ id: 'all', name: 'All' }]); // If no categories, still show 'All'
             }
         } catch (error) {
             console.error("Failed to fetch categories:", error);
+            setCategories([{ id: 'all', name: 'All' }]); // Ensure 'All' is present even on error
         }
     };
     if (user) {
@@ -48,14 +50,20 @@ const ExplorePage = () => {
   // --- LOGIKA FILTERING ---
   // filter dulu datanya sebelum dipotong (pagination)
   const filteredPlans = plans ? plans.filter(plan => {
-      if (!searchQuery) return true;
+    const categoryMatch = activeTab === 'All' 
+        ? true 
+        : plan.categories && plan.categories.some(cat => cat.name.toLowerCase() === activeTab.toLowerCase());
 
-      // Logic pencarian (Case Insensitive)
-      const lowerQuery = searchQuery.toLowerCase();
-      const titleMatch = plan.title && plan.title.toLowerCase().includes(lowerQuery);
-      const descMatch = plan.description && plan.description.toLowerCase().includes(lowerQuery);
+    if (!searchQuery) {
+        return categoryMatch;
+    }
 
-      return titleMatch || descMatch;
+    // Logic pencarian (Case Insensitive)
+    const lowerQuery = searchQuery.toLowerCase();
+    const titleMatch = plan.title && plan.title.toLowerCase().includes(lowerQuery);
+    const descMatch = plan.description && plan.description.toLowerCase().includes(lowerQuery);
+
+    return categoryMatch && (titleMatch || descMatch);
   }) : [];
 
   // LOGIKA PAGINATION (Berdasarkan filteredPlans)
@@ -141,7 +149,7 @@ const ExplorePage = () => {
 
                 return (
                   <TripCard
-                    key={plan.plan_id}
+                    key={plan.plan_id || index} // Use plan_id as key, fallback to index if plan_id is falsy.
                     id={plan.plan_id}
                     title={plan.title}
                     author={plan.author_name || "Unknown Author"}
@@ -158,9 +166,9 @@ const ExplorePage = () => {
               })
           ) : (
               // Tampilan jika hasil pencarian kosong (tanpa merusak layout)
-              <div className="md:col-span-2 flex flex-col items-center justify-center text-gray-400">
-                  <p className="font-bold text-lg">No trips found</p>
-                  <p className="text-sm">Try searching for something else.</p>
+              <div className="md:col-span-2 flex flex-col items-center justify-center text-gray-400 text-center">
+                  <p className="font-bold text-lg">No trips found for "{activeTab}"</p>
+                  <p className="text-sm">Try selecting another category or using a different search term.</p>
               </div>
           )}
         </div>
