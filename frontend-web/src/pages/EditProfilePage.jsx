@@ -132,7 +132,7 @@ const EditProfilePage = ({ user }) => {
     }
   };
 
-  // ====== PENTING: FIX FOTO ======
+  // FIX FOTO
   const getImageSrc = () => {
     if (!formData.image) return "";
 
@@ -153,6 +153,12 @@ const EditProfilePage = ({ user }) => {
       if (!rankString) return '?';
       const match = rankString.match(/lvl (\d+)/i);
       return match ? match[1] : '?';
+  };
+
+    // --- HELPER AMBIL NAMA PANGKAT ---
+  const getRankName = (rankString) => {
+      if (!rankString) return '';
+      return rankString.replace(/ lvl \d+/i, '').trim();
   };
 
   return (
@@ -207,7 +213,7 @@ const EditProfilePage = ({ user }) => {
                   <span className="absolute font-bold text-xs">{getRankLevel(displayUser.rank)}</span>
                 </div>
                 <h2 className="text-xl font-bold text-slate-900">
-                  {displayUser.rank}
+                  {getRankName(displayUser.rank)}
                 </h2>
               </div>
             </div>

@@ -157,6 +157,16 @@ const MyProfilePage = () => {
         navigate(`/trip/${id}`);
     };
 
+    // --- HELPER AMBIL NAMA PANGKAT ---
+    const getRankName = (rankString) => {
+        if (!rankString) return '';
+        return rankString.replace(/ lvl \d+/i, '').trim();
+    };
+
+    // --- LOGIKA PROGRESS BAR ---
+    const currentXP = userXP.xp || 0;
+    const progressPercentage = currentXP % 100;
+
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-5 pt-30 flex justify-center items-start md:items-center">
             <div className="bg-white w-full max-w-7xl p-6 md:p-10 rounded-xl shadow-sm">
@@ -187,7 +197,7 @@ const MyProfilePage = () => {
                                         {getRankLevel(profileRank)}
                                     </span>
                                 </div>
-                                <h2 className="text-xl font-bold text-[#1e293b]">{profileRank}</h2>
+                                <h2 className="text-xl font-bold text-[#1e293b]">{getRankName(profileRank)}</h2>
                             </div>
                         </div>
                     </div>
@@ -202,11 +212,17 @@ const MyProfilePage = () => {
                             </div>
                             <div className="w-full">
                                 <h4 className="font-bold text-[#1e293b] text-[18px]">Your Score’s</h4>
-                                <p className="text-[14px] text-gray-500 font-medium">{userXP.rank}</p>
-                                <p className="font-bold text-[14px] text-[#1e293b] mt-0.5">{userXP.xp}</p>
+                                <p className="text-[14px] text-gray-500 font-medium">{getRankName(userXP.rank)}</p>
+                                <p className="font-bold text-[14px] text-[#1e293b] mt-0.5">{userXP.xp} XP</p>
+                                
+                                {/* INTEGRASI PROGRESS BAR */}
                                 <div className="w-40 h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
-                                    <div className="h-full bg-[#1e293b] w-[60%] rounded-full"></div>
+                                    <div 
+                                        className="h-full bg-[#1e293b] rounded-full transition-all duration-500 ease-out" 
+                                        style={{ width: `${progressPercentage}%` }} // Dynamic width
+                                    ></div>
                                 </div>
+                                <p className="text-[10px] text-gray-400 mt-0.5">{100 - progressPercentage} XP to next level</p>
                             </div>
                         </div>
                     </div>
