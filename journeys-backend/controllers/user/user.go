@@ -283,6 +283,13 @@ func GetUserProfile(c *gin.Context) {
 		if len(p.Banner) > 0 {
 			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
 		}
+
+		var avgRating float64
+		config.DB.Table("trip_reviews").
+			Select("AVG(rating)").
+			Where("plan_id = ?", p.PlanID).
+			Scan(&avgRating)
+
 		planResp = append(planResp, map[string]interface{}{
 			"plan_id":     p.PlanID,
 			"title":       p.Title,
@@ -292,6 +299,8 @@ func GetUserProfile(c *gin.Context) {
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
 			"status":      p.Status,
+			"rating":      avgRating,
+			"author_name": user.Username,
 		})
 	}
 
