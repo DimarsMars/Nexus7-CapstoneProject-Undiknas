@@ -28,7 +28,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   List<PlaceReview> _reviews = [];
   bool _isLoading = true;
   bool _isBookmarked = false;
-  Uint8List? _selectedImageBytes;
+List<Uint8List> _selectedImages = [];
 
   // DATA DUMMY UNTUK MORE PICTURES
   final List<String> _dummyMorePictures = [
@@ -98,7 +98,8 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                             _reviewController.clear();
                             setModalState(() {
                               _rating = 0;
-                              _selectedImageBytes = null;
+                              _selectedImages.clear(); // ✅ benar
+
                             });
                           },
                           icon: const Icon(Icons.close),
@@ -109,14 +110,15 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                     GestureDetector(
                       onTap: () async {
                         final picker = ImagePicker();
-                        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                     final pickedFiles = await picker.pickMultiImage(imageQuality: 70);
+if (pickedFiles != null) {
+  final bytesList = await Future.wait(pickedFiles.map((f) => f.readAsBytes()));
+  setModalState(() {
+    _selectedImages.addAll(bytesList); // ✅ append, bukan replace
+  });
+}
 
-                        if (pickedFile != null) {
-                          final bytes = await pickedFile.readAsBytes();
-                          setModalState(() {
-                            _selectedImageBytes = bytes;
-                          });
-                        }
+
                       },
                       child: Container(
                         height: 150,
@@ -124,27 +126,37 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                           border: Border.all(color: Colors.grey[300]!, width: 2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: _selectedImageBytes != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.memory(
-                                  _selectedImageBytes!,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.add, size: 48, color: Colors.grey[400]),
-                                    const SizedBox(height: 8),
-                                    Text('Add Image',
-                                        style: TextStyle(
-                                            fontSize: 16, color: Colors.grey[600])),
-                                  ],
-                                ),
-                              ),
+                        child: _selectedImages.isNotEmpty
+    ? ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _selectedImages.length,
+        itemBuilder: (context, index) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                _selectedImages[index],
+                width: 120,
+                height: 150,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        },
+      )
+    : Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add, size: 48, color: Colors.grey[400]),
+            const SizedBox(height: 8),
+            Text('Add Images',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
+          ],
+        ),
+      )
+
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -181,36 +193,41 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                         ),
                         ElevatedButton(
                           onPressed: () async {
-                            if (_reviewController.text.isNotEmpty && _rating > 0) {
-                              Navigator.of(context).pop();
+                              if (_reviewController.text.isNotEmpty && _rating > 0) {
+                                final currentContext = context; // ✅ simpan context sebelum pop
+                                Navigator.of(currentContext).pop(); // ✅ hindari gunakan context langsung setelah pop
 
-                              final success = await ApiService().submitPlaceReview(
-                                routeId: widget.routeId,
-                                rating: _rating,
-                                comment: _reviewController.text,
-                                imageBytes: _selectedImageBytes,
-                              );
-
-                              _reviewController.clear();
-                              setState(() => _rating = 0);
-                              _selectedImageBytes = null;
-
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Review submitted successfully!')),
+                                final success = await ApiService().submitPlaceReview(
+                                  routeId: widget.routeId,
+                                  rating: _rating,
+                                  comment: _reviewController.text,
+                                  imageBytesList: _selectedImages,
                                 );
-                                await _loadData(); // refresh review list
+
+                                _reviewController.clear();
+                                _selectedImages.clear();
+
+                                if (!mounted) return; // ✅ pastikan widget masih hidup
+
+                                if (success) {
+                                  ScaffoldMessenger.of(currentContext).showSnackBar(
+                                    const SnackBar(content: Text('Review submitted successfully!')),
+                                  );
+                                  await _loadData(); // refresh review list
+                                } else {
+                                  ScaffoldMessenger.of(currentContext).showSnackBar(
+                                    const SnackBar(content: Text('Failed to submit review')),
+                                  );
+                                }
+
+                                setState(() => _rating = 0);
                               } else {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Failed to submit review')),
+                                  const SnackBar(content: Text('Please add a review and rating')),
                                 );
                               }
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please add a review and rating')),
-                              );
                             }
-                          },
+                              ,
                           child: const Text('Add review'),
                         ),
                       ],
@@ -227,7 +244,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images =
+    final List<String> image =
         _place != null && _place!.imageBase64.isNotEmpty
             ? [_place!.imageBase64]
             : ['assets/icons/serenity-oasis.jpg'];
@@ -313,9 +330,9 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                     borderRadius: BorderRadius.circular(20),
                                     child: PageView.builder(
                                       controller: _pageController,
-                                      itemCount: images.length,
+                                      itemCount: image.length,
                                       itemBuilder: (context, index) {
-                                        final img = images[index];
+                                        final img = image[index];
                                         return img.startsWith('/') || img.length > 100
                                             ? Image.memory(base64Decode(img),
                                                 fit: BoxFit.cover)
@@ -332,7 +349,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   child: Center(
                                     child: SmoothPageIndicator(
                                       controller: _pageController,
-                                      count: images.length,
+                                      count: image.length,
                                       effect: ScrollingDotsEffect(
                                         activeDotColor: const Color(0xFF1E3A5F),
                                         dotColor: Colors.white.withOpacity(0.5),
@@ -441,19 +458,21 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                                 topLeft: Radius.circular(16),
                                                 bottomRight: Radius.circular(16),
                                               ),
-                                              child: review.imageBase64.isNotEmpty
-                                                  ? Image.memory(
-                                                      base64Decode(review.imageBase64),
-                                                      width: 100,
-                                                      height: 120,
-                                                      fit: BoxFit.cover,
-                                                    )
-                                                  : Image.asset(
-                                                      'assets/icons/review.jpg',
-                                                      width: 100,
-                                                      height: 120,
-                                                      fit: BoxFit.cover,
-                                                    ),
+                                             child: review.imageBase64List.isNotEmpty
+  ? Image.memory(
+      base64Decode(review.imageBase64List[0]),
+      width: 100,
+      height: 120,
+      fit: BoxFit.cover,
+    )
+
+    : Image.asset(
+        'assets/icons/review.jpg',
+        width: 100,
+        height: 120,
+        fit: BoxFit.cover,
+      ),
+
                                             ),
                                             Expanded(
                                               child: Padding(
@@ -513,18 +532,21 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                               const SizedBox(height: 8),
                                               Row(
                                                 children: [
-                                                  ..._dummyMorePictures.map((path) => Container(
-                                                        margin: const EdgeInsets.only(right: 8),
-                                                        width: 50,
-                                                        height: 50,
-                                                        decoration: BoxDecoration(
-                                                          borderRadius: BorderRadius.circular(8),
-                                                          image: DecorationImage(
-                                                            image: AssetImage(path),
-                                                            fit: BoxFit.cover,
-                                                          ),
-                                                        ),
-                                                      )),
+                                                 ...review.imageBase64List
+    .skip(1) // ambil dari gambar ke-2
+    .map((img) => Container(
+          margin: const EdgeInsets.only(right: 8),
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            image: DecorationImage(
+              image: MemoryImage(base64Decode(img)),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ))
+    .toList(),
                                                   const Spacer(),
                                                   TextButton(
                                                     onPressed: () {},
