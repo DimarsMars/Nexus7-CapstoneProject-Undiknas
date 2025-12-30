@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-// 1. IMPORT FaRegBookmark (Outline)
 import { FaChevronLeft, FaStar, FaBookmark, FaRegBookmark, FaTimes, FaCamera } from "react-icons/fa";
 import apiService from '../services/apiService';
 
@@ -13,7 +12,7 @@ const MyTripReviewPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentImage, setCurrentImage] = useState(0);
   
-  // 2. STATE UNTUK STATUS BOOKMARK
+  // STATE UNTUK STATUS BOOKMARK
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isBookmarking, setIsBookmarking] = useState(false);
   const [bookmarkId, setBookmarkId] = useState(null);
@@ -23,11 +22,14 @@ const MyTripReviewPage = () => {
   const [userRating, setUserRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewImage, setReviewImage] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  
+  // --- Ubah state image jadi Array [] ---
+  const [reviewImages, setReviewImages] = useState([]); 
+  const [previewImages, setPreviewImages] = useState([]); 
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // FETCH DATA (ROUTE, REVIEWS, & CHECK BOOKMARK STATUS)
+  // FETCH DATA
   const fetchData = async () => {
     try {
       const [routeRes, reviewsRes, bookmarksRes] = await Promise.all([
@@ -72,16 +74,25 @@ const MyTripReviewPage = () => {
       setLoading(true);
       fetchData();
     }
-    // eslint-disable-next-line
   }, [id]);
 
-  // HANDLERS
+  // --- Handle Multiple Images ---
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setReviewImage(file);
-      setPreviewImage(URL.createObjectURL(file));
+    const files = Array.from(e.target.files); // Ambil semua file yang dipilih
+    if (files.length > 0) {
+      // Simpan File object untuk dikirim ke API
+      setReviewImages(prev => [...prev, ...files]);
+
+      // Buat URL preview untuk ditampilkan di UI
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setPreviewImages(prev => [...prev, ...newPreviews]);
     }
+  };
+
+  // Fungsi untuk menghapus gambar yang salah pilih
+  const removeImage = (index) => {
+    setReviewImages(prev => prev.filter((_, i) => i !== index));
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmitReview = async () => {
@@ -98,9 +109,11 @@ const MyTripReviewPage = () => {
       formData.append('rating', userRating);
       formData.append('comment', reviewComment);
       
-      if (reviewImage) {
-        formData.append('image', reviewImage);
-      }
+      // --- Append Multiple Images ---
+   
+      reviewImages.forEach((file) => {
+          formData.append('image', file);
+      });
 
       const response = await apiService.postReviewPlace(formData);
 
@@ -111,10 +124,12 @@ const MyTripReviewPage = () => {
       }
 
       setIsModalOpen(false);
+      
+      // Reset State
       setUserRating(0);
       setReviewComment("");
-      setReviewImage(null);
-      setPreviewImage(null);
+      setReviewImages([]); // Reset array
+      setPreviewImages([]); // Reset preview array
 
       fetchData();
 
@@ -126,7 +141,6 @@ const MyTripReviewPage = () => {
     }
   };
 
-  // 4. UPDATE LOGIKA HANDLE BOOKMARK
   const handleBookmark = async () => {
     if (isBookmarking) {
       return;
@@ -135,16 +149,13 @@ const MyTripReviewPage = () => {
 
     try {
       if (isBookmarked && bookmarkId) {
-        // --- UNBOOKMARK ---
         await apiService.deleteBookmarkRoute(bookmarkId);
         alert("Bookmark removed successfully!");
         setIsBookmarked(false);
         setBookmarkId(null);
       } else {
-        // --- BOOKMARK ---
-        await apiService.postBookmarkRoute(id); // 'id' is routeId from useParams
+        await apiService.postBookmarkRoute(id);
         alert("Added to bookmarks!");
-        // Re-fetch all data to get the new bookmarkId and ensure state is perfectly synced
         await fetchData();
       }
     } catch (error) {
@@ -156,7 +167,6 @@ const MyTripReviewPage = () => {
     }
   };
 
-  // HANDLING LOADING & ERROR
   if (loading) {
       return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -173,11 +183,21 @@ const MyTripReviewPage = () => {
       );
   }
 
+
   const getImageSrc = (img) => {
       if (!img) return null;
-      return img.startsWith('data:image') || img.startsWith('http') 
-        ? img 
-        : `data:image/jpeg;base64,${img}`;
+      
+      let imageString = img;
+      if (Array.isArray(img)) {
+          if (img.length === 0) return null;
+          imageString = img[0]; 
+      }
+
+      if (typeof imageString !== 'string') return null;
+
+      return imageString.startsWith('data:image') || imageString.startsWith('http') 
+        ? imageString 
+        : `data:image/jpeg;base64,${imageString}`;
   };
 
   let sliderImages = [];
@@ -223,14 +243,10 @@ const MyTripReviewPage = () => {
 
         {/* ACTION BAR */}
         <div className="flex justify-end items-center gap-4 mb-8">
-            
-            {/* 5. IMPLEMENTASI UI TOGGLE ICON */}
             <div onClick={handleBookmark} className="cursor-pointer transition hover:scale-110" title={isBookmarked ? "Saved" : "Save this place"}>
                 {isBookmarked ? (
-                    // TAMPILAN JIKA SUDAH DI-BOOKMARK (FILLED & WARNA)
                     <FaBookmark className="text-3xl text-[#1e293b]" />
                 ) : (
-                    // TAMPILAN JIKA BELUM (OUTLINE)
                     <FaRegBookmark className="text-3xl text-[#1e293b] hover:text-gray-600" />
                 )}
             </div>
@@ -248,39 +264,69 @@ const MyTripReviewPage = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {reviews && reviews.length > 0 ? (
-                reviews.map((item) => (
-                    <div key={item.review_id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-                        <div className="flex gap-4 mb-4">
-                            <div className="w-24 h-20 shrink-0 rounded-lg overflow-hidden">
-                                {item.image ? (
-                                    <img src={getImageSrc(item.image)} alt="Review" className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-400">No Img</div>
-                                )}
-                            </div>
+                reviews.map((item) => {
 
-                            <div className='text-left'>
-                                <div className="flex text-yellow-400 text-xs mb-1">
-                                    {[...Array(item.rating || 0)].map((_, i) => <FaStar key={i} />)}
+                    const images = Array.isArray(item.image) 
+                        ? item.image 
+                        : (item.image ? [item.image] : []);
+                    
+                    const mainImage = images.length > 0 ? images[0] : null;
+                    const extraImages = images.slice(1, 4);
+
+                    return (
+                        <div key={item.review_id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+                            <div className="flex gap-4 mb-4">
+                                {/* FOTO UTAMA (KIRI) */}
+                                <div className="w-32 h-20 shrink-0 rounded-lg overflow-hidden border border-gray-100">
+                                    {mainImage ? (
+                                        <img src={getImageSrc(mainImage)} alt="Review" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-400">No Img</div>
+                                    )}
                                 </div>
-                                <h3 className="font-bold text-[#1e293b] mb-1">Traveler</h3>
-                                <p className="text-gray-500 text-[10px] leading-tight line-clamp-3">
-                                    {item.comment}
-                                </p>
-                            </div>
-                        </div>
 
-                        <div className="mt-auto">
-                            <p className="text-[10px] text-gray-500 mb-2">More picture from the reviews</p>
-                            <div className="flex items-center gap-2 h-10">
-                                <span className="text-[10px] text-gray-300 italic">No extra photos</span>
-                                <button className="text-[10px] text-gray-500 underline hover:text-black ml-auto whitespace-nowrap">
-                                    See More Picture
-                                </button>
+                                <div className='text-left'>
+                                    <div className="flex text-yellow-400 text-xs mb-1">
+                                        {[...Array(item.rating || 0)].map((_, i) => <FaStar key={i} />)}
+                                    </div>
+                                    <h3 className="font-bold text-[#1e293b] mb-1">Traveler</h3>
+                                    <p className="text-gray-500 text-[10px] leading-tight line-clamp-3">
+                                        {item.comment}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* EXTRA PHOTOS */}
+                            <div className="mt-auto">
+                                <p className="text-[10px] text-gray-500 mb-2">More picture from the reviews</p>
+                                <div className="flex items-center gap-2 h-10">
+                                    {extraImages.length > 0 ? (
+                                        extraImages.map((img, idx) => (
+                                            <div key={idx} className="w-15 h-10 rounded-md overflow-hidden border border-gray-200 shrink-0">
+                                                <img src={getImageSrc(img)} alt={`Extra ${idx}`} className="w-full h-full object-cover" />
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <span className="text-[10px] text-gray-300 italic">No extra photos</span>
+                                    )}
+
+                                    {/* Tombol See More */}
+                                    {images.length > 4 && (
+                                        <button className="text-[10px] text-gray-500 underline hover:text-black ml-auto whitespace-nowrap">
+                                            +{images.length - 4} More
+                                        </button>
+                                    )}
+                                    
+                                    {images.length <= 4 && (
+                                         <button className="text-[10px] text-gray-500 underline hover:text-black ml-auto whitespace-nowrap">
+                                            See Detail
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))
+                    );
+                })
             ) : (
                 <div className="col-span-3 text-center text-gray-400 py-10">
                     No reviews yet for this location.
@@ -290,7 +336,7 @@ const MyTripReviewPage = () => {
 
       </div>
 
-      {/* --- ADD REVIEW MODAL --- */}
+      {/* ADD REVIEW MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={() => setIsModalOpen(false)}>
             <div 
@@ -331,21 +377,36 @@ const MyTripReviewPage = () => {
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Add Photo</label>
-                    <div className="flex items-center gap-4">
-                        <label className="cursor-pointer bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 flex items-center gap-2 hover:bg-gray-100 transition">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Add Photo (Max 5)</label>
+                    <div className="flex flex-col gap-3">
+                        {/* INPUT FILE MULTIPLE */}
+                        <label className="cursor-pointer bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 flex items-center justify-center gap-2 hover:bg-gray-100 transition border-dashed">
                             <FaCamera className="text-gray-500" />
-                            <span className="text-sm text-gray-600">Choose Image</span>
+                            <span className="text-sm text-gray-600">Choose Images</span>
                             <input 
                                 type="file" 
                                 accept="image/*" 
+                                multiple
                                 className="hidden" 
                                 onChange={handleImageChange}
                             />
                         </label>
-                        {previewImage && (
-                            <div className="w-16 h-16 rounded-md overflow-hidden border border-gray-200">
-                                <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+
+                        {/* PREVIEW IMAGE LIST */}
+                        {previewImages.length > 0 && (
+                            <div className="flex gap-2 overflow-x-auto py-2">
+                                {previewImages.map((src, idx) => (
+                                    <div key={idx} className="relative w-16 h-16 shrink-0 group">
+                                        <img src={src} alt={`Preview ${idx}`} className="w-full h-full object-cover rounded-md border border-gray-200" />
+                                        {/* Optional: Tombol hapus kecil jika hover */}
+                                        <button 
+                                            onClick={() => removeImage(idx)}
+                                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5 text-[10px] opacity-0 group-hover:opacity-100 transition"
+                                        >
+                                            <FaTimes />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
