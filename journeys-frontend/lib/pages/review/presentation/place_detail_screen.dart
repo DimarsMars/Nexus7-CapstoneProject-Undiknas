@@ -132,7 +132,7 @@ List<Uint8List> _selectedImages = [];
                                   borderRadius: BorderRadius.circular(10),
                                   image: DecorationImage(
                                     image: MemoryImage(_selectedImages[index]),
-                                    fit: BoxFit.cover,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
@@ -536,14 +536,14 @@ List<Uint8List> _selectedImages = [];
       base64Decode(review.imageBase64List[0]),
       width: 100,
       height: 120,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain
     )
 
     : Image.asset(
         'assets/icons/review.jpg',
         width: 100,
         height: 120,
-        fit: BoxFit.cover,
+        fit: BoxFit.contain
       ),
 
                                             ),
