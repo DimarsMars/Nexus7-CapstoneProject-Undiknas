@@ -145,7 +145,7 @@ const handleSubmitReview = async () => {
                 
                 <div className="flex gap-1 mt-2 text-yellow-400 text-xl">
                     {[...Array(5)].map((_, i) => (
-                        <FaStar key={i} className={i < (plan.rating || 5) ? "text-yellow-400" : "text-gray-200"} />
+                        <FaStar key={i} className={i < (plan.rating) ? "text-yellow-400" : "text-gray-200"} />
                     ))}
                 </div>
             </div>

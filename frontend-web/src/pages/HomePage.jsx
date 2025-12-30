@@ -34,8 +34,8 @@ const HomePage = () => {
                     key={plan.plan_id}
                     id={plan.plan_id}
                     title={plan.title}
-                    author={plan.description}
-                    rating={plan.rating || 5} 
+                    author={plan.author_name || "Unknown Author"}
+                    rating={plan.rating} 
                     image={`data:image/jpeg;base64,${plan.banner}`}
                     className={
                         index === 0

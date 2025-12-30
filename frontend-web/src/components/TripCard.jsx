@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 const TripCard = ({ id, image, title, author, rating, className, isClickable = true }) => {
   const navigate = useNavigate();
 
+  const starRating = Number(rating) || 0;
+
   const handleClick = () => {
     if (isClickable) {
       navigate(`/trip/${id}`);
@@ -27,14 +29,14 @@ const TripCard = ({ id, image, title, author, rating, className, isClickable = t
 
       <div className="absolute bottom-0 left-0 p-5 w-full text-left">
         <h3 className="text-white text-2xl font-bold mb-1 capitalize">{title}</h3>
-        <p className="text-gray-300 text-xs px-2 mb-3">{author}</p>
+        <p className="text-gray-300 text-xs px-2 mb-3 capitalize">{author}</p>
         
         <div className="flex items-center space-x-1">
           {[...Array(5)].map((_, index) => (
             <FaStar
               key={index}
               className={`w-4 h-4 ${
-                index < rating ? "text-yellow-400" : "text-gray-400"
+                index < starRating ? "text-yellow-400" : "text-gray-400"
               }`}
             />
           ))}
