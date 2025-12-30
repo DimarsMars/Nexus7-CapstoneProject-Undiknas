@@ -74,14 +74,29 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
       }
     }
 
-    return Scaffold(
+return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => context.pop(),
+        leadingWidth: 120, // Menambah lebar agar teks "Back" muat
+        leading: InkWell(
+          onTap: () => context.pop(),
+          child: const Row(
+            children: [
+              SizedBox(width: 12),
+              Icon(Icons.arrow_back, color: Colors.black),
+              SizedBox(width: 4),
+              Text(
+                'Back',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       body: SingleChildScrollView(

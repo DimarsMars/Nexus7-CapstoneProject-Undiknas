@@ -1,13 +1,14 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journeys/services/api_service.dart';
+import 'package:journeys/models/category_model.dart';
 import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/traveller_model.dart';
+import 'package:journeys/services/api_service.dart';
 import 'package:journeys/theme/app_theme.dart';
-import 'package:journeys/models/category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -403,56 +404,68 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
 
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(planCategories.length, (index) {
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: index < planCategories.length - 1 ? 12 : 0,
-                      ),
-                      child: Column(
-                        children: [
-                          Container(
-                            height: 75,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+  child: isCategoryLoading
+      ? const Center(child: CircularProgressIndicator())
+      : Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            categories.length.clamp(0, 4), // Maksimal 4 kategori saja
+            (index) {
+              final category = categories[index];
+
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: index < 3 ? 12 : 0),
+                  child: Column(
+                    children: [
+                      Container(
+                        height: 75,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: category.imageBase64.isNotEmpty
+                              ? Image.memory(
+                                  base64Decode(category.imageBase64),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                )
+                              : Image.asset(
+                                  'assets/icons/forge_your_route.jpg',
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                planCategories[index]['image'],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            planCategories[index]['label'],
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                }),
-              ),
-            ),
+                      const SizedBox(height: 8),
+                      Text(
+                        category.name,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+),
+
             const SizedBox(height: 24),
 
             Padding(
