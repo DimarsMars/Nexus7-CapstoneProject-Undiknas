@@ -64,6 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCategories() async {
     try {
       final result = await ApiService().getCategories();
+      // Mengacak urutan kategori setiap kali dipanggil
+      result.shuffle(Random());
       setState(() {
         categories = result;
         isCategoryLoading = false;
@@ -131,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-            // KATEGORI ATAS (Ditambahkan Shadow agar 3D)
+            // KATEGORI ATAS (Static & Random)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -142,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15), // Shadow dipertebal
+                      color: Colors.black.withOpacity(0.15),
                       blurRadius: 12,
                       spreadRadius: 1,
                       offset: const Offset(0, 4),
@@ -155,25 +157,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         scrollDirection: Axis.horizontal,
                         itemCount: categories.length,
                         itemBuilder: (context, index) {
-                          final isSelected = selectedCategoryIndex == index;
                           final category = categories[index];
 
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedCategoryIndex = index;
-                              });
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 15),
-                              child: Center(
-                                child: Text(
-                                  category.name,
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.black : Colors.grey[600],
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    fontSize: 14,
-                                  ),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 15),
+                            child: Center(
+                              child: Text(
+                                category.name,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 14,
                                 ),
                               ),
                             ),

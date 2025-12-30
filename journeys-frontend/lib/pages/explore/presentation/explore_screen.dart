@@ -133,7 +133,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         decoration: BoxDecoration(
-                          color: isSelected ? Colors.black : Colors.transparent,
+                          color: isSelected ? const Color.fromARGB(255, 27, 38, 59) : Colors.transparent,
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Center(
