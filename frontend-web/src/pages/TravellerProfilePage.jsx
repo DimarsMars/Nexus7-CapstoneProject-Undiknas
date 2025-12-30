@@ -99,6 +99,12 @@ const TravellerProfilePage = () => {
     navigate(`/trip/${id}`);
   };
 
+    // --- HELPER AMBIL NAMA PANGKAT ---
+  const getRankName = (rankString) => {
+      if (!rankString) return '';
+      return rankString.replace(/ lvl \d+/i, '').trim();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-10 pt-30 pb-20 px-5">
       <div className="max-w-7xl mx-auto">
@@ -136,7 +142,7 @@ const TravellerProfilePage = () => {
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Rank's</p>
-                                <p className="font-bold text-sm text-gray-900">{profile.rank || "Traveler"}</p>
+                                <p className="font-bold text-sm text-gray-900">{getRankName(profile.rank) || "Unknown"}</p>
                             </div>
                         </div>
                     </div>
