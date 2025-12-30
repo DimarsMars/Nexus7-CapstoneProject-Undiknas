@@ -8,6 +8,7 @@ import '../../../models/place_detail.dart';
 import '../../../models/place_review.dart';
 import 'package:go_router/go_router.dart';
 
+
 class PlaceDetailScreen extends StatefulWidget {
   final int routeId;
 
@@ -70,177 +71,249 @@ List<Uint8List> _selectedImages = [];
   }
 
   void _showAddReviewModal() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 600),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('Add Review',
-                            style: TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold)),
-                        IconButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _reviewController.clear();
-                            setModalState(() {
-                              _rating = 0;
-                              _selectedImages.clear(); // ✅ benar
-
-                            });
-                          },
-                          icon: const Icon(Icons.close),
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 600),
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ===== HEADER =====
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Add Review',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _reviewController.clear();
+                          setModalState(() {
+                            _rating = 0;
+                            _selectedImages.clear();
+                          });
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ===== THUMBNAIL KECIL (DI LUAR BOX) =====
+                  if (_selectedImages.isNotEmpty)
+                    SizedBox(
+                      height: 90,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _selectedImages.length,
+                        itemBuilder: (context, index) {
+                          return Stack(
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                margin: const EdgeInsets.only(right: 8),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  image: DecorationImage(
+                                    image: MemoryImage(_selectedImages[index]),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setModalState(() {
+                                      _selectedImages.removeAt(index);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 14,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                    const SizedBox(height: 20),
-                    GestureDetector(
-                      onTap: () async {
-                        final picker = ImagePicker();
-                     final pickedFiles = await picker.pickMultiImage(imageQuality: 70);
-if (pickedFiles != null) {
-  final bytesList = await Future.wait(pickedFiles.map((f) => f.readAsBytes()));
-  setModalState(() {
-    _selectedImages.addAll(bytesList); // ✅ append, bukan replace
-  });
-}
 
+                  if (_selectedImages.isNotEmpty)
+                    const SizedBox(height: 12),
 
-                      },
-                      child: Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey[300]!, width: 2),
-                          borderRadius: BorderRadius.circular(12),
+                  // ===== BOX ADD IMAGE (TETAP BESAR & BISA ADD LAGI) =====
+                  GestureDetector(
+                    onTap: () async {
+  final picker = ImagePicker();
+  final pickedFiles =
+      await picker.pickMultiImage(imageQuality: 70);
+
+  if (!mounted) return; // ⬅️ PENTING
+
+  if (pickedFiles.isNotEmpty) {
+    final bytes = await Future.wait(
+      pickedFiles.map((e) => e.readAsBytes()),
+    );
+
+    if (context.mounted) { // ⬅️ PENTING
+      setModalState(() {
+        _selectedImages.addAll(bytes);
+      });
+    }
+  }
+},
+
+                    child: Container(
+                      height: 150,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          width: 2,
                         ),
-                        child: _selectedImages.isNotEmpty
-    ? ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _selectedImages.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.memory(
-                _selectedImages[index],
-                width: 120,
-                height: 150,
-                fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add Images',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ===== TEXT REVIEW =====
+                  TextField(
+                    controller: _reviewController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      hintText: 'Write a Review...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // ===== RATING + SUBMIT =====
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () =>
+                                setModalState(() => _rating = index + 1),
+                            child: Icon(
+                              Icons.star,
+                              size: 32,
+                              color: index < _rating
+                                  ? Colors.amber
+                                  : Colors.grey[300],
+                            ),
+                          );
+                        }),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_reviewController.text.isNotEmpty &&
+                              _rating > 0) {
+                            final currentContext = context;
+                            Navigator.of(currentContext).pop();
+
+                            final success =
+                                await ApiService().submitPlaceReview(
+                              routeId: widget.routeId,
+                              rating: _rating,
+                              comment: _reviewController.text,
+                              imageBytesList: _selectedImages,
+                            );
+
+                            _reviewController.clear();
+                            _selectedImages.clear();
+
+                            if (!mounted) return;
+
+                            if (success) {
+                              ScaffoldMessenger.of(currentContext).showSnackBar(
+                                const SnackBar(
+                                  content:
+                                      Text('Review submitted successfully!'),
+                                ),
+                              );
+                              await _loadData();
+                            } else {
+                              ScaffoldMessenger.of(currentContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Failed to submit review'),
+                                ),
+                              );
+                            }
+
+                            setState(() => _rating = 0);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content:
+                                    Text('Please add a review and rating'),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Add review'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
         },
-      )
-    : Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add, size: 48, color: Colors.grey[400]),
-            const SizedBox(height: 8),
-            Text('Add Images',
-                style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-          ],
-        ),
-      )
+      );
+    },
+  );
+}
 
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _reviewController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Write a Review...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: List.generate(5, (index) {
-                            return GestureDetector(
-                              onTap: () =>
-                                  setModalState(() => _rating = index + 1),
-                              child: Icon(
-                                Icons.star,
-                                size: 32,
-                                color: index < _rating
-                                    ? Colors.amber
-                                    : Colors.grey[300],
-                              ),
-                            );
-                          }),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                              if (_reviewController.text.isNotEmpty && _rating > 0) {
-                                final currentContext = context; // ✅ simpan context sebelum pop
-                                Navigator.of(currentContext).pop(); // ✅ hindari gunakan context langsung setelah pop
-
-                                final success = await ApiService().submitPlaceReview(
-                                  routeId: widget.routeId,
-                                  rating: _rating,
-                                  comment: _reviewController.text,
-                                  imageBytesList: _selectedImages,
-                                );
-
-                                _reviewController.clear();
-                                _selectedImages.clear();
-
-                                if (!mounted) return; // ✅ pastikan widget masih hidup
-
-                                if (success) {
-                                  ScaffoldMessenger.of(currentContext).showSnackBar(
-                                    const SnackBar(content: Text('Review submitted successfully!')),
-                                  );
-                                  await _loadData(); // refresh review list
-                                } else {
-                                  ScaffoldMessenger.of(currentContext).showSnackBar(
-                                    const SnackBar(content: Text('Failed to submit review')),
-                                  );
-                                }
-
-                                setState(() => _rating = 0);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please add a review and rating')),
-                                );
-                              }
-                            }
-                              ,
-                          child: const Text('Add review'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {

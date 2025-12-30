@@ -73,10 +73,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-
     final List<Map<String, dynamic>> planCategories = [
       {'image': 'assets/icons/tamples.jpg', 'label': 'Temple'},
       {'image': 'assets/icons/beaches.jpg', 'label': 'Beach'},
@@ -95,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // SEARCH BAR
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
               child: Container(
@@ -132,56 +131,61 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 20),
 
-             SizedBox(
-              height: 44,
-              child: isCategoryLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: categories.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 10),
-                      itemBuilder: (context, index) {
-                        final isSelected = selectedCategoryIndex == index;
-                        final category = categories[index];
+            // KATEGORI ATAS (Ditambahkan Shadow agar 3D)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15), // Shadow dipertebal
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: isCategoryLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: categories.length,
+                        itemBuilder: (context, index) {
+                          final isSelected = selectedCategoryIndex == index;
+                          final category = categories[index];
 
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedCategoryIndex = index;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color:
-                                  isSelected ? Colors.black : Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 8,
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedCategoryIndex = index;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 15),
+                              child: Center(
+                                child: Text(
+                                  category.name,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.black : Colors.grey[600],
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 14,
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: Text(
-                              category.name,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black,
-                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      ),
+              ),
             ),
 
             const SizedBox(height: 24),
 
+            // FEATURED PLANS
             SizedBox(
               height: 240,
               child: isLoading
@@ -360,7 +364,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -501,14 +505,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       itemBuilder: (context, index) {
                         final traveller = travellers[index];
                         Uint8List? imageBytes;
-                       if (traveller.photoBase64.isNotEmpty) {
-                        try {
-                          final base64String = traveller.photoBase64.split(',').last;
-                          imageBytes = base64Decode(base64String);
-                        } catch (_) {
-                          imageBytes = null;
+                        if (traveller.photoBase64.isNotEmpty) {
+                          try {
+                            final base64String = traveller.photoBase64.split(',').last;
+                            imageBytes = base64Decode(base64String);
+                          } catch (_) {
+                            imageBytes = null;
+                          }
                         }
-                      }
 
                         return Container(
                           width: 90,
@@ -526,14 +530,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ],
                                 ),
-                      child: CircleAvatar(
-                        radius: 35,
-                        // Tambahkan baris ini:
-                        backgroundColor: AppColors.lightGrey, 
-                        backgroundImage: imageBytes != null
-                            ? MemoryImage(imageBytes)
-                            : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
-                      ),
+                                child: CircleAvatar(
+                                  radius: 35,
+                                  backgroundColor: AppColors.lightGrey,
+                                  backgroundImage: imageBytes != null
+                                      ? MemoryImage(imageBytes)
+                                      : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
+                                ),
                               ),
                               const SizedBox(height: 10),
                               Text(
@@ -550,7 +553,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
             ),
-
             const SizedBox(height: 32),
           ],
         ),

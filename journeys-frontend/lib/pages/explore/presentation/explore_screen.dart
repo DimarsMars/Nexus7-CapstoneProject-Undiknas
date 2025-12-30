@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/models/plan_model.dart';
-import 'package:journeys/models/category_model.dart'; // Tambahan untuk kategori model
+import 'package:journeys/models/category_model.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -98,53 +98,58 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // Category Chips from API
-            Container(
-              height: 60,
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: categories.length + 1,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final isSelected = index == 0
-                      ? selectedCategory == null
-                      : selectedCategory == categories[index - 1].name;
-                  final label =
-                      index == 0 ? 'All' : categories[index - 1].name;
+            // Category Chips Container
+          Container(
+  margin: const EdgeInsets.symmetric(horizontal: 16),
+  padding: const EdgeInsets.symmetric(vertical: 4),
+  decoration: BoxDecoration(
+    color: Colors.white,
+    borderRadius: BorderRadius.circular(25), // Tetap bulat sesuai desain awal
+    boxShadow: [
+      BoxShadow(
+        color: Colors.black.withOpacity(0.15), // Membuat shadow sedikit lebih gelap agar terlihat
+        blurRadius: 15, // Tingkat kelembutan shadow
+        spreadRadius: 1, // Jangkauan shadow
+        offset: const Offset(0, 4), // Bayangan mengarah ke bawah
+      ),
+    ],
+  ),
+  child: SizedBox(
+    height: 50,
+    child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: categories.length + 1,
+                  itemBuilder: (context, index) {
+                    final isSelected = index == 0
+                        ? selectedCategory == null
+                        : selectedCategory == categories[index - 1].name;
+                    final label =
+                        index == 0 ? 'All' : categories[index - 1].name;
 
-                  return GestureDetector(
-                    onTap: () => _filterByCategory(index == 0 ? null : label),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.black : Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      child: Center(
-                        child: Text(
-                          label,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                    return GestureDetector(
+                      onTap: () => _filterByCategory(index == 0 ? null : label),
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(
+                          color: isSelected ? Colors.black : Colors.transparent,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Center(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black87,
+                              fontSize: 14,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -153,13 +158,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : GridView.builder(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 0.75,
+                        childAspectRatio: 0.72,
                       ),
                       itemCount: filteredPlans.length,
                       itemBuilder: (context, index) {
@@ -186,19 +191,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white, // Ditambahkan agar shadow muncul
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
+          // Tambahkan shadow di sini
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.2), // Kepekatan bayangan
+            blurRadius: 6, // Kelembutan
+            offset: const Offset(0, 4), // Posisi bayangan (x, y)
           ),
         ],
       ),
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             child: imageBytes != null
                 ? Image.memory(
                     imageBytes,
@@ -214,21 +221,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(8),
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.8),
                 ],
-                stops: const [0.5, 1.0],
+                stops: const [0.6, 1.0],
               ),
             ),
           ),
           Positioned(
-            left: 12,
-            right: 12,
+            left: 10,
+            right: 10,
             bottom: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,26 +244,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   plan.title,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   plan.authorName.isNotEmpty ? plan.authorName : 'Anonymous',
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 10,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Row(
                   children: List.generate(5, (starIndex) {
                     return Icon(
                       Icons.star,
-                      size: 14,
+                      size: 10,
                       color: starIndex < plan.rating.round()
                           ? Colors.amber
                           : Colors.grey[400],
