@@ -60,145 +60,232 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   }
 
   void _showRateTripModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
-              backgroundColor: Color(0xFFE9EBEE),
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+  final rootContext = context; // Simpan context asli PlanOpenedScreen
+
+  showDialog(
+    context: rootContext,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Dialog(
+  backgroundColor: Colors.white,
+  insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      controller: _reviewController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Write a Review...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4A5B7A),
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: List.generate(5, (index) {
-                            return GestureDetector(
-                              onTap: () {
-                                setModalState(() {
-                                  _rating = index + 1;
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: Icon(
-                                  Icons.star,
-                                  size: 32,
-                                  color: index < _rating
-                                      ? Colors.amber
-                                      : Colors.grey[300],
-                                ),
+            ],
+          ),
+          child: TextField(
+            controller: _reviewController,
+            maxLines: 5,
+            decoration: InputDecoration(
+              hintText: 'Write a Review...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.all(18),
+            ),
+          ),
+        ),
+
+
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                _rating = index + 1;
+                              });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Icon(
+                                Icons.star,
+                                size: 32,
+                                color: index < _rating
+                                    ? Colors.amber
+                                    : Colors.grey[300],
                               ),
+                            ),
+                          );
+                        }),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_reviewController.text.isNotEmpty && _rating > 0) {
+                            final success = await ApiService().submitTripReview(
+                              widget.planId,
+                              _rating,
+                              _reviewController.text.trim(),
                             );
-                          }),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            if (_reviewController.text.isNotEmpty &&
-                                _rating > 0) {
-                              final success =
-                                  await ApiService().submitTripReview(
-                                widget.planId,
-                                _rating,
-                                _reviewController.text.trim(),
-                              );
-                              if (success) {
-                                Navigator.of(context).pop();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Review submitted successfully!'),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                                _reviewController.clear();
-                                setState(() => _rating = 0);
-                                await _loadPlan();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Failed to submit review.'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
+                            if (success) {
+                              Navigator.of(context).pop(); // Tutup dialog
+                              await Future.delayed(Duration(milliseconds: 100));
+                              Navigator.of(rootContext).pop(true); // Tutup screen
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content:
-                                      Text('Please add a review and rating'),
+                                  content: Text('Failed to submit review.'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
                             }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A5B7A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add review',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w600),
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please add a review and rating'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A5B7A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                        child: const Text(
+                          'Add review',
+                          style:
+                              TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+void _showReportConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.redAccent,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Report Trip?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A5F),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+              const SizedBox(height: 12),
+              const Text(
+                "Are you sure you want to report this trip?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        _handleReportTrip(); // Trigger action
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text("Yes, Report"),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+void _handleReportTrip() async {
+  // TODO: Ganti ini jika kamu punya API report
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Trip has been reported."),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +487,7 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                       Expanded(
                                         flex: 4,
                                         child: ElevatedButton(
-                                          onPressed: () {},
+                                          onPressed: _showReportConfirmation,
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Colors.red,
                                             foregroundColor: Colors.white,

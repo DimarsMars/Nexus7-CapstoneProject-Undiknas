@@ -30,6 +30,7 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   bool _isLoading = true;
   bool _isBookmarked = false;
   List<Uint8List> _selectedImages = [];
+  double _averageRating = 0;
 
   final List<String> _dummyMorePictures = [
     'assets/icons/review.jpg',
@@ -43,24 +44,31 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    try {
-      final place = await ApiService().getPlaceDetail(widget.routeId);
-      final reviews = await ApiService().getPlaceReviews(widget.routeId);
-      final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
+ Future<void> _loadData() async {
+  try {
+    final place = await ApiService().getPlaceDetail(widget.routeId);
+    final reviews = await ApiService().getPlaceReviews(widget.routeId);
+    final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
 
-      setState(() {
-        _place = place;
-        _reviews = reviews;
-        _bookmarkId = bookmarkId;
-        _isBookmarked = bookmarkId != null;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint("Error loading place detail: $e");
-      setState(() => _isLoading = false);
+    double avg = 0;
+    if (reviews.isNotEmpty) {
+      avg = reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
     }
+
+    setState(() {
+      _place = place;
+      _reviews = reviews;
+      _averageRating = avg;
+      _bookmarkId = bookmarkId;
+      _isBookmarked = bookmarkId != null;
+      _isLoading = false;
+    });
+  } catch (e) {
+    debugPrint("Error loading place detail: $e");
+    setState(() => _isLoading = false);
   }
+}
+
 
   @override
   void dispose() {
@@ -346,14 +354,17 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
                                   ),
                                 ),
                                 Row(
-                                  children: List.generate(5, (index) {
-                                    return Icon(Icons.star,
-                                        size: 20,
-                                        color: index < 4
-                                            ? Colors.amber
-                                            : Colors.grey[300]);
-                                  }),
-                                ),
+  children: List.generate(5, (index) {
+    return Icon(
+      Icons.star,
+      size: 20,
+      color: index < _averageRating.round()
+          ? Colors.amber
+          : Colors.grey[300],
+    );
+  }),
+),
+
                               ],
                             ),
                           ),
