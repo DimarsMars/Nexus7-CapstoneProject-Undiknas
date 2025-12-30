@@ -194,6 +194,12 @@ func GetPlanDetail(c *gin.Context) {
 		return
 	}
 
+	var rating float64
+	config.DB.Table("trip_reviews").
+		Select("AVG(rating)").
+		Where("plan_id = ?", planID).
+		Scan(&rating)
+
 	var bannerBase64 string
 	if len(plan.Banner) > 0 {
 		bannerBase64 = base64.StdEncoding.EncodeToString(plan.Banner)
@@ -224,9 +230,11 @@ func GetPlanDetail(c *gin.Context) {
 			"banner": bannerBase64,
 			"routes": routeList,
 			"status": plan.Status,
+			"rating": rating,
 		},
 	})
 }
+
 
 func GetPlanBanner(c *gin.Context) {
 	idStr := c.Param("id")
