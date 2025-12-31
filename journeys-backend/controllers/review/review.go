@@ -145,104 +145,78 @@ func DeleteMyTripReview(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Review berhasil dihapus"})
 }
 
-
 func CreatePlaceReview(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
-	routeID := c.PostForm("route_id")
-	rating := c.PostForm("rating")
+	routeID := helper.StringToUint(c.PostForm("route_id"))
+	rating := helper.StringToInt(c.PostForm("rating"))
 	comment := c.PostForm("comment")
 
-	var ratingInt int
-	if _, err := fmt.Sscanf(rating, "%d", &ratingInt); err != nil || ratingInt < 1 || ratingInt > 5 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Rating harus berupa angka antara 1 sampai 5"})
+	if rating < 1 || rating > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Rating harus 1-5"})
 		return
-	}
-
-	routeUint := helper.StringToUint(routeID)
-	var route models.Route
-	if err := config.DB.First(&route, routeUint).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Route tidak ditemukan"})
-		return
-	}
-
-	var imageBytes []byte
-	file, err := c.FormFile("image")
-	if err == nil {
-		src, _ := file.Open()
-		defer src.Close()
-		imageBytes, _ = io.ReadAll(src)
 	}
 
 	review := models.PlaceReview{
 		UserID:    userID,
-		RouteID:   routeUint,
-		Rating:    ratingInt,
+		RouteID:   routeID,
+		Rating:    rating,
 		Comment:   comment,
-		Image:     imageBytes,
 		CreatedAt: time.Now(),
 	}
 
 	if err := config.DB.Create(&review).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan place review"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan review"})
 		return
 	}
 
-	xp := models.UserXP{
-		UserID:      userID,
-		XPValue:     10,
-		Description: "Reviewed a place",
+	form, _ := c.MultipartForm()
+	files := form.File["image"]
+
+	for _, file := range files {
+		src, _ := file.Open()
+		bytes, _ := io.ReadAll(src)
+		src.Close()
+
+		config.DB.Create(&models.PlaceReviewImage{
+			ReviewID: review.ReviewID,
+			Image:    bytes,
+		})
 	}
-	config.DB.Create(&xp)
 
-	var totalXP int64
-	config.DB.Model(&models.UserXP{}).
-		Where("user_id = ?", userID).
-		Select("COALESCE(SUM(xp_value),0)").
-		Scan(&totalXP)
-
-	newRank := helper.CalculateRank(int(totalXP))
-	config.DB.Model(&models.Profile{}).
-		Where("user_id = ?", userID).
-		Update("rank", newRank)
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Place review berhasil ditambahkan",
-		"data":    review,
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Place review berhasil ditambahkan"})
 }
 
 func GetPlaceReviews(c *gin.Context) {
 	routeID := c.Param("route_id")
 
 	var reviews []models.PlaceReview
-	if err := config.DB.
+	config.DB.
+		Preload("Image").
 		Where("route_id = ?", routeID).
 		Order("created_at DESC").
-		Find(&reviews).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil place reviews"})
-		return
-	}
+		Find(&reviews)
 
-	var result []map[string]interface{}
+	response := []map[string]interface{}{}
+
 	for _, r := range reviews {
-		imageBase64 := ""
-		if len(r.Image) > 0 {
-			imageBase64 = base64.StdEncoding.EncodeToString(r.Image)
+		image := []string{}
+		for _, img := range r.Image {
+			image = append(image, base64.StdEncoding.EncodeToString(img.Image))
 		}
 
-		result = append(result, map[string]interface{}{
+		response = append(response, map[string]interface{}{
 			"review_id":  r.ReviewID,
 			"user_id":    r.UserID,
 			"route_id":   r.RouteID,
 			"rating":     r.Rating,
 			"comment":    r.Comment,
-			"image":      imageBase64,
+			"image":      image,
 			"created_at": r.CreatedAt,
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": result})
+	c.JSON(http.StatusOK, gin.H{"data": response})
 }
 
 func GetTripReviewsByUser(c *gin.Context) {

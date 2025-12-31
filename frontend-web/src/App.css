@@ -1,0 +1,17 @@
+#root {
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+  font-family: 'inter', sans-serif;
+}
+
+/* Sembunyikan scrollbar untuk Chrome, Safari dan Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sembunyikan scrollbar untuk IE, Edge dan Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

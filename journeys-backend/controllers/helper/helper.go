@@ -76,3 +76,9 @@ func StringToUint(s string) uint {
 	fmt.Sscanf(s, "%d", &id)
 	return id
 }
+
+func StringToInt(s string) int {
+	var i int
+	fmt.Sscanf(s, "%d", &i)
+	return i
+}
