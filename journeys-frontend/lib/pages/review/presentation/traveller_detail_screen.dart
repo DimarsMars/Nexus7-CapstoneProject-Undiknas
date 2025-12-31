@@ -319,17 +319,17 @@ return Scaffold(
           ),
         ),
         const SizedBox(height: 4),
-        Row(
-          children: List.generate(5, (i) {
-            return Icon(
-              Icons.star,
-              size: 14,
-              color: i < (plan['rating'] ?? 0)
-                  ? Colors.amber
-                  : Colors.grey[400],
-            );
-          }),
-        ),
+Row(
+  children: List.generate(5, (i) {
+    return Icon(
+      Icons.star,
+      size: 14,
+      color: i < (plan['rating'] ?? 0)
+          ? Colors.amber
+          : Colors.white,
+    );
+  }),
+),
       ],
     ),
   ),

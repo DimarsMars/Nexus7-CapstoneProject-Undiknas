@@ -380,18 +380,15 @@ void _handleReportTrip() async {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (bannerBytes != null)
-                              ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                                child: Image.memory(
-                                  bannerBytes,
-                                  height: 260,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                             ClipRRect(
+  borderRadius: BorderRadius.circular(20), // <-- Ujung gambar jadi membulat semua
+  child: Image.memory(
+    bannerBytes,
+    height: 260,
+    width: double.infinity,
+    fit: BoxFit.cover,
+  ),
+),
                             Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
@@ -415,24 +412,16 @@ void _handleReportTrip() async {
                                                   fontWeight: FontWeight.bold),
                                             ),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              children: List.generate(5,
-                                                  (index) {
-                                                double starFill =
-                                                    rating - index;
-                                                IconData icon;
-                                                if (starFill >= 1) {
-                                                  icon = Icons.star;
-                                                } else if (starFill >= 0.5) {
-                                                  icon = Icons.star_half;
-                                                } else {
-                                                  icon = Icons.star_border;
-                                                }
-                                                return Icon(icon,
-                                                    size: 24,
-                                                    color: Colors.amber);
-                                              }),
-                                            ),
+                                       Row(
+  children: List.generate(5, (index) {
+    return Icon(
+      Icons.star,
+      size: 24,
+      color: index < rating ? Colors.amber : Colors.white,
+    );
+  }),
+),
+
                                           ],
                                         ),
                                       ),
@@ -458,94 +447,97 @@ void _handleReportTrip() async {
                                     ],
                                   ),
                                   const SizedBox(height: 16),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        flex: 4,
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF1E3A5F),
-                                            foregroundColor: Colors.white,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 10, horizontal: 8),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                          ),
-                                          child: const Text('Set Trip',
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        flex: 4,
-                                        child: ElevatedButton(
-                                          onPressed: _showReportConfirmation,
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                            foregroundColor: Colors.white,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 10, horizontal: 8),
-                                            shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                          ),
-                                          child: const Text('Report',
-                                              style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600)),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      SizedBox(
-                                        width: 40,
-                                        height: 40,
-                                        child: IconButton(
-                                          onPressed: () async {
-                                            if (_isFavorite &&
-                                                _favoriteId != null) {
-                                              final success =
-                                                  await ApiService()
-                                                      .removeFavorite(
-                                                          _favoriteId!);
-                                              if (success) {
-                                                setState(() {
-                                                  _isFavorite = false;
-                                                  _favoriteId = null;
-                                                });
-                                              }
-                                            } else {
-                                              final success = await ApiService()
-                                                  .addFavorite(widget.planId);
-                                              if (success) {
-                                                await _loadFavoriteStatus();
-                                              }
-                                            }
-                                          },
-                                          icon: Icon(
-                                            _isFavorite
-                                                ? Icons.favorite
-                                                : Icons.favorite_border,
-                                            color: _isFavorite
-                                                ? Colors.red
-                                                : Colors.black,
-                                            size: 24,
-                                          ),
-                                          padding: EdgeInsets.zero,
-                                          constraints:
-                                              const BoxConstraints(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+Row(
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+    // Set Trip button
+    SizedBox(
+      height: 34,
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E3A5F),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          minimumSize: const Size(0, 34),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const Text(
+          'Set Trip',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
+
+    const SizedBox(width: 8),
+
+    // Report button
+    SizedBox(
+      height: 34,
+      child: ElevatedButton(
+        onPressed: _showReportConfirmation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          minimumSize: const Size(0, 34),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const Text(
+          'Report',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
+
+    // Spacer untuk dorong icon ke kanan
+    const Spacer(),
+
+    // Favorite icon
+    SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        onPressed: () async {
+          if (_isFavorite && _favoriteId != null) {
+            final success = await ApiService().removeFavorite(_favoriteId!);
+            if (success) {
+              setState(() {
+                _isFavorite = false;
+                _favoriteId = null;
+              });
+            }
+          } else {
+            final success = await ApiService().addFavorite(widget.planId);
+            if (success) {
+              await _loadFavoriteStatus();
+            }
+          }
+        },
+        icon: Icon(
+          _isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: _isFavorite ? Colors.red : Colors.black,
+          size: 24,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
+    ),
+  ],
+),
+
                                   const SizedBox(height: 16),
                                   Wrap(
                                     spacing: 8,

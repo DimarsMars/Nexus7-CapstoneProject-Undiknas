@@ -60,20 +60,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Diubah ke white agar seragam dengan Home
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // SEARCH BAR AREA (Sudah disesuaikan dengan desain Home)
+            // SEARCH BAR AREA
             Container(
               width: double.infinity,
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(20, 30, 20, 15), // Turun sedikit
+              padding: const EdgeInsets.fromLTRB(20, 30, 20, 15),
               child: Container(
                 height: 50,
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12), // Bentuk Rectangle
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: const Color.fromARGB(255, 235, 235, 235),
                     width: 1.0,
@@ -119,21 +119,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
               ),
             ),
 
-            // Category Chips Container
+            // Category Chips Container (Background kotak putih tetap ada)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16),
               padding: const EdgeInsets.symmetric(vertical: 4),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.2), // <- lebih pekat
+    blurRadius: 14,                        // <- lebih besar
+    spreadRadius: 3,                       // <- lebih luas
+    offset: const Offset(0, 6),            // <- lebih ke bawah
+  ),
+],
+
               ),
               child: SizedBox(
                 height: 50,
@@ -151,20 +152,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     return GestureDetector(
                       onTap: () => _filterByCategory(index == 0 ? null : label),
                       child: Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 6),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color.fromARGB(255, 27, 38, 59)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        // Bagian dekorasi kotak per item dihapus/dibuat transparan
+                        decoration: const BoxDecoration(
+                          color: Colors.transparent, 
                         ),
                         child: Center(
                           child: Text(
                             label,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black87,
+                              // Teks berubah warna saat terpilih
+                              color: isSelected 
+                                  ? const Color.fromARGB(255, 27, 38, 59) 
+                                  : Colors.grey[400],
                               fontSize: 14,
                               fontWeight: isSelected
                                   ? FontWeight.bold

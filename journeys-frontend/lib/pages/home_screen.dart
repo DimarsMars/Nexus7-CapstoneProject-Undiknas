@@ -9,6 +9,8 @@ import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/traveller_model.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/theme/app_theme.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -153,20 +155,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 12,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+ boxShadow: [
+  BoxShadow(
+    color: Colors.black.withOpacity(0.2), // <- lebih pekat
+    blurRadius: 14,                        // <- lebih besar
+    spreadRadius: 3,                       // <- lebih luas
+    offset: const Offset(0, 6),            // <- lebih ke bawah
+  ),
+],
+
                 ),
                 child: isCategoryLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ListView.builder(
                         scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 30),
                         itemCount: categories.length,
                         itemBuilder: (context, index) {
                           final category = categories[index];
@@ -271,27 +274,34 @@ class _HomeScreenState extends State<HomeScreen> {
                                         plan.authorName.isNotEmpty
                                             ? plan.authorName
                                             : "Anonymous",
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.85),
-                                          fontSize: 11,
-                                          fontStyle: FontStyle.italic,
-                                        ),
+ style: GoogleFonts.inter(
+  color: Colors.white.withOpacity(0.85),
+  fontSize: 11,
+  fontStyle: FontStyle.normal,
+),
+
                                       ),
                                       const SizedBox(height: 6),
-                                      Row(
-                                        children: List.generate(5, (index) {
-                                          double starFill = plan.rating - index;
-                                          IconData icon;
-                                          if (starFill >= 1) {
-                                            icon = Icons.star;
-                                          } else if (starFill >= 0.5) {
-                                            icon = Icons.star_half;
-                                          } else {
-                                            icon = Icons.star_border;
-                                          }
-                                          return Icon(icon,
-                                              size: 14, color: Colors.amber);
-                                        }),
+Row(
+  children: List.generate(5, (index) {
+    double starFill = plan.rating - index;
+    IconData icon;
+    Color color;
+
+    if (starFill >= 1) {
+      icon = Icons.star;
+      color = Colors.amber;
+    } else if (starFill >= 0.5) {
+      icon = Icons.star_half;
+      color = Colors.amber;
+    } else {
+      icon = Icons.star;
+      color = Colors.white;
+    }
+
+    return Icon(icon, size: 14, color: color);
+  }),
+
                                       ),
                                     ],
                                   ),

@@ -19,7 +19,7 @@ import 'package:http/http.dart' as http;
 class ApiService {
   final _auth = FirebaseAuth.instance;
   final _client = ApiClient();
-  final String _loginUrl = 'http://172.20.10.2:8080/auth/login';
+  final String _loginUrl = 'http://192.168.1.11:8080/auth/login';
 
   Future<UserModel> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
@@ -51,7 +51,7 @@ class ApiService {
 
   final idToken = await credential.user!.getIdToken();
 
-  final response = await _client.post('http://172.20.10.2:8080/auth/register', {
+  final response = await _client.post('http://192.168.1.11:8080/auth/register', {
     'idToken': idToken,
     'username': username,
   });
@@ -73,7 +73,7 @@ Future<List<CategoryModel>> getCategories() async {
   final idToken = await user.getIdToken();
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/category/',
+    'http://192.168.1.11:8080/category/',
     headers: {
       'Authorization': 'Bearer $idToken',
     },
@@ -88,7 +88,7 @@ Future<List<PlanModel>> getAllPlans() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/plans/all',
+    'http://192.168.1.11:8080/plans/all',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -103,7 +103,7 @@ Future<List<PlanModel>> getAllPlans() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/plans/$planId/detail',
+    'http://192.168.1.11:8080/plans/$planId/detail',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -128,7 +128,7 @@ Future<List<TravellerModel>> getAllTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/user/all',
+    'http://192.168.1.11:8080/user/all',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -143,7 +143,7 @@ Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/user/recomendations/category',
+    'http://192.168.1.11:8080/user/recomendations/category',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -160,7 +160,7 @@ Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/user/mostactive',
+    'http://192.168.1.11:8080/user/mostactive',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -178,7 +178,7 @@ Future<TravellerProfileModel> getUserProfile(int id) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/user/profile/$id',
+    'http://192.168.1.11:8080/user/profile/$id',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -192,7 +192,7 @@ Future<bool> isFollowing(int id) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/follow/$id/is-following',
+    'http://192.168.1.11:8080/follow/$id/is-following',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -205,7 +205,7 @@ Future<Map<String, dynamic>> getSocialCounts(int id) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/follow/$id/socials',
+    'http://192.168.1.11:8080/follow/$id/socials',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -221,7 +221,7 @@ Future<bool> followUser(int id) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.post(
-    'http://172.20.10.2:8080/follow/$id',
+    'http://192.168.1.11:8080/follow/$id',
     {},
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
@@ -235,7 +235,7 @@ Future<bool> unfollowUser(int id) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.delete(
-    'http://172.20.10.2:8080/follow/$id',
+    'http://192.168.1.11:8080/follow/$id',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -248,7 +248,7 @@ Future<PlaceDetail?> getPlaceDetail(int routeId) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/plans/route/$routeId',
+    'http://192.168.1.11:8080/plans/route/$routeId',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -264,7 +264,7 @@ Future<List<PlaceReview>> getPlaceReviews(int routeId) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/reviews/place/$routeId',
+    'http://192.168.1.11:8080/reviews/place/$routeId',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -278,7 +278,7 @@ Future<bool> addFavorite(int planId) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.post(
-    'http://172.20.10.2:8080/favorites/$planId',
+    'http://192.168.1.11:8080/favorites/$planId',
     {},
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
@@ -292,7 +292,7 @@ Future<bool> removeFavorite(int favoriteId) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.delete(
-    'http://172.20.10.2:8080/favorites/$favoriteId',
+    'http://192.168.1.11:8080/favorites/$favoriteId',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -305,7 +305,7 @@ Future<int?> getFavoriteIdForPlan(int planId) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/favorites/',
+    'http://192.168.1.11:8080/favorites/',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -325,7 +325,7 @@ Future<bool> submitTripReview(int planId, int rating, String comment) async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.post(
-    'http://172.20.10.2:8080/reviews/trip',
+    'http://192.168.1.11:8080/reviews/trip',
     {
       'plan_id': planId,
       'rating': rating,
@@ -343,7 +343,7 @@ Future<int?> getBookmarkIdForRoute(int routeId) async {
   final idToken = await user?.getIdToken();
 
   final response = await _client.get(
-    'http://172.20.10.2:8080/bookmarks/',
+    'http://192.168.1.11:8080/bookmarks/',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -363,7 +363,7 @@ Future<bool> addBookmark(int routeId) async {
   final idToken = await user?.getIdToken();
 
   final response = await _client.post(
-    'http://172.20.10.2:8080/bookmarks/$routeId',
+    'http://192.168.1.11:8080/bookmarks/$routeId',
     {},
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
@@ -376,7 +376,7 @@ Future<bool> removeBookmark(int bookmarkId) async {
   final idToken = await user?.getIdToken();
 
   final response = await _client.delete(
-    'http://172.20.10.2:8080/bookmarks/$bookmarkId',
+    'http://192.168.1.11:8080/bookmarks/$bookmarkId',
     headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
   );
 
@@ -392,7 +392,7 @@ Future<bool> submitPlaceReview({
   final user = _auth.currentUser;
   final idToken = await user?.getIdToken();
 
-  final uri = Uri.parse('http://172.20.10.2:8080/reviews/place');
+  final uri = Uri.parse('http://192.168.1.11:8080/reviews/place');
 
   final request = http.MultipartRequest('POST', uri)
     ..headers['Authorization'] = 'Bearer $idToken'

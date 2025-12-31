@@ -112,16 +112,26 @@ class _TravellerScreenState extends State<TravellerScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        'You may like (category)',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1B263B),
-                        ),
-                      ),
-                    ),
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: Row(
+    children: [
+      GestureDetector(
+        onTap: () => context.go('/home'), // <- Arahkan balik ke Home
+        child: const Icon(Icons.arrow_back, color: Color(0xFF1B263B)),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        'You may like (category)',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1B263B),
+        ),
+      ),
+    ],
+  ),
+),
                     const SizedBox(height: 20),
 
                     // YOU MAY LIKE
@@ -148,16 +158,20 @@ class _TravellerScreenState extends State<TravellerScreen> {
 
                     const SizedBox(height: 32),
 
-                    Center(
-                      child: Text(
-                        'Most Active Traveller',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1B263B),
-                        ),
-                      ),
-                    ),
+ Padding(
+  padding: const EdgeInsets.fromLTRB(48, 0, 16, 0), // <- 48 untuk menyamakan dengan ikon panah
+  child: Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      'Most Active Traveller',
+      style: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF1B263B),
+      ),
+    ),
+  ),
+),
                     const SizedBox(height: 20),
 
                     // MOST ACTIVE
@@ -232,12 +246,21 @@ class _TravellerScreenState extends State<TravellerScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
+CircleAvatar(
   radius: 42,
+  backgroundColor: Colors.grey[200],
   backgroundImage: photoBase64.isNotEmpty
       ? MemoryImage(base64Decode(photoBase64.split(',').last))
-      : const AssetImage('assets/icons/profile.jpg') as ImageProvider,
+      : null,
+  child: photoBase64.isEmpty
+      ? const Icon(
+          Icons.person,
+          size: 42,
+          color: Colors.grey,
+        )
+      : null,
 ),
+
             const SizedBox(height: 12),
             Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
             Text(title, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
