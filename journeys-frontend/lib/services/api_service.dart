@@ -20,7 +20,7 @@ import 'package:http/http.dart' as http;
 class ApiService {
   final _auth = FirebaseAuth.instance;
   final _client = ApiClient();
-  final String _loginUrl = 'http://192.168.1.7:8080/auth/login';
+  final String _loginUrl = 'http://192.168.1.8:8080/auth/login';
 
   Future<UserModel> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
@@ -52,7 +52,7 @@ class ApiService {
 
   final idToken = await credential.user!.getIdToken();
 
-  final response = await _client.post('http://192.168.1.7:8080/auth/register', {
+  final response = await _client.post('http://192.168.1.8:8080/auth/register', {
     'idToken': idToken,
     'username': username,
   });
@@ -73,7 +73,7 @@ Future<UserModel> getUserMe() async {
   final idToken = await user.getIdToken();
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/user/me',
+    'http://192.168.1.8:8080/user/me',
     headers: {
       'Authorization': 'Bearer $idToken',
     },
@@ -90,7 +90,7 @@ Future<ProfileModel> getProfile() async {
   final idToken = await user.getIdToken();
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/profile/me',
+    'http://192.168.1.8:8080/profile/me',
     headers: {
       'Authorization': 'Bearer $idToken',
     },
@@ -106,7 +106,7 @@ Future<UserXpModel> getUserXP() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/user/xp',
+      'http://192.168.1.8:8080/user/xp',
       headers: {'Authorization': 'Bearer $idToken'},
     );
     
@@ -121,7 +121,7 @@ Future<List<CategoryModel>> getCategories() async {
   final idToken = await user.getIdToken();
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/category/',
+    'http://192.168.1.8:8080/category/',
     headers: {
       'Authorization': 'Bearer $idToken',
     },
@@ -136,7 +136,7 @@ Future<List<PlanModel>> getAllPlans() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/plans/all',
+    'http://192.168.1.8:8080/plans/all',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -151,7 +151,7 @@ Future<List<PlanModel>> getAllPlans() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/plans/$planId/detail',
+    'http://192.168.1.8:8080/plans/$planId/detail',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -175,7 +175,7 @@ Future<List<TravellerModel>> getAllTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/user/all',
+    'http://192.168.1.8:8080/user/all',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -190,7 +190,7 @@ Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/user/recomendations/category',
+    'http://192.168.1.8:8080/user/recomendations/category',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -207,7 +207,7 @@ Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
   final idToken = user != null ? await user.getIdToken() : null;
 
   final response = await _client.get(
-    'http://192.168.1.7:8080/user/mostactive',
+    'http://192.168.1.8:8080/user/mostactive',
     headers: idToken != null
         ? {'Authorization': 'Bearer $idToken'}
         : null,
@@ -227,7 +227,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/plans/',
+      'http://192.168.1.8:8080/plans/',
       headers: {
         'Authorization': 'Bearer $idToken',
       },
@@ -255,7 +255,7 @@ Future<List<PlanModel>> getMyPlans() async {
     }
 
     await _client.putMultipart(
-      'http://192.168.1.7:8080/profile/update',
+      'http://192.168.1.8:8080/profile/update',
       headers: {
         'Authorization': 'Bearer $idToken',
       },
@@ -276,7 +276,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     await _client.delete(
-      'http://192.168.1.7:8080/reviews/my/$reviewId',
+      'http://192.168.1.8:8080/reviews/my/$reviewId',
       headers: {'Authorization': 'Bearer $idToken'},
     );
   }
@@ -288,7 +288,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/reviews/trip/me',
+      'http://192.168.1.8:8080/reviews/trip/me',
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final data = response['data'] as List<dynamic>;
@@ -301,7 +301,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/reviews/trip/my-plans',
+      'http://192.168.1.8:8080/reviews/trip/my-plans',
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final data = response['data'] as List<dynamic>;
@@ -314,7 +314,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/plans/history',
+      'http://192.168.1.8:8080/plans/history',
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final data = response['data'] as List<dynamic>;
@@ -327,7 +327,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     await _client.delete(
-      'http://192.168.1.7:8080/plans/history/$progressId',
+      'http://192.168.1.8:8080/plans/history/$progressId',
       headers: {'Authorization': 'Bearer $idToken'},
     );
   }
@@ -338,7 +338,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/favorites/',
+      'http://192.168.1.8:8080/favorites/',
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final data = response['data'] as List<dynamic>;
@@ -351,7 +351,7 @@ Future<List<PlanModel>> getMyPlans() async {
     final idToken = await user.getIdToken();
 
     await _client.delete(
-      'http://192.168.1.7:8080/favorites/$favoriteId',
+      'http://192.168.1.8:8080/favorites/$favoriteId',
       headers: {'Authorization': 'Bearer $idToken'},
     );
   }
