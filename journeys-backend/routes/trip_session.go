@@ -13,5 +13,6 @@ func TripSessionRoutes(r *gin.Engine) {
 	{
 		trip.POST("/:plan_id", plan.HandleTripSession)
 		trip.GET("/active", plan.GetActiveTrip)
+		trip.DELETE("/cancel", plan.CancelTripSession)
 	}
 }
