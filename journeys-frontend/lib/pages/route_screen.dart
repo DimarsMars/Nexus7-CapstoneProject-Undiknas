@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:journeys/pages/bookmark_screen.dart';
 import 'package:journeys/pages/trip_schedule_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -16,8 +17,13 @@ class RouteScreen extends StatefulWidget {
 
 class _RouteScreenState extends State<RouteScreen> {
   // ================= CONFIG =================
-  static const String orsApiKey =
-      "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ1NmVlYzAzODhmMjQyYTU4YzNlYzFjNjcyZmJmOWNmIiwiaCI6Im11cm11cjY0In0=";
+  late final String orsApiKey;
+
+@override
+void initState() {
+  super.initState();
+  orsApiKey = dotenv.env['ORS_API_KEY'] ?? '';
+}
 
 Future<String?> getFirebaseToken() async {
   final user = FirebaseAuth.instance.currentUser;
@@ -299,25 +305,6 @@ fetchRoute();
   }
 
 
-  // ================= POST ROUTE =================
-  void postRoute() {
-    if (routes.isEmpty) return;
-
-    setState(() {
-      routes.clear();
-      routePoints.clear();
-      routeGeometry.clear();
-      previewPoint = null;
-      mapCenter = const LatLng(-8.436697, 115.279947);
-    });
-
-    mapController.move(mapCenter, 14);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Route berhasil di-post")),
-    );
-  }
-
   void clearForm() {
     titleController.clear();
     descController.clear();
@@ -362,59 +349,52 @@ fetchRoute();
   }
 
 Future<void> postRouteToBackend() async {
-    if (routes.isEmpty) return;
+  final token = await getFirebaseToken();
+  if (token == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("User belum login")),
+    );
+    return;
+  }
 
-    final token = await getFirebaseToken();
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User belum login")),
-      );
-      return;
-    }
+  final body = {
+    "title": titleController.text,
+    "description": descController.text,
+    "status": selectedValue ?? "",
+    "tags": categories.map((e) => "#$e").toList(),
+  };
 
-    final response = await http.post(
-      Uri.parse("https://api-kamu.com/routes"), // 🔥 GANTI URL
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({
-  "title": titleController.text,
-  "description": descController.text,
-  "category": selectedCategory,
-  "stops": routes.map((r) => {
-    "title": r["title"],
-    "address": r["address"],
-    "lat": r["latlng"].latitude,
-    "lng": r["latlng"].longitude,
-  }).toList(),
-  "geometry": routeGeometry.map((p) => {
-    "lat": p.latitude,
-    "lng": p.longitude,
-  }).toList(),
-}),
+  final response = await http.post(
+    Uri.parse("http://localhost:8080/plans/"),
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer $token",
+    },
+    body: jsonEncode(body),
+  );
 
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Plan berhasil dibuat")),
     );
 
-    if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Route berhasil disimpan")),
-      );
     setState(() {
-  routes.clear();
-  routePoints.clear();
-  routeGeometry.clear();
-  previewPoint = null;
-  selectedCategory = null;
-});
+      routes.clear();
+      routePoints.clear();
+      routeGeometry.clear();
+      previewPoint = null;
+      selectedCategory = null;
+      selectedValue = null;
+    });
 
-clearForm();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal menyimpan route")),
-      );
-    }
+    clearForm();
+  } else {
+    debugPrint("ERROR: ${response.body}");
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Gagal membuat plan")),
+    );
   }
+}
 
   // ================= UI =================
   @override
