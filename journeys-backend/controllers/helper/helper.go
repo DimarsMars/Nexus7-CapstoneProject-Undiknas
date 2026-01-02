@@ -3,6 +3,7 @@ package helper
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 func CalculateRank(totalXP int) string {
@@ -81,4 +82,8 @@ func StringToInt(s string) int {
 	var i int
 	fmt.Sscanf(s, "%d", &i)
 	return i
+}
+
+func TimePtr(t time.Time) *time.Time {
+	return &t
 }

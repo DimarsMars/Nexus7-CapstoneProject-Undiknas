@@ -24,6 +24,7 @@ func PlanRoutes(r *gin.Engine) {
 		planGroup.GET("/route/:id", plan.GetRouteDetail)
 		planGroup.GET("/history", plan.GetCompletedPlans)
 		planGroup.DELETE("/completed-plans/:progress_id", plan.DeleteCompletedPlan)
+		planGroup.GET("/:id/completed-steps", plan.GetCompletedStepsByUser)
 
 	}
 }
