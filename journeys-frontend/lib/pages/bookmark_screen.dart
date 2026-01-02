@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:journeys/pages/route_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 class BookmarkScreen extends StatefulWidget {
   const BookmarkScreen({super.key});
@@ -11,12 +14,14 @@ class BookmarkScreen extends StatefulWidget {
 class _BookmarkScreenState extends State<BookmarkScreen> {
   List<Map<String, String>> savedPlaces = [
     {
+      'id': '15', // 🔥 ID PLACE (contoh)
       'name': 'Serenity Oasis',
       'category': 'Restaurant',
       'location': 'Bedugul - Gianyar.',
       'image': 'https://picsum.photos/150/90'
     },
     {
+      'id': '16',
       'name': 'Dirty Diana',
       'category': 'Restaurant',
       'location': 'Bedugul - Gianyar.',
@@ -26,6 +31,52 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
 
   TextEditingController searchController = TextEditingController();
 
+  // =================================================
+  // FIREBASE TOKEN
+  // =================================================
+  Future<String?> getFirebaseToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    return await user.getIdToken();
+  }
+
+  // =================================================
+  // POST BOOKMARK API
+  // =================================================
+  Future<void> addBookmark(String placeId) async {
+    final token = await getFirebaseToken();
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User belum login")),
+      );
+      return;
+    }
+
+    final response = await http.post(
+      Uri.parse("http://192.168.1.8:8080/bookmarks/$placeId"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Berhasil ditambahkan ke bookmark")),
+      );
+    } else {
+      debugPrint("Bookmark ERROR ${response.statusCode}");
+      debugPrint(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Gagal menambahkan bookmark")),
+      );
+    }
+  }
+
+  // =================================================
+  // UI
+  // =================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,19 +117,15 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // -------------------------------------------------
-  // SEARCH BOX (Sesuai desain)
-  // -------------------------------------------------
-
+  // =================================================
+  // SEARCH BOX
+  // =================================================
   Widget _buildSearchBox() {
     return Column(
       children: [
         const Text(
           "Search",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 10),
         TextField(
@@ -92,7 +139,6 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
               icon: const Icon(Icons.refresh),
               onPressed: () {},
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -103,20 +149,16 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // -------------------------------------------------
+  // =================================================
   // SAVED HEADER
-  // -------------------------------------------------
-
+  // =================================================
   Widget _buildSavedHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text(
           "Saved",
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w700,
-          ),
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
         ),
         TextButton(
           onPressed: () {
@@ -131,10 +173,9 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // -------------------------------------------------
-  // CARD ITEM (Disesuaikan dengan gambar)
-  // -------------------------------------------------
-
+  // =================================================
+  // CARD ITEM
+  // =================================================
   Widget _buildCard(Map<String, String> place) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -145,7 +186,6 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            spreadRadius: 1,
             blurRadius: 6,
           )
         ],
@@ -162,51 +202,42 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             ),
           ),
           const SizedBox(width: 12),
-
-          // Text Section
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  place['name']!,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  place['category']!,
-                  style: TextStyle(color: Colors.grey[700], fontSize: 13),
-                ),
+                Text(place['name']!,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700)),
+                Text(place['category']!,
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13)),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.place, size: 16, color: Colors.grey),
+                    const Icon(Icons.place,
+                        size: 16, color: Colors.grey),
                     const SizedBox(width: 4),
-                    Text(
-                      place['location']!,
-                      style: const TextStyle(
-                          fontSize: 12, color: Colors.black54),
-                    ),
+                    Text(place['location']!,
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.black54)),
                   ],
                 )
               ],
             ),
           ),
-
-          // Bookmark & Icon Box
           Column(
             children: [
               IconButton(
                 icon: const Icon(Icons.bookmark, color: Colors.black87),
-                onPressed: () {},
+                onPressed: () {
+                  addBookmark(place['id']!); // 🔥 POST KE BACKEND
+                },
               ),
-
-              // Kotak kecil (seperti gambar)
               Container(
                 width: 26,
                 height: 26,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black54, width: 1),
+                  border: Border.all(color: Colors.black54),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(Icons.crop_square, size: 16),
@@ -218,33 +249,29 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     );
   }
 
-  // -------------------------------------------------
-  // ADD TO ROUTE BUTTON (Sesuaikan gambar)
-  // -------------------------------------------------
-
+  // =================================================
+  // ADD TO ROUTE
+  // =================================================
   Widget _buildAddToRouteButton() {
     return Center(
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF274664),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const RouteScreen()),
-        );
-      },
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const RouteScreen()),
+          );
+        },
         child: const Text(
           "Add to route",
           style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+              fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
     );
