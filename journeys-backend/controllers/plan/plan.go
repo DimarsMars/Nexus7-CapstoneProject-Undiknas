@@ -247,28 +247,6 @@ func GetPlanDetail(c *gin.Context) {
 	})
 }
 
-func GetPlanBanner(c *gin.Context) {
-	idStr := c.Param("id")
-	planID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var plan models.Plan
-	if err := config.DB.First(&plan, "plan_id = ?", planID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
-		return
-	}
-
-	if len(plan.Banner) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Banner kosong"})
-		return
-	}
-
-	c.Data(http.StatusOK, "image/jpeg", plan.Banner)
-}
-
 func UpdatePlan(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	idStr := c.Param("id")
