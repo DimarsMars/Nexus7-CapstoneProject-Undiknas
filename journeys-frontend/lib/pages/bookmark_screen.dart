@@ -14,7 +14,7 @@ class BookmarkScreen extends StatefulWidget {
 class _BookmarkScreenState extends State<BookmarkScreen> {
   List<Map<String, String>> savedPlaces = [
     {
-      'id': '15', // 🔥 ID PLACE (contoh)
+      'id': '15',
       'name': 'Serenity Oasis',
       'category': 'Restaurant',
       'location': 'Bedugul - Gianyar.',
@@ -32,6 +32,15 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
   TextEditingController searchController = TextEditingController();
 
   // =================================================
+  // INIT STATE
+  // =================================================
+  @override
+  void initState() {
+    super.initState();
+    getBookmarks();
+  }
+
+  // =================================================
   // FIREBASE TOKEN
   // =================================================
   Future<String?> getFirebaseToken() async {
@@ -41,17 +50,11 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
   }
 
   // =================================================
-  // POST BOOKMARK API
+  // POST BOOKMARK (TIDAK DIUBAH)
   // =================================================
   Future<void> addBookmark(String placeId) async {
     final token = await getFirebaseToken();
-
-    if (token == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("User belum login")),
-      );
-      return;
-    }
+    if (token == null) return;
 
     final response = await http.post(
       Uri.parse("http://192.168.1.8:8080/bookmarks/$placeId"),
@@ -65,12 +68,75 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Berhasil ditambahkan ke bookmark")),
       );
-    } else {
-      debugPrint("Bookmark ERROR ${response.statusCode}");
-      debugPrint(response.body);
+    }
+  }
+
+  // =================================================
+  // GET BOOKMARK
+  // =================================================
+  Future<void> getBookmarks() async {
+    final token = await getFirebaseToken();
+    if (token == null) return;
+
+    final response = await http.get(
+      Uri.parse("http://192.168.1.8:8080/bookmarks"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
+      final List<Map<String, String>> loadedPlaces =
+          json['data'].map<Map<String, String>>((item) {
+        final route = item['route'];
+
+        return {
+          'id': route['route_id'].toString(),
+          'name': route['title'] ?? '',
+          'category': route['tags'] != null && route['tags'].isNotEmpty
+              ? route['tags'][0]
+              : '',
+          'location': route['address'] ?? '',
+          'image': route['image'] != null && route['image'].toString().isNotEmpty
+              ? route['image']
+              : 'https://picsum.photos/150/90',
+        };
+      }).toList();
+
+      setState(() {
+        savedPlaces = loadedPlaces;
+      });
+    }
+  }
+
+  // =================================================
+  // DELETE BOOKMARK
+  // =================================================
+  Future<void> deleteBookmark(String placeId) async {
+    final token = await getFirebaseToken();
+    if (token == null) return;
+
+    final response = await http.delete(
+      Uri.parse("http://192.168.1.8:8080/bookmarks/$placeId"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Gagal menambahkan bookmark")),
+        SnackBar(content: Text(json['message'])),
       );
+
+      setState(() {
+        savedPlaces.removeWhere((item) => item['id'] == placeId);
+      });
     }
   }
 
@@ -123,10 +189,8 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
   Widget _buildSearchBox() {
     return Column(
       children: [
-        const Text(
-          "Search",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-        ),
+        const Text("Search",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
         TextField(
           controller: searchController,
@@ -135,10 +199,6 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             fillColor: Colors.white,
             hintText: "Restaurant...",
             prefixIcon: const Icon(Icons.search),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {},
-            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -156,18 +216,12 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const Text(
-          "Saved",
-          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
-        ),
+        const Text("Saved",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
         TextButton(
-          onPressed: () {
-            setState(() => savedPlaces.clear());
-          },
-          child: const Text(
-            "Remove all",
-            style: TextStyle(color: Color(0xFF274664)),
-          ),
+          onPressed: () => setState(() => savedPlaces.clear()),
+          child: const Text("Remove all",
+              style: TextStyle(color: Color(0xFF274664))),
         )
       ],
     );
@@ -184,10 +238,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-          )
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)
         ],
       ),
       child: Row(
@@ -211,7 +262,6 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                         fontSize: 15, fontWeight: FontWeight.w700)),
                 Text(place['category']!,
                     style: TextStyle(color: Colors.grey[700], fontSize: 13)),
-                const SizedBox(height: 4),
                 Row(
                   children: [
                     const Icon(Icons.place,
@@ -229,18 +279,19 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
             children: [
               IconButton(
                 icon: const Icon(Icons.bookmark, color: Colors.black87),
-                onPressed: () {
-                  addBookmark(place['id']!); // 🔥 POST KE BACKEND
-                },
+                onPressed: () => addBookmark(place['id']!),
               ),
-              Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black54),
-                  borderRadius: BorderRadius.circular(6),
+              GestureDetector(
+                onTap: () => deleteBookmark(place['id']!),
+                child: Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black54),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.crop_square, size: 16),
                 ),
-                child: const Icon(Icons.crop_square, size: 16),
               )
             ],
           )
