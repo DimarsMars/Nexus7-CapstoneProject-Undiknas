@@ -72,7 +72,6 @@ func CreatePlan(c *gin.Context) {
 		}
 	}
 
-	// ✅ AuthorName disimpan di sini
 	plan := models.Plan{
 		UserID:      userID,
 		Title:       title,
@@ -147,10 +146,15 @@ func GetPlans(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
 	var plans []models.Plan
-	if err := config.DB.Preload("Categories").Where("user_id = ?", userID).Find(&plans).Error; err != nil {
+	if err := config.DB.Preload("Categories").
+		Where("user_id = ?", userID).
+		Find(&plans).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil plans"})
 		return
 	}
+
+	var user models.User
+	config.DB.First(&user, "user_id = ?", userID)
 
 	var response []map[string]interface{}
 	for _, p := range plans {
@@ -158,6 +162,12 @@ func GetPlans(c *gin.Context) {
 		if len(p.Banner) > 0 {
 			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
 		}
+
+		var avgRating float64
+		config.DB.Table("trip_reviews").
+			Select("AVG(rating)").
+			Where("plan_id = ?", p.PlanID).
+			Scan(&avgRating)
 
 		response = append(response, map[string]interface{}{
 			"plan_id":     p.PlanID,
@@ -168,6 +178,8 @@ func GetPlans(c *gin.Context) {
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
 			"status":      p.Status,
+			"rating":      avgRating,
+			"author_name": user.Username,
 		})
 	}
 
