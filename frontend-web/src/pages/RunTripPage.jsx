@@ -1,17 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
-import LocationRouteCard from '../components/LocationRouteCard';
+import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef, useState } from 'react';
 import { FaChevronLeft } from "react-icons/fa";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import { useNavigate, useParams } from 'react-router-dom';
+import LocationRouteCard from '../components/LocationRouteCard';
 import apiService from '../services/apiService';
 
 // --- KONFIGURASI ICON MARKER ---
-import iconMarker from 'leaflet/dist/images/marker-icon.png';
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
+import iconMarker from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const DefaultIcon = L.icon({
@@ -154,17 +154,26 @@ const RunTripPage = () => {
             ]);
 
             if (planRes.data && planRes.data.routes) {
-              const formattedRoutes = planRes.data.routes.map(route => ({
-                  id: route.route_id,
-                  title: route.title,
-                  category: route.description,
-                  lat: route.latitude,
-                  lng: route.longitude,
-                  image: route.image ? `data:image/jpeg;base64,${route.image}` : "https://via.placeholder.com/150",
-                  address: route.address,
-              }));
-              setTripRoute(formattedRoutes);
-            }
+  const completedSteps = planRes.data.completed_steps || [];
+
+  const formattedRoutes = planRes.data.routes
+    .filter(route => !completedSteps.includes(route.step_order)) // ✅ FILTER
+    .map(route => ({
+      id: route.route_id,
+      title: route.title,
+      category: route.description,
+      lat: route.latitude,
+      lng: route.longitude,
+      image: route.image
+        ? `data:image/jpeg;base64,${route.image}`
+        : "https://via.placeholder.com/150",
+      address: route.address,
+      step_order: route.step_order,
+    }));
+
+  setTripRoute(formattedRoutes);
+}
+
 
             if (bookmarksRes.data) {
                 const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
@@ -187,16 +196,45 @@ const RunTripPage = () => {
     }
   }, [id]);
 
+  // 🔥 AMBIL STATUS TRIP SESSION DARI DATABASE
+useEffect(() => {
+  const fetchTripSession = async () => {
+    try {
+      const res = await apiService.getActiveTrip();
+
+      if (res.data) {
+        const session = res.data.find(
+          (s) => s.Plan?.plan_id === parseInt(id)
+        );
+        setTripSession(session || null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch trip session", err);
+    }
+  };
+
+  fetchTripSession();
+}, [id]);
+
+
+
   // 2. STATE UNTUK NAVIGASI
-  const [currentStepIndex, setCurrentStepIndex] = useState(0); 
   const [userLocation, setUserLocation] = useState(null);
   const [routeSummary, setRouteSummary] = useState({ distance: '...', time: '...' });
-  const [isPaused, setIsPaused] = useState(false);
+  const [tripSession, setTripSession] = useState(null);
+  
 
   // Ambil lokasi tujuan saat ini berdasarkan index
-  const currentDestination = tripRoute[currentStepIndex];
+  const currentDestination = tripRoute[0];
 
   // 3. DETEKSI LOKASI USER (GEOLOCATION)
+
+ useEffect(() => {
+  if (currentDestination?.id) {
+    fetchTripSession(); // ✅ Refresh session untuk lokasi baru
+  }
+}, [currentDestination?.id]);
+
   useEffect(() => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -220,69 +258,123 @@ const RunTripPage = () => {
   }, []);
 
   // 4. HANDLER TOMBOL (UPDATED: VERIFIKASI LOKASI)
-  const handleArrived = async () => {
-    // Cek apakah lokasi GPS tersedia
-    if (!userLocation) {
-        alert("Menunggu sinyal GPS...");
-        return;
+ const handleArrived = async () => {
+  if (!userLocation) {
+    alert("Menunggu sinyal GPS...");
+    return;
+  }
+
+  setIsVerifying(true);
+
+  try {
+    const payload = {
+      latitude: userLocation.lat,
+      longitude: userLocation.lng,
+      step_order: currentDestination.step_order,
+    };
+
+    const response = await apiService.postPlanVerifyLocation(id, payload);
+
+    if (response.data?.error) {
+      const jarak = response.data.distance_km
+        ? `${response.data.distance_km.toFixed(2)} km`
+        : "-";
+      alert(`${response.data.error}\nJarak Anda: ${jarak}`);
+      return;
     }
 
-    setIsVerifying(true);
+    alert(`Berhasil sampai di ${currentDestination.title}!`);
 
-    try {
-        const stepOrder = currentStepIndex + 1;
+    // ✅ Hapus lokasi yang selesai
+    const updatedRoutes = tripRoute.filter(
+      r => r.step_order !== currentDestination.step_order
+    );
 
-        const payload = {
-            latitude: userLocation.lat,
-            longitude: userLocation.lng,
-            step_order: stepOrder
-        };
+    if (updatedRoutes.length === 0) {
+      alert("🎉 Selamat! Anda telah menyelesaikan seluruh perjalanan!");
+      navigate("/myprofile");
+    } else {
+      setTripRoute(updatedRoutes);
 
-        // Panggil Endpoint Verify
-        const response = await apiService.postPlanVerifyLocation(id, payload);
+      const nextRoute = updatedRoutes[0];
 
-        // Cek response body
-        // Skenario 1: Backend mengembalikan status 200 OK tapi dengan pesan error (Soft Error)
-        if (response.data && response.data.error) {
-             const jarak = response.data.distance_km ? `${response.data.distance_km.toFixed(2)} km` : '-';
-             alert(`${response.data.error}\nJarak Anda: ${jarak}`);
-             // Jangan update step index karena belum sampai
-        } 
-        // Skenario 2: Berhasil
-        else {
-             alert(`Berhasil sampai di ${currentDestination.title}! Melanjutkan ke tujuan berikutnya...`);
-             
-             // Pindah ke step berikutnya
-             if (currentStepIndex < tripRoute.length - 1) {
-                setCurrentStepIndex(prev => prev + 1);
-             } else {
-                alert("Selamat! Anda telah menyelesaikan seluruh perjalanan!");
-                navigate('/myprofile');
-             }
-        }
+      // ✅ Langsung START session untuk rute berikutnya
+      const res = await apiService.postTripSessionAction(id, {
+        action: "start",
+        route_id: nextRoute.id,
+      });
 
-    } catch (error) {
-        // Skenario 3: Backend mengembalikan status 400/500 (Hard Error)
-        console.error("Verifikasi Gagal:", error);
-        
-        const errorData = error.response?.data;
-        const errorMessage = errorData?.error || "Gagal memverifikasi lokasi.";
-        const jarak = errorData?.distance_km ? `${errorData.distance_km.toFixed(2)} km` : null;
+      setTripSession(res.data?.data || {
+        route_id: nextRoute.id,
+        status: "ongoing",
+      });
 
-        if (jarak) {
-            alert(`${errorMessage}\nJarak Anda: ${jarak}`);
-        } else {
-            alert(errorMessage);
-        }
-    } finally {
-        setIsVerifying(false);
+      alert(`Trip berikutnya dimulai: ${nextRoute.title}`);
     }
-  };
+  } catch (error) {
+    const msg =
+      error.response?.data?.error || "Gagal memverifikasi lokasi.";
+    alert(msg);
+  } finally {
+    setIsVerifying(false);
+  }
+};
 
-  const handlePause = () => {
-    setIsPaused(!isPaused);
+
+const handlePause = async () => {
+  if (!currentDestination) return;
+
+  try {
+    const sessionIsForCurrentRoute = tripSession?.route_id === currentDestination.id;
+
+    if (!tripSession || !sessionIsForCurrentRoute) {
+      const res = await apiService.postTripSessionAction(id, {
+        action: "start",
+        route_id: currentDestination.id,
+      });
+
+      setTripSession(res.data?.data);
+      alert("Trip started");
+      return;
+    }
+
+    const isPaused = tripSession.status === "paused";
+    const action = isPaused ? "resume" : "pause";
+
+    await apiService.postTripSessionAction(id, {
+      action,
+      route_id: currentDestination.id,
+    });
+
+    setTripSession(prev => ({
+      ...prev,
+      status: isPaused ? "ongoing" : "paused",
+    }));
+
     alert(isPaused ? "Navigation Resumed" : "Navigation Paused");
-  };
+  } catch (error) {
+    console.error("Trip session error:", error);
+    alert("Gagal menjalankan aksi trip session.");
+  }
+};
+
+
+const fetchTripSession = async () => {
+  try {
+    const res = await apiService.getActiveTrip();
+
+    if (res.data) {
+      const session = res.data.find(
+        (s) => s.Plan?.plan_id === parseInt(id)
+      );
+      setTripSession(session || null);
+    }
+  } catch (err) {
+    console.error("Failed to fetch trip session", err);
+  }
+};
+
+
 
   const handleBookmark = async (routeId) => {
     if (isBookmarking) return;
@@ -345,6 +437,8 @@ const RunTripPage = () => {
     );
   }
 
+  
+
   const allLocations = tripRoute;
 
     return (
@@ -377,13 +471,15 @@ const RunTripPage = () => {
                                 </Marker>
                             )}
 
-                            {currentDestination && (
-                                <RoutingMachine 
-                                    userLocation={userLocation} 
-                                    destination={currentDestination}
-                                    onRouteFound={setRouteSummary}
-                                />
-                            )}
+                          {currentDestination && (
+                        <RoutingMachine 
+                            key={currentDestination.id} // ✅ ini penting
+                            userLocation={userLocation} 
+                            destination={currentDestination}
+                            onRouteFound={setRouteSummary}
+                        />
+                        )}
+
                         </MapContainer>
                     </div>
 
@@ -421,11 +517,12 @@ const RunTripPage = () => {
                         {isVerifying ? "Verifying..." : "Arrived!"}
                     </button>
                     <button 
-                        onClick={() => setIsPaused(!isPaused)}
+                        onClick={() => handlePause()}
                         className="flex-1 bg-white text-slate-800 border border-slate-200 py-3 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition"
-                    >
-                        {isPaused ? "Resume" : "Pause"}
+                        >
+                        {tripSession?.status === "paused" ? "Resume" : "Pause"}
                     </button>
+
                 </div>
 
                 {/* === SECTION 3: TRIP ITINERARY === */}

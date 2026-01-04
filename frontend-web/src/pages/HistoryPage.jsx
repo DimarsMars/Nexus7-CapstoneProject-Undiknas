@@ -1,17 +1,19 @@
-import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import apiService from '../services/apiService';
-import { FaArrowRight, FaTrash, FaHeart } from "react-icons/fa";
-import { useData } from '../context/DataContext';
+import { FaArrowRight, FaHeart, FaTrash } from "react-icons/fa";
+import { useNavigate } from 'react-router-dom';
 import FavoriteCard from '../components/FavoriteCard';
-import TripNowCard from '../components/TripNowCard';
 import PastTripCard from '../components/PastTripCard';
+import TripNowCard from '../components/TripNowCard';
+import { useData } from '../context/DataContext';
+import apiService from '../services/apiService';
 
-const HistoryPage = ({ activeTrips }) => {
+const HistoryPage = () => {
     const navigate = useNavigate();
     const { favoriteTrips, removeFavorite } = useData();
     const [pastTrips, setPastTrips] = useState([]);
+    const [activeTrips, setActiveTrips] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(true);
+    const [loadingActiveTrips, setLoadingActiveTrips] = useState(true);
 
     useEffect(() => {
         const fetchHistoryData = async () => {
@@ -29,7 +31,23 @@ const HistoryPage = ({ activeTrips }) => {
             }
         };
 
+        const fetchActiveTrips = async () => {
+            try {
+                setLoadingActiveTrips(true);
+                const response = await apiService.getActiveTrip();
+
+                if (response.data) {
+                    setActiveTrips(response.data);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil trip aktif:", error);
+            } finally {
+                setLoadingActiveTrips(false);
+            }
+        };
+
         fetchHistoryData();
+        fetchActiveTrips();
     }, []);
 
     // --- FUNGSI DELETE HISTORY ---
@@ -54,32 +72,77 @@ const HistoryPage = ({ activeTrips }) => {
         await Promise.all(deletePromises);
     };
 
+    const handleCancelTripNow = async () => {
+    if (activeTrips.length === 0) {
+        alert("Tidak ada trip aktif.");
+        return;
+    }
+
+    const isConfirmed = window.confirm(
+        "Yakin ingin membatalkan semua trip yang sedang berjalan?"
+    );
+    if (!isConfirmed) return;
+
+    try {
+        // 🔥 hapus semua trip session berdasarkan plan_id
+        await Promise.all(
+            activeTrips.map(trip =>
+                apiService.cancelTripSessions(trip.Plan.plan_id)
+            )
+        );
+
+        alert("Semua trip berhasil dibatalkan.");
+
+        // refresh UI
+        setActiveTrips([]);
+    } catch (error) {
+        console.error("Gagal cancel trip:", error);
+        alert("Gagal membatalkan trip.");
+    }
+};
+
+
     return (
         <div className="min-h-screen bg-gray-100 py-10 px-5 pt-24 md:pt-30">
             <div className="max-w-7xl mx-auto space-y-10 text-left">
                 
                 {/* --- SECTION 1: YOUR TRIP NOW --- */}
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-slate-900">Your Trip Now</h2>
-                        <button className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition">
-                            Cancel
-                        </button>
-                    </div>
-                    <div className="flex flex-col gap-4">
-                        {activeTrips && activeTrips.map((trip) => (
-                            <TripNowCard 
-                                key={trip.id}
-                                image={trip.image}
-                                title={trip.title}
-                                description={trip.description}
-                                location={trip.location}
-                                actionIcon={<FaArrowRight />} 
-                                onAction={() => navigate(`/trip/${trip.id}`)}
-                            />
-                        ))}
-                    </div>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-bold text-slate-900">Your Trip Now</h2>
+                <button 
+                onClick={handleCancelTripNow}
+                className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition"
+            >
+                Cancel
+            </button>
+
                 </div>
+                <div className="flex flex-col gap-4">
+                    {loadingActiveTrips ? (
+                <div className="p-4 text-center text-gray-400">Loading active trips...</div>
+            ) : activeTrips.length > 0 ? (
+                activeTrips.map((session) => (
+                    <TripNowCard 
+                        key={session.session_id}
+                        image={`data:image/jpeg;base64,${session.Plan.banner}`}
+                        title={session.Plan.title}
+                        description={session.Plan.description}
+                        location={session.Plan.routes[0]?.address || "Unknown"}
+                        actionIcon={<FaArrowRight />} 
+                        onAction={() => navigate(`/runtrip/${session.Plan.plan_id}`)}
+
+                    />
+                ))
+            ) : (
+                <div className="p-4 bg-gray-50 rounded-lg text-center text-gray-400 italic">
+                    You have no active trips right now.
+                </div>
+            )}
+
+                </div>
+            </div>
+
 
                 {/* --- SECTION 2: FAVOURITES (UPDATED INTEGRATION) --- */}
                 <div className="space-y-4">

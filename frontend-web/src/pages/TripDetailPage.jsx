@@ -1,8 +1,7 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { FaStar, FaHeart, FaRegHeart, FaChevronLeft } from "react-icons/fa";
+import { useEffect, useState } from 'react';
+import { FaChevronLeft, FaHeart, FaRegHeart, FaStar } from "react-icons/fa";
+import { useNavigate, useParams } from 'react-router-dom';
 import RouteCard from '../components/RouteCard';
-import apiClient from '../services/apiClient';
 import { useData } from '../context/DataContext';
 import apiService from '../services/apiService';
 
@@ -57,6 +56,31 @@ const TripDetailPage = () => {
         await addFavorite(tripData.plan.plan_id);
     }
   };
+
+const handleSetTrip = async () => {
+  if (!tripData || !tripData.routes || tripData.routes.length === 0) {
+    alert("Trip ini tidak memiliki rute.");
+    return;
+  }
+
+  try {
+    // Jalankan sesi trip untuk semua rute
+   if (tripData.routes.length > 0) {
+  const firstRoute = tripData.routes[0];
+  await apiService.postTripSessionStart(tripData.plan.plan_id, firstRoute.route_id);
+}
+
+
+    // Redirect ke halaman runtrip
+    navigate(`/runtrip/${tripData.plan.plan_id}`);
+  } catch (error) {
+    console.error("Gagal memulai trip:", error);
+    const msg = error?.response?.data?.error || "Gagal memulai trip. Coba lagi.";
+    alert(msg);
+  }
+};
+
+
 
 const handleSubmitReview = async () => {
       if (userRating === 0) {
@@ -153,9 +177,10 @@ const handleSubmitReview = async () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-gray-100">
                 <div className="flex gap-3">
-                    <button  onClick={() => navigate(`/runtrip/${plan.plan_id}`)} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">
+                    <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">
                         Set Trip
                     </button>
+
                     <button className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">
                         Report
                     </button>

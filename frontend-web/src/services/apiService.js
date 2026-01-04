@@ -132,6 +132,31 @@ const deletePastTripPlan = (id) => {
   return apiClient.delete(`/plans/completed-plans/${id}`);
 }
 
+const postTripSessionAction = (planId, payload) => {
+  return apiClient.post(`/trip-sessions/${planId}`, payload);
+};
+
+const postTripSessionStart = (planId, routeId) => {
+  return apiClient.post(`/trip-sessions/${planId}`, {
+    action: 'start',
+    route_id: routeId
+  });
+};
+
+const getActiveTrip = () => {
+  return apiClient.get('/trip-sessions/active');
+};
+
+const getCompletedSteps = (planId) => {
+  return apiClient.get(`/plans/${planId}/completed-steps`);
+};
+
+const cancelTripSessions = (planId) => {
+  return apiClient.delete(`/trip-sessions/cancel?plan_id=${planId}`);
+};
+
+
+
 
 const apiService = {
   updateUserProfile,
@@ -166,7 +191,12 @@ const apiService = {
   deleteFavorite,
   getPasTripCard,
   deleteReviewTrips,
-  deletePastTripPlan
+  deletePastTripPlan,
+  postTripSessionAction,
+  postTripSessionStart,
+  getActiveTrip,
+  getCompletedSteps,
+  cancelTripSessions,
 };
 
 export default apiService;
