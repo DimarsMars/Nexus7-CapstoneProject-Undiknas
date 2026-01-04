@@ -19,6 +19,7 @@ const TravellerProfilePage = () => {
   // State for social interactions
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
+  const [showReportPopup, setShowReportPopup] = useState(false); // State for report pop-up
 
   // --- DATA FETCHING ---
   useEffect(() => {
@@ -101,6 +102,13 @@ const TravellerProfilePage = () => {
       setFollowerCount((prev) => previousState ? prev + 1 : prev - 1);
       alert("Failed to update follow status.");
     }
+  };
+
+  const handleReport = () => {
+    setShowReportPopup(true);
+    setTimeout(() => {
+      setShowReportPopup(false);
+    }, 3000); // Hide pop-up after 3 seconds
   };
 
   const handleCardClick = (id) => {
@@ -196,12 +204,22 @@ const TravellerProfilePage = () => {
                             {isFollowing === true ? 'Unfollow' : 'Follow'}
                         </button>
                     )}
-                    <button className="px-8 py-2 font-medium text-white transition bg-red-600 rounded-md hover:bg-red-700">
+                    <button 
+                        onClick={handleReport} // Call handleReport on click
+                        className="px-8 py-2 font-medium text-white transition bg-red-600 rounded-md hover:bg-red-700"
+                    >
                         Report
                     </button>
                 </div>
             </div>
         </div>
+
+        {/* Report Success Pop-up */}
+        {showReportPopup && (
+          <div className="fixed bottom-4 right-4 p-4 bg-green-500 text-white rounded-lg shadow-lg">
+            User has been reported successfully!
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {profile.plans && profile.plans.length > 0 ? (
