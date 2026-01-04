@@ -212,12 +212,13 @@ func GetTripReviewsByUser(c *gin.Context) {
 		Description string
 		Tags        string
 		Banner      []byte
+		AuthorID    uint
 	}
 
 	var reviews []Result
 	err := config.DB.Raw(`
 		SELECT tr.review_id, tr.user_id, tr.rating, tr.comment, tr.created_at,
-		       p.plan_id, p.title, p.description, p.tags, p.banner
+		       p.plan_id, p.title, p.description, p.tags, p.banner, p.user_id AS author_id
 		FROM trip_reviews tr
 		JOIN plans p ON tr.plan_id = p.plan_id
 		WHERE tr.user_id = ?
@@ -227,6 +228,38 @@ func GetTripReviewsByUser(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil review kamu"})
 		return
+	}
+
+	authorIDs := []uint{}
+	for _, r := range reviews {
+		authorIDs = append(authorIDs, r.AuthorID)
+	}
+
+	uniqueAuthorIDs := map[uint]bool{}
+	filteredAuthorIDs := []uint{}
+	for _, id := range authorIDs {
+		if !uniqueAuthorIDs[id] {
+			uniqueAuthorIDs[id] = true
+			filteredAuthorIDs = append(filteredAuthorIDs, id)
+		}
+	}
+
+	type Author struct {
+		UserID   uint
+		Username string
+	}
+
+	var authors []Author
+	if len(filteredAuthorIDs) > 0 {
+		config.DB.Table("users").
+			Select("user_id, username").
+			Where("user_id IN ?", filteredAuthorIDs).
+			Find(&authors)
+	}
+
+	authorMap := make(map[uint]string)
+	for _, a := range authors {
+		authorMap[a.UserID] = a.Username
 	}
 
 	var response []map[string]interface{}
@@ -248,6 +281,7 @@ func GetTripReviewsByUser(c *gin.Context) {
 				"description": r.Description,
 				"tags":        r.Tags,
 				"banner":      bannerBase64,
+				"author_name": authorMap[r.AuthorID],
 			},
 		})
 	}
