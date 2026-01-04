@@ -3,7 +3,6 @@ package plan
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -73,7 +72,6 @@ func CreatePlan(c *gin.Context) {
 		}
 	}
 
-	// ✅ AuthorName disimpan di sini
 	plan := models.Plan{
 		UserID:      userID,
 		Title:       title,
@@ -148,10 +146,15 @@ func GetPlans(c *gin.Context) {
 	userID := c.GetUint("user_id")
 
 	var plans []models.Plan
-	if err := config.DB.Preload("Categories").Where("user_id = ?", userID).Find(&plans).Error; err != nil {
+	if err := config.DB.Preload("Categories").
+		Where("user_id = ?", userID).
+		Find(&plans).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil plans"})
 		return
 	}
+
+	var user models.User
+	config.DB.First(&user, "user_id = ?", userID)
 
 	var response []map[string]interface{}
 	for _, p := range plans {
@@ -159,6 +162,12 @@ func GetPlans(c *gin.Context) {
 		if len(p.Banner) > 0 {
 			bannerBase64 = base64.StdEncoding.EncodeToString(p.Banner)
 		}
+
+		var avgRating float64
+		config.DB.Table("trip_reviews").
+			Select("AVG(rating)").
+			Where("plan_id = ?", p.PlanID).
+			Scan(&avgRating)
 
 		response = append(response, map[string]interface{}{
 			"plan_id":     p.PlanID,
@@ -169,6 +178,8 @@ func GetPlans(c *gin.Context) {
 			"categories":  p.Categories,
 			"created_at":  p.CreatedAt,
 			"status":      p.Status,
+			"rating":      avgRating,
+			"author_name": user.Username,
 		})
 	}
 
@@ -245,58 +256,6 @@ func GetPlanDetail(c *gin.Context) {
 			"completed_steps": completedSteps,
 		},
 	})
-}
-
-func UpdatePlan(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	idStr := c.Param("id")
-	planID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var plan models.Plan
-	if err := config.DB.Preload("Categories").Where("plan_id = ? AND user_id = ?", planID, userID).First(&plan).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
-		return
-	}
-
-	if title := c.PostForm("title"); title != "" {
-		plan.Title = title
-	}
-	if desc := c.PostForm("description"); desc != "" {
-		plan.Description = desc
-	}
-	if tagsRaw := c.PostForm("tags"); tagsRaw != "" {
-		plan.Tags = strings.Split(tagsRaw, ",")
-	}
-	if catIDsRaw := c.PostForm("category_ids"); catIDsRaw != "" {
-		catIDs := strings.Split(catIDsRaw, ",")
-		var categories []models.Category
-		if err := config.DB.Where("category_id IN ?", catIDs).Find(&categories).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Kategori tidak ditemukan"})
-			return
-		}
-		config.DB.Model(&plan).Association("Categories").Replace(categories)
-	}
-	if file, err := c.FormFile("banner"); err == nil {
-		opened, _ := file.Open()
-		defer opened.Close()
-		bannerBytes, _ := io.ReadAll(opened)
-		plan.Banner = bannerBytes
-	}
-
-	if status := c.PostForm("status"); status != "" {
-		plan.Status = status
-	}
-
-	if err := config.DB.Save(&plan).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update plan"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Plan berhasil diupdate", "data": plan})
 }
 
 func DeletePlan(c *gin.Context) {
@@ -517,6 +476,37 @@ func GetRecommendedPlans(c *gin.Context) {
 		return
 	}
 
+	type RatingResult struct {
+		PlanID uint
+		Rating float64
+	}
+
+	var ratings []RatingResult
+	config.DB.Table("trip_reviews").
+		Select("plan_id, AVG(rating) as rating").
+		Group("plan_id").
+		Scan(&ratings)
+
+	ratingMap := map[uint]float64{}
+	for _, r := range ratings {
+		ratingMap[r.PlanID] = r.Rating
+	}
+
+	type AuthorResult struct {
+		UserID   uint
+		Username string
+	}
+
+	var authors []AuthorResult
+	config.DB.Table("users").
+		Select("user_id, username").
+		Scan(&authors)
+
+	authorMap := map[uint]string{}
+	for _, a := range authors {
+		authorMap[a.UserID] = a.Username
+	}
+
 	resp := []map[string]interface{}{}
 	for _, p := range recommendedPlans {
 		banner := ""
@@ -531,6 +521,8 @@ func GetRecommendedPlans(c *gin.Context) {
 			"status":      p.Status,
 			"categories":  p.Categories,
 			"banner":      banner,
+			"rating":      ratingMap[p.PlanID],
+			"author_name": authorMap[p.UserID],
 		})
 	}
 
@@ -585,42 +577,6 @@ func GetAllPlans(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
-}
-
-func GetRoutesByPlanID(c *gin.Context) {
-	planIDStr := c.Param("plan_id")
-	planID, err := strconv.ParseUint(planIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var routes []models.Route
-	if err := config.DB.Where("plan_id = ?", planID).Order("step_order ASC").Find(&routes).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil routes"})
-		return
-	}
-
-	var routeList []map[string]interface{}
-	for _, r := range routes {
-		imgBase64 := ""
-		if len(r.Image) > 0 {
-			imgBase64 = base64.StdEncoding.EncodeToString(r.Image)
-		}
-		routeList = append(routeList, map[string]interface{}{
-			"route_id":    r.RouteID,
-			"title":       r.Title,
-			"description": r.Description,
-			"address":     r.Address,
-			"latitude":    r.Latitude,
-			"longitude":   r.Longitude,
-			"tags":        r.Tags,
-			"step_order":  r.StepOrder,
-			"image":       imgBase64,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": routeList})
 }
 
 func GetRouteDetail(c *gin.Context) {

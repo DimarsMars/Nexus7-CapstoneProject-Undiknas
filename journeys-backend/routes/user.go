@@ -12,7 +12,6 @@ func UserRoutes(r *gin.Engine) {
 	u.Use(middleware.FirebaseAuth())
 	{
 		u.GET("/me", user.GetUser)
-		u.PUT("/update", user.UpdateUser)
 		u.GET("/xp", user.GetUserXPSummary)
 		u.GET("/xp/history", user.GetUserXPHistory)
 		u.GET("/mostactive", user.GetMostActiveTravellers)
