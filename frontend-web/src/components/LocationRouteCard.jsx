@@ -64,9 +64,10 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookm
           <h4 className="font-bold text-slate-800 text-md mb-1">
             Lokasi {index + 1} : {point.name}
           </h4>
-          <p className="text-slate-500 px-3 text-xs leading-relaxed line-clamp-2">
-            {point.address}
-          </p>
+          <div className="flex items-center gap-1.5 text-gray-400 text-xs mt-2">
+            <FaMapMarkerAlt />
+            <span>{point.address}</span>
+          </div>
           <p className="text-slate-700  text-sm leading-relaxed line-clamp-2">
             {point.description}
           </p>
