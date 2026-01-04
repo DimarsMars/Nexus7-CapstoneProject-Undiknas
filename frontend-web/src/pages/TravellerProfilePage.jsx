@@ -106,9 +106,10 @@ const TravellerProfilePage = () => {
 
   const handleReport = () => {
     setShowReportPopup(true);
-    setTimeout(() => {
-      setShowReportPopup(false);
-    }, 3000); // Hide pop-up after 3 seconds
+  };
+
+  const handleClosePopup = () => {
+    setShowReportPopup(false);
   };
 
   const handleCardClick = (id) => {
@@ -214,10 +215,21 @@ const TravellerProfilePage = () => {
             </div>
         </div>
 
-        {/* Report Success Pop-up */}
+        {/* Report Success Modal */}
         {showReportPopup && (
-          <div className="fixed bottom-4 right-4 p-4 bg-green-500 text-white rounded-lg shadow-lg">
-            User has been reported successfully!
+          <div className="fixed inset-0 z-500 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={handleClosePopup}>
+            <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+              <h3 className="mb-4 text-xl font-bold text-slate-800">Report Submitted</h3>
+              <p className="mb-6 text-gray-600">
+                Thank you. The user has been reported and our team will review the case.
+              </p>
+              <button
+                onClick={handleClosePopup}
+                className="w-full py-2 font-bold text-white transition rounded-lg bg-red-600 hover:bg-red-700"
+              >
+                Close
+              </button>
+            </div>
           </div>
         )}
 
@@ -228,8 +240,8 @@ const TravellerProfilePage = () => {
                         key={trip.plan_id}
                         id={trip.plan_id}
                         title={trip.title}
-                        author={trip.description}
-                        rating={trip.rating || 5}
+                        author={trip.author_name || "Unknown Author"}
+                        rating={trip.rating}
                         image={`data:image/jpeg;base64,${trip.banner}`}
                         className={
                           index === 0
