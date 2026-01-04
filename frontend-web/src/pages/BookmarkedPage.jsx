@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaFilter } from "react-icons/fa";
 import BookmarkedCard from '../components/BookmarkedCard';
 import apiService from '../services/apiService';
-import { useData } from '../context/DataContext'; // Import useData
+import { useData } from '../context/DataContext';
 
 const BookmarkedPage = () => {
   const navigate = useNavigate();
-  const { addWaypointToRoute, currentRouteWaypoints } = useData(); // Use context
+  const { addWaypoints } = useData();
 
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,21 +82,21 @@ const BookmarkedPage = () => {
   const handleAddToRoute = () => {
     const itemsToAdd = savedItems
       .filter(item => selectedIds.includes(item.bookmark_id))
-      .map(item => item.route);
+      .map(item => ({
+            lat: item.route.latitude,
+            lng: item.route.longitude,
+            name: item.route.title,
+            address: item.route.address,
+            description: item.route.description,
+            image: item.route.image || ''
+      }));
     
-    itemsToAdd.forEach(item => {
-        addWaypointToRoute({
-            lat: item.latitude,
-            lng: item.longitude,
-            name: item.title,
-            address: item.address,
-            description: item.description,
-            image: item.image || ''
-        });
-    });
+    if (itemsToAdd.length > 0) {
+      addWaypoints(itemsToAdd);
+      alert(`${itemsToAdd.length} items added to route!`);
+    }
     
     setSelectedIds([]);
-    alert(`${itemsToAdd.length} items added to route!`);
     navigate('/maps'); // Navigate to MapsPage
   };
 

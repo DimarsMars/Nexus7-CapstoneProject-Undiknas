@@ -95,20 +95,49 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    // --- Route Creation State ---
     const [currentRouteWaypoints, setCurrentRouteWaypoints] = useState([]);
 
-    const addWaypointToRoute = (waypoint) => {
+    const setWaypoints = (newWaypoints) => {
+        setCurrentRouteWaypoints(newWaypoints);
+    }
+
+    const addWaypoint = (waypoint) => {
         setCurrentRouteWaypoints((prev) => {
-            const isDuplicate = prev.some(
-                (item) => item.lat === waypoint.lat && item.lng === waypoint.lng
-            );
-            if (!isDuplicate) {
-                return [...prev, waypoint];
-            }
-            return prev;
+            const isDuplicate = prev.some(item => item.lat === waypoint.lat && item.lng === waypoint.lng);
+            return isDuplicate ? prev : [...prev, waypoint];
         });
     };
 
+    const addWaypoints = (waypoints) => {
+        setCurrentRouteWaypoints((prev) => {
+            const newWaypoints = waypoints.filter(newWp => 
+                !prev.some(prevWp => prevWp.lat === newWp.lat && prevWp.lng === newWp.lng)
+            );
+            return [...prev, ...newWaypoints];
+        });
+    };
+
+    const deleteWaypoint = (index) => {
+        setCurrentRouteWaypoints((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const editWaypoint = (index, updatedData) => {
+        setCurrentRouteWaypoints((prev) => {
+            const newWaypoints = [...prev];
+            newWaypoints[index] = { ...newWaypoints[index], ...updatedData };
+            return newWaypoints;
+        });
+    };
+
+    const uploadWaypointImage = (index, imageBase64) => {
+        setCurrentRouteWaypoints((prev) => {
+            const newWaypoints = [...prev];
+            newWaypoints[index].image = imageBase64;
+            return newWaypoints;
+        });
+    };
+    
     const clearRouteWaypoints = () => {
         setCurrentRouteWaypoints([]);
     };
@@ -124,9 +153,15 @@ export const DataProvider = ({ children }) => {
         fetchFavorites,
         searchQuery, 
         setSearchQuery,
+        // Waypoint management
         currentRouteWaypoints,
-        addWaypointToRoute,
-        clearRouteWaypoints
+        setWaypoints,
+        addWaypoint,
+        addWaypoints,
+        deleteWaypoint,
+        editWaypoint,
+        uploadWaypointImage,
+        clearRouteWaypoints,
     };
 
     return (
