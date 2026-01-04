@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"be_journeys/config"
 	"be_journeys/controllers/helper"
@@ -189,7 +190,10 @@ func GetPlanDetail(c *gin.Context) {
 	}
 
 	var routes []models.Route
-	if err := config.DB.Where("plan_id = ?", plan.PlanID).Find(&routes).Error; err != nil {
+	if err := config.DB.
+		Where("plan_id = ?", plan.PlanID).
+		Order("step_order ASC").
+		Find(&routes).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil routes"})
 		return
 	}
@@ -224,38 +228,23 @@ func GetPlanDetail(c *gin.Context) {
 		})
 	}
 
+	// ✅ Tambahkan data step yang sudah selesai
+	userID := c.GetUint("user_id")
+	var completedSteps []int
+	config.DB.Model(&models.PlanProgress{}).
+		Where("user_id = ? AND plan_id = ?", userID, planID).
+		Pluck("step_order", &completedSteps)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": map[string]interface{}{
-			"plan":   plan,
-			"banner": bannerBase64,
-			"routes": routeList,
-			"status": plan.Status,
-			"rating": rating,
+			"plan":            plan,
+			"banner":          bannerBase64,
+			"routes":          routeList,
+			"status":          plan.Status,
+			"rating":          rating,
+			"completed_steps": completedSteps,
 		},
 	})
-}
-
-
-func GetPlanBanner(c *gin.Context) {
-	idStr := c.Param("id")
-	planID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var plan models.Plan
-	if err := config.DB.First(&plan, "plan_id = ?", planID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
-		return
-	}
-
-	if len(plan.Banner) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Banner kosong"})
-		return
-	}
-
-	c.Data(http.StatusOK, "image/jpeg", plan.Banner)
 }
 
 func UpdatePlan(c *gin.Context) {
@@ -362,7 +351,12 @@ func VerifyUserLocation(c *gin.Context) {
 		return
 	}
 
-	distance := helper.CalculateDistance(input.Latitude, input.Longitude, route.Latitude, route.Longitude)
+	distance := helper.CalculateDistance(
+		input.Latitude,
+		input.Longitude,
+		route.Latitude,
+		route.Longitude,
+	)
 
 	if distance > 0.3 {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -381,6 +375,20 @@ func VerifyUserLocation(c *gin.Context) {
 		return
 	}
 
+	// ✅ TAMBAHAN WAJIB: akhiri trip session route sebelumnya
+	config.DB.
+		Model(&models.TripSession{}).
+		Where(
+			"user_id = ? AND plan_id = ? AND status IN ?",
+			userID,
+			planID,
+			[]string{"ongoing", "paused"},
+		).
+		Updates(map[string]interface{}{
+			"status":   "done",
+			"ended_at": time.Now(),
+		})
+
 	newProgress := models.PlanProgress{
 		UserID:    userID,
 		PlanID:    uint(planID),
@@ -396,18 +404,21 @@ func VerifyUserLocation(c *gin.Context) {
 		XPValue:     10,
 		Description: "Arrived at step " + strconv.Itoa(input.StepOrder),
 	}
-
 	if err := config.DB.Create(&xp).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menambahkan XP"})
 		return
 	}
 
 	var totalXP int64
-	config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&totalXP)
+	config.DB.
+		Model(&models.UserXP{}).
+		Where("user_id = ?", userID).
+		Select("SUM(xp_value)").
+		Scan(&totalXP)
 
 	newRank := helper.CalculateRank(int(totalXP))
-
-	config.DB.Model(&models.Profile{}).
+	config.DB.
+		Model(&models.Profile{}).
 		Where("user_id = ?", userID).
 		Update("rank", newRank)
 
@@ -415,7 +426,8 @@ func VerifyUserLocation(c *gin.Context) {
 	config.DB.
 		Model(&models.Route{}).
 		Where("plan_id = ?", planID).
-		Select("MAX(step_order)").Scan(&maxStep)
+		Select("MAX(step_order)").
+		Scan(&maxStep)
 
 	if input.StepOrder == maxStep {
 
@@ -430,12 +442,22 @@ func VerifyUserLocation(c *gin.Context) {
 		}
 
 		var updatedTotalXP int64
-		config.DB.Model(&models.UserXP{}).Where("user_id = ?", userID).Select("SUM(xp_value)").Scan(&updatedTotalXP)
+		config.DB.
+			Model(&models.UserXP{}).
+			Where("user_id = ?", userID).
+			Select("SUM(xp_value)").
+			Scan(&updatedTotalXP)
 
 		finalRank := helper.CalculateRank(int(updatedTotalXP))
-		config.DB.Model(&models.Profile{}).
+		config.DB.
+			Model(&models.Profile{}).
 			Where("user_id = ?", userID).
 			Update("rank", finalRank)
+
+		// hapus trip session setelah trip selesai
+		config.DB.
+			Where("user_id = ? AND plan_id = ?", userID, planID).
+			Delete(&models.TripSession{})
 
 		c.JSON(http.StatusOK, gin.H{
 			"message":  "Selamat, kamu telah menyelesaikan seluruh trip!",
@@ -710,10 +732,202 @@ func DeleteCompletedPlan(c *gin.Context) {
 		return
 	}
 
-	if err := config.DB.Delete(&progress).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus history"})
+	planID := progress.PlanID
+
+	if err := config.DB.
+		Where("user_id = ? AND plan_id = ?", userID, planID).
+		Delete(&models.PlanProgress{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus semua progress trip"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "History berhasil dihapus"})
+	c.JSON(http.StatusOK, gin.H{"message": "Seluruh history plan berhasil dihapus"})
+}
+
+type TripSessionInput struct {
+	Action  string `json:"action" binding:"required"`
+	RouteID uint   `json:"route_id" binding:"required"`
+}
+
+func HandleTripSession(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	planIDStr := c.Param("plan_id")
+	planID, err := strconv.ParseUint(planIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Plan ID tidak valid"})
+		return
+	}
+
+	var input TripSessionInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input tidak valid"})
+		return
+	}
+
+	var session models.TripSession
+	action := input.Action
+
+	switch action {
+	case "start":
+		var count int64
+		config.DB.Model(&models.TripSession{}).
+			Where("user_id = ? AND plan_id = ? AND status = ? AND route_id != ?", userID, planID, "ongoing", input.RouteID).
+			Count(&count)
+
+		if count > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Masih ada lokasi lain yang aktif, selesaikan dulu."})
+			return
+		}
+
+		if err := config.DB.
+			Where("user_id = ? AND plan_id = ? AND route_id = ? AND status != ?", userID, planID, input.RouteID, "done").
+			First(&session).Error; err == nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Trip untuk lokasi ini sudah aktif / belum selesai"})
+			return
+		}
+
+		newSession := models.TripSession{
+			UserID:    userID,
+			PlanID:    uint(planID),
+			RouteID:   input.RouteID,
+			Status:    "ongoing",
+			StartedAt: time.Now(),
+		}
+		if err := config.DB.Create(&newSession).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memulai trip"})
+			return
+		}
+		session = newSession
+
+	case "pause":
+		if err := config.DB.
+			Where("user_id = ? AND plan_id = ? AND route_id = ? AND status = ?", userID, planID, input.RouteID, "ongoing").
+			First(&session).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Tidak ada trip ongoing untuk lokasi ini"})
+			return
+		}
+		session.Status = "paused"
+		session.PausedAt = helper.TimePtr(time.Now())
+		config.DB.Save(&session)
+
+	case "resume":
+		var count int64
+		config.DB.Model(&models.TripSession{}).
+			Where("user_id = ? AND plan_id = ? AND status = ? AND route_id != ?", userID, planID, "ongoing", input.RouteID).
+			Count(&count)
+		if count > 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Masih ada lokasi lain yang aktif, selesaikan dulu."})
+			return
+		}
+
+		if err := config.DB.
+			Where("user_id = ? AND plan_id = ? AND route_id = ? AND status = ?", userID, planID, input.RouteID, "paused").
+			First(&session).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Trip tidak dalam keadaan pause"})
+			return
+		}
+		session.Status = "ongoing"
+		session.PausedAt = nil
+		config.DB.Save(&session)
+
+	case "end":
+		if err := config.DB.
+			Where("user_id = ? AND plan_id = ? AND route_id = ? AND status != ?", userID, planID, input.RouteID, "done").
+			First(&session).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Trip belum dimulai atau sudah selesai"})
+			return
+		}
+		session.Status = "done"
+		session.EndedAt = helper.TimePtr(time.Now())
+		config.DB.Save(&session)
+
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Aksi tidak dikenali"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Berhasil menjalankan aksi trip: " + action,
+		"data":    session,
+	})
+}
+
+func GetActiveTrip(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var sessions []models.TripSession
+	if err := config.DB.
+		Preload("Plan").
+		Preload("Plan.Routes").
+		Where("user_id = ? AND status IN ?", userID, []string{"ongoing", "paused"}).
+		Order("started_at DESC").
+		Find(&sessions).Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal mengambil trip aktif",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": sessions,
+	})
+}
+
+func GetCompletedStepsByUser(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	planIDStr := c.Param("id") // ✅ BENAR
+
+	planID, err := strconv.ParseUint(planIDStr, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
+		return
+	}
+
+	var progresses []models.PlanProgress
+	if err := config.DB.
+		Where("user_id = ? AND plan_id = ?", userID, planID).
+		Find(&progresses).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data progress"})
+		return
+	}
+
+	completed := []int{}
+	for _, p := range progresses {
+		completed = append(completed, p.StepOrder)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": completed})
+}
+
+func CancelTripSession(c *gin.Context) {
+	userID := c.MustGet("user_id").(uint)
+	planID := c.Query("plan_id")
+
+	if planID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Plan ID wajib disertakan"})
+		return
+	}
+
+	// Cek apakah ada session
+	var count int64
+	if err := config.DB.Model(&models.TripSession{}).
+		Where("user_id = ? AND plan_id = ?", userID, planID).
+		Count(&count).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengecek sesi"})
+		return
+	}
+
+	if count == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tidak ada trip session ditemukan"})
+		return
+	}
+
+	// Hapus
+	if err := config.DB.Delete(&models.TripSession{}, "user_id = ? AND plan_id = ?", userID, planID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus sesi"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Semua trip session berhasil dibatalkan"})
 }
