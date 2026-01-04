@@ -117,6 +117,7 @@ const TripDetailPage = () => {
   const { tripData, isLoading, error } = useTripDetail(id);
 
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [showReportPopup, setShowReportPopup] = useState(false); // State for report modal
 
   const favoriteRecord = tripData ? favoriteTrips.find(fav => fav.plan_id === tripData.plan.plan_id) : null;
   const isLiked = !!favoriteRecord;
@@ -147,6 +148,14 @@ const TripDetailPage = () => {
     alert(response.message || "Review submitted successfully!");
     // Optional: could add logic here to refetch trip data to show new average rating
   }, []);
+
+  const handleReport = () => {
+    setShowReportPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowReportPopup(false);
+  };
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center font-bold text-gray-500">Loading trip details...</div>;
@@ -187,10 +196,10 @@ const TripDetailPage = () => {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-4 border-b border-gray-200">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 pb-4">
               <div className="flex gap-3">
                 <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">Set Trip</button>
-                <button className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">Report</button>
+                <button onClick={handleReport} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">Report</button>
               </div>
               <button onClick={handleLike} aria-label={isLiked ? "Unsave Trip" : "Save Trip"}>
                 {isLiked ? <FaHeart className="text-2xl text-red-600 cursor-pointer transition transform active:scale-90" /> : <FaRegHeart className="text-2xl text-slate-800 cursor-pointer transition transform active:scale-90" />}
@@ -198,7 +207,7 @@ const TripDetailPage = () => {
             </div>
 
             {plan.categories?.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-2 pb-3 mb-3 border-b border-gray-200">
                 {plan.categories.map((cat, index) => <span key={index} className="text-slate-600 bg-slate-100 px-3 py-1 rounded-full text-sm font-medium">#{cat.name || cat}</span>)}
               </div>
             )}
@@ -229,6 +238,24 @@ const TripDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Report Success Modal */}
+      {showReportPopup && (
+        <div className="fixed inset-0 z-500 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={handleClosePopup}>
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl text-center" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-4 text-xl font-bold text-slate-800">Report Submitted</h3>
+            <p className="mb-6 text-gray-600">
+              Thank you. This trip has been reported and our team will review the case.
+            </p>
+            <button
+              onClick={handleClosePopup}
+              className="w-full py-2 font-bold text-white transition rounded-lg bg-red-600 hover:bg-red-700"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       <ReviewModal
         isOpen={isReviewModalOpen}
