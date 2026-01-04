@@ -95,27 +95,6 @@ func CreateTripReview(c *gin.Context) {
 	})
 }
 
-func GetTripReviews(c *gin.Context) {
-	planIDParam := c.Param("plan_id")
-
-	var planID uint
-	if _, err := fmt.Sscanf(planIDParam, "%d", &planID); err != nil || planID == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "plan_id tidak valid"})
-		return
-	}
-
-	var reviews []models.TripReview
-	if err := config.DB.
-		Where("plan_id = ?", planID).
-		Order("created_at DESC").
-		Find(&reviews).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil plan reviews"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": reviews})
-}
-
 func DeleteMyTripReview(c *gin.Context) {
 	userID := c.GetUint("user_id")
 	reviewIDParam := c.Param("review_id")

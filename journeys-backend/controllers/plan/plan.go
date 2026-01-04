@@ -3,7 +3,6 @@ package plan
 import (
 	"encoding/base64"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -245,58 +244,6 @@ func GetPlanDetail(c *gin.Context) {
 			"completed_steps": completedSteps,
 		},
 	})
-}
-
-func UpdatePlan(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	idStr := c.Param("id")
-	planID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var plan models.Plan
-	if err := config.DB.Preload("Categories").Where("plan_id = ? AND user_id = ?", planID, userID).First(&plan).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
-		return
-	}
-
-	if title := c.PostForm("title"); title != "" {
-		plan.Title = title
-	}
-	if desc := c.PostForm("description"); desc != "" {
-		plan.Description = desc
-	}
-	if tagsRaw := c.PostForm("tags"); tagsRaw != "" {
-		plan.Tags = strings.Split(tagsRaw, ",")
-	}
-	if catIDsRaw := c.PostForm("category_ids"); catIDsRaw != "" {
-		catIDs := strings.Split(catIDsRaw, ",")
-		var categories []models.Category
-		if err := config.DB.Where("category_id IN ?", catIDs).Find(&categories).Error; err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Kategori tidak ditemukan"})
-			return
-		}
-		config.DB.Model(&plan).Association("Categories").Replace(categories)
-	}
-	if file, err := c.FormFile("banner"); err == nil {
-		opened, _ := file.Open()
-		defer opened.Close()
-		bannerBytes, _ := io.ReadAll(opened)
-		plan.Banner = bannerBytes
-	}
-
-	if status := c.PostForm("status"); status != "" {
-		plan.Status = status
-	}
-
-	if err := config.DB.Save(&plan).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal update plan"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Plan berhasil diupdate", "data": plan})
 }
 
 func DeletePlan(c *gin.Context) {
@@ -585,42 +532,6 @@ func GetAllPlans(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": response})
-}
-
-func GetRoutesByPlanID(c *gin.Context) {
-	planIDStr := c.Param("plan_id")
-	planID, err := strconv.ParseUint(planIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var routes []models.Route
-	if err := config.DB.Where("plan_id = ?", planID).Order("step_order ASC").Find(&routes).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil routes"})
-		return
-	}
-
-	var routeList []map[string]interface{}
-	for _, r := range routes {
-		imgBase64 := ""
-		if len(r.Image) > 0 {
-			imgBase64 = base64.StdEncoding.EncodeToString(r.Image)
-		}
-		routeList = append(routeList, map[string]interface{}{
-			"route_id":    r.RouteID,
-			"title":       r.Title,
-			"description": r.Description,
-			"address":     r.Address,
-			"latitude":    r.Latitude,
-			"longitude":   r.Longitude,
-			"tags":        r.Tags,
-			"step_order":  r.StepOrder,
-			"image":       imgBase64,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": routeList})
 }
 
 func GetRouteDetail(c *gin.Context) {
