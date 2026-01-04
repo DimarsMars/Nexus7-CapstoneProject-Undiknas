@@ -59,7 +59,7 @@ const UserReviewCard = ({ userId, image, name, role, review, rating }) => {
       <div className="flex flex-col items-center shrink-0 w-full md:w-32">
         <div className="w-24 h-24 mb-3 rounded-full overflow-hidden shadow-sm">
           <img 
-            src={image} 
+            src={image && image.trim() !== '' ? image : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='} 
             alt={name} 
             className="w-full h-full object-cover"
           />
