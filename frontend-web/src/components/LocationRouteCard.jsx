@@ -50,7 +50,11 @@ const LocationRouteCard = ({ point, index, onDelete, onEdit, onAddImage, onBookm
 
         <div className="w-40 h-26 bg-slate-100 rounded-md flex items-center justify-center shrink-0">
           {point.image ? (
-              <img src={point.image} alt={point.name} className="w-full h-full object-cover rounded-md" />
+              <img 
+                src={point.image.startsWith('data:image') ? point.image : `data:image/jpeg;base64,${point.image}`} 
+                alt={point.name} 
+                className="w-full h-full object-cover rounded-md" 
+              />
           ) : (
               <FaMapMarkerAlt className="text-slate-400 text-2xl" />
           )}

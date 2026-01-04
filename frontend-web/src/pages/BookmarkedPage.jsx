@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { FaChevronLeft, FaFilter } from "react-icons/fa";
 import BookmarkedCard from '../components/BookmarkedCard';
 import apiService from '../services/apiService';
+import { useData } from '../context/DataContext'; // Import useData
 
 const BookmarkedPage = () => {
   const navigate = useNavigate();
+  const { addWaypointToRoute, currentRouteWaypoints } = useData(); // Use context
 
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState([]);
-  const [routeItems, setRouteItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchBookmarks = async () => {
@@ -83,16 +84,20 @@ const BookmarkedPage = () => {
       .filter(item => selectedIds.includes(item.bookmark_id))
       .map(item => item.route);
     
-    const newRoute = [...routeItems];
     itemsToAdd.forEach(item => {
-      if (!newRoute.find(r => r.route_id === item.route_id)) {
-        newRoute.push(item);
-      }
+        addWaypointToRoute({
+            lat: item.latitude,
+            lng: item.longitude,
+            name: item.title,
+            address: item.address,
+            description: item.description,
+            image: item.image || ''
+        });
     });
     
-    setRouteItems(newRoute);
     setSelectedIds([]);
     alert(`${itemsToAdd.length} items added to route!`);
+    navigate('/maps'); // Navigate to MapsPage
   };
 
   const filteredItems = savedItems.filter(item =>
@@ -170,24 +175,6 @@ const BookmarkedPage = () => {
                 >
                     Add to route
                 </button>
-            </div>
-        )}
-
-        {routeItems.length > 0 && (
-            <div className="border-t-2 border-gray-200 pt-8">
-                <h2 className="text-lg font-bold text-[#1e293b] mb-4">Current Route Plan</h2>
-                <div className="flex flex-col gap-4 opacity-80">
-                    {routeItems.map((item) => (
-                        <div key={`route-${item.route_id}`} className="pointer-events-none grayscale-[0.2]">
-                             <BookmarkedCard 
-                                item={item}
-                                isSelected={true}
-                                onToggleSelect={() => {}} 
-                                onRemove={() => {}}
-                            />
-                        </div>
-                    ))}
-                </div>
             </div>
         )}
 

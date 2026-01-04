@@ -10,7 +10,7 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-import { useData } from '../context/DataContext'; // Added useData import
+import { useData } from '../context/DataContext'; 
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -68,18 +68,19 @@ const MapClickHandler = ({ onMapClick }) => {
     return null;
 };
 
-const PreviewMarker = ({ position }) => {
-    if (!position) return null;
-    return <Marker position={[position.lat, position.lng]} />;
-};
-
 
 // --- MAIN PAGE ---
 const MapsPage = () => {
-  const [waypoints, setWaypoints] = useState([]); 
   const navigate = useNavigate();
-  const { fetchAllPlan } = useData(); // Added useData hook
+  const { fetchAllPlan, currentRouteWaypoints, clearRouteWaypoints } = useData(); 
   
+  const [waypoints, setWaypoints] = useState(currentRouteWaypoints); 
+
+  useEffect(() => {
+      // Initialize waypoints with any routes passed from BookmarkedPage
+      setWaypoints(currentRouteWaypoints);
+  }, [currentRouteWaypoints]);
+
   // State Search & Preview
   const [searchQuery, setSearchQuery] = useState("");
   const [mapCenter, setMapCenter] = useState([-8.5069, 115.2625]);
@@ -266,8 +267,15 @@ const MapsPage = () => {
 
     // Backend mengharapkan array rute dalam format JSON string
     const routesData = waypoints.map((point, index) => {
-      // Strip the base64 prefix if the image exists
-      const imageBase64 = point.image ? point.image.split(',')[1] : "";
+      // Safely handle both raw base64 and full Data URL strings
+      let imageBase64 = "";
+      if (point.image) {
+        if (point.image.includes(',')) {
+          imageBase64 = point.image.split(',')[1]; // It's a full Data URL, extract base64
+        } else {
+          imageBase64 = point.image; // It's already a raw base64 string
+        }
+      }
 
       return {
         title: point.name,
@@ -298,6 +306,7 @@ const MapsPage = () => {
       setPlanDescription("");
       setSelectedCategories([]);
       setWaypoints([]);
+      clearRouteWaypoints(); // Clear the global waypoints
     } catch (error) {
       console.error("Failed to create plan:", error.response ? error.response.data : error);
       alert(`Failed to create plan. ${error.response?.data?.error || error.message}`);

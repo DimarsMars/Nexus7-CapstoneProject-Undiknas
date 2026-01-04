@@ -95,6 +95,24 @@ export const DataProvider = ({ children }) => {
         }
     };
 
+    const [currentRouteWaypoints, setCurrentRouteWaypoints] = useState([]);
+
+    const addWaypointToRoute = (waypoint) => {
+        setCurrentRouteWaypoints((prev) => {
+            const isDuplicate = prev.some(
+                (item) => item.lat === waypoint.lat && item.lng === waypoint.lng
+            );
+            if (!isDuplicate) {
+                return [...prev, waypoint];
+            }
+            return prev;
+        });
+    };
+
+    const clearRouteWaypoints = () => {
+        setCurrentRouteWaypoints([]);
+    };
+
     const value = {
         plans,
         loadingPlans,
@@ -105,7 +123,10 @@ export const DataProvider = ({ children }) => {
         removeFavorite,
         fetchFavorites,
         searchQuery, 
-        setSearchQuery
+        setSearchQuery,
+        currentRouteWaypoints,
+        addWaypointToRoute,
+        clearRouteWaypoints
     };
 
     return (

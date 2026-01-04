@@ -174,14 +174,13 @@ const RunTripPage = () => {
   setTripRoute(formattedRoutes);
 }
 
-
-            if (bookmarksRes.data) {
-                const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
-                const bookmarkMap = new Map();
-                bookmarkList.forEach(item => {
-                    bookmarkMap.set(item.route_id, item.bookmark_id);
-                });
-                setBookmarks(bookmarkMap);
+        if (bookmarksRes.data) {
+            const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
+            const bookmarkMap = new Map();
+            bookmarkList.forEach(item => {
+                bookmarkMap.set(item.route_id, item.bookmark_id);
+            });
+            setBookmarks(bookmarkMap);
             }
         } catch (err) {
             setError("Failed to fetch trip data.");
