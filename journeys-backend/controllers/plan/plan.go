@@ -476,6 +476,37 @@ func GetRecommendedPlans(c *gin.Context) {
 		return
 	}
 
+	type RatingResult struct {
+		PlanID uint
+		Rating float64
+	}
+
+	var ratings []RatingResult
+	config.DB.Table("trip_reviews").
+		Select("plan_id, AVG(rating) as rating").
+		Group("plan_id").
+		Scan(&ratings)
+
+	ratingMap := map[uint]float64{}
+	for _, r := range ratings {
+		ratingMap[r.PlanID] = r.Rating
+	}
+
+	type AuthorResult struct {
+		UserID   uint
+		Username string
+	}
+
+	var authors []AuthorResult
+	config.DB.Table("users").
+		Select("user_id, username").
+		Scan(&authors)
+
+	authorMap := map[uint]string{}
+	for _, a := range authors {
+		authorMap[a.UserID] = a.Username
+	}
+
 	resp := []map[string]interface{}{}
 	for _, p := range recommendedPlans {
 		banner := ""
@@ -490,6 +521,8 @@ func GetRecommendedPlans(c *gin.Context) {
 			"status":      p.Status,
 			"categories":  p.Categories,
 			"banner":      banner,
+			"rating":      ratingMap[p.PlanID],
+			"author_name": authorMap[p.UserID],
 		})
 	}
 
