@@ -228,7 +228,7 @@ const MyProfilePage = () => {
                                     key={trip.plan_id}
                                     id={trip.plan_id}
                                     title={trip.title}
-                                    author={trip.description}
+                                    author={trip.author_name || "Unknown Author"}
                                     rating={trip.rating || 5}
                                     image={getImageSrc(trip.banner)}
                                     className={index === 0 ? "h-56 md:col-span-2 md:h-72" : "h-56 md:h-60"}
