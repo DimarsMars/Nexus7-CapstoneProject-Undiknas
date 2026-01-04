@@ -16,6 +16,10 @@ const getCategories = () => {
   return apiClient.get('/category/');
 };
 
+const postCategory = (categoryData) => {
+  return apiClient.post('/category/', categoryData);
+};
+
 const createPlan = (planData) => {
   return apiClient.post('/plans/', planData);
 };
@@ -163,6 +167,7 @@ const apiService = {
   getUserMe,
   getProfileMe,
   getCategories,
+  postCategory,
   createPlan,
   getAllPlan,
   getAllPlanByUserLogin,

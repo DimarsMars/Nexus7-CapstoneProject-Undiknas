@@ -19,6 +19,7 @@ import MapsPage from './pages/MapsPage';
 import { useAuth } from './context/AuthContext';
 import HistoryPage from './pages/HistoryPage';
 import RunTripPage from './pages/RunTripPage';
+import AddCategoryPage from './pages/AddCategoryPage';
 
 const trips = [
     {
@@ -167,6 +168,7 @@ function App() {
         <Route path='maps' element={<MapsPage />} />
         <Route path='runtrip/:id' element={<RunTripPage />} />
         <Route path='history' element={<HistoryPage activeTrips={activeTrips} favouriteTrips={favouriteTrips} pastTrips={pastTrips} />} />
+        <Route path='add-category' element={<AddCategoryPage />} />
       </Route>
 
       {/* Fallback route */}
