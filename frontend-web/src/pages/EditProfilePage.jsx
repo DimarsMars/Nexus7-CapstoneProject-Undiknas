@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react'; // Added useMemo and useCallback
 import { FaCertificate, FaPen, FaTimes, FaChevronDown } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
 
-const EditProfilePage = ({ user }) => {
+const EditProfilePage = () => { // Removed unused 'user' prop
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
+
+  // --- STATE MANAGEMENT ---
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [profileDescription, setProfileDescription] = useState(null);
+  const [profileDescription, setProfileDescription] = useState(null); // Used to initialize selectedCategories
 
   const [displayUser, setDisplayUser] = useState({
     name: 'Loading...',
@@ -20,9 +22,11 @@ const EditProfilePage = ({ user }) => {
   const [formData, setFormData] = useState({
     birthDate: '',
     status: '',
-    image: ''
+    image: '' // This will hold either a base64 string or a File object
   });
 
+  // --- EFFECTS ---
+  // Effect to fetch user and profile data
   useEffect(() => {
     const fetchUserData = async () => {
       if (authUser && authUser.idToken) {
@@ -40,7 +44,7 @@ const EditProfilePage = ({ user }) => {
           setFormData({
             birthDate: profile.birth_date?.split('T')[0] || "",
             status: profile.status || "",
-            image: profile.photo || ""
+            image: profile.photo || "" // Assuming profile.photo is base64 string initially
           });
           setProfileDescription(profile.description || "");
         } catch (error) {
@@ -53,6 +57,7 @@ const EditProfilePage = ({ user }) => {
     fetchUserData();
   }, [authUser]);
 
+  // Effect to fetch all available categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -67,43 +72,45 @@ const EditProfilePage = ({ user }) => {
       }
     };
     fetchCategories();
-  }, []);
+  }, []); // Runs once on mount
 
+  // Effect to initialize selectedCategories based on profileDescription and fetched categories
   useEffect(() => {
     if (profileDescription !== null && categories.length > 0) {
+      // Logic for parsing comma-separated description string to category names
       const categoryNames = profileDescription.split(',').map(name => name.trim()).filter(name => name);
       if (categoryNames.length > 0) {
         const selected = categories.filter(cat => categoryNames.includes(cat.name.trim()));
         setSelectedCategories(selected);
       }
     }
-  }, [profileDescription, categories]);
+  }, [profileDescription, categories]); // Reruns if profileDescription or categories change
 
-  const handleSelectCategory = (category) => {
+  // --- MEMOIZED HANDLERS ---
+  const handleSelectCategory = useCallback((category) => {
     if (!selectedCategories.some(c => c.category_id === category.category_id)) {
-        setSelectedCategories([...selectedCategories, category]);
+        setSelectedCategories(prev => [...prev, category]);
     }
     setIsDropdownOpen(false); 
-  };
+  }, [selectedCategories]);
 
-  const handleRemoveCategory = (categoryId) => {
-      const updated = selectedCategories.filter(c => c.category_id !== categoryId);
-      setSelectedCategories(updated);
-  };
+  const handleRemoveCategory = useCallback((categoryId) => {
+      setSelectedCategories(prev => prev.filter(c => c.category_id !== categoryId));
+  }, []); // No dependencies that change its logic, so empty array is fine
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  }, []); // No dependencies that change its logic, so empty array is fine
 
-  const handleImageChange = (e) => {
+  const handleImageChange = useCallback((e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({ ...prev, image: file }));
+      setFormData(prev => ({ ...prev, image: file })); // Store the File object
     }
-  };
+  }, []); // No dependencies that change its logic, so empty array is fine
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
 
     if (!authUser || !authUser.idToken) {
@@ -117,50 +124,53 @@ const EditProfilePage = ({ user }) => {
     formDataToSend.append('birth_date', formData.birthDate);
     formDataToSend.append('description', descriptionString);
     formDataToSend.append('status', formData.status);
-    formDataToSend.append('location', 'Solo');
-    formDataToSend.append('languages', 'ID');
-    formDataToSend.append('photo', formData.image);
+    formDataToSend.append('location', 'Solo'); // Hardcoded as per original
+    formDataToSend.append('languages', 'ID'); // Hardcoded as per original
+    formDataToSend.append('photo', formData.image); // Retained original logic for image submission
 
     try {
       await apiService.updateUserProfile(formDataToSend);
       alert("Profile Updated!");
-      setProfileDescription(descriptionString);
+      setProfileDescription(descriptionString); // Update description to reflect changes immediately
       navigate('/myprofile');
     } catch (error) {
       console.error("Error updating profile:", error);
       alert("Failed to update profile. Please try again.");
     }
-  };
+  }, [authUser, selectedCategories, formData, navigate]);
 
-  // FIX FOTO
-  const getImageSrc = () => {
+  // --- MEMOIZED HELPERS / COMPUTED VALUES ---
+  const getImageSrc = useMemo(() => {
+    // If formData.image is empty or null, return empty string
     if (!formData.image) return "";
 
-    // File upload (preview)
+    // If formData.image is a File object, create a URL for preview
     if (formData.image instanceof File) {
       return URL.createObjectURL(formData.image);
     }
 
-    // Base64 dari backend
+    // If formData.image is a string (assumed base64 from backend), prepend data URI
     return `data:image/jpeg;base64,${formData.image}`;
-  };
+  }, [formData.image]);
 
-  const availableCategories = categories.filter(
-    c => !selectedCategories.some(selected => selected.category_id === c.category_id)
-  );
+  const availableCategories = useMemo(() => {
+    return categories.filter(
+      c => !selectedCategories.some(selected => selected.category_id === c.category_id)
+    );
+  }, [categories, selectedCategories]);
 
+  // These are simple string operations, no need for useMemo
   const getRankLevel = (rankString) => {
       if (!rankString) return '?';
       const match = rankString.match(/lvl (\d+)/i);
       return match ? match[1] : '?';
   };
-
-    // --- HELPER AMBIL NAMA PANGKAT ---
   const getRankName = (rankString) => {
       if (!rankString) return '';
       return rankString.replace(/ lvl \d+/i, '').trim();
   };
 
+  // --- RENDER LOGIC ---
   return (
     <div className="min-h-screen bg-gray-100 py-10 px-5 pt-28 flex justify-center items-center">
       <div className="bg-white w-full max-w-7xl p-8 md:p-12 rounded-xl shadow-sm">
@@ -171,7 +181,7 @@ const EditProfilePage = ({ user }) => {
             <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-gray-100">
               {formData.image ? (
                 <img
-                  src={getImageSrc()}
+                  src={getImageSrc} // Use memoized value
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -207,7 +217,7 @@ const EditProfilePage = ({ user }) => {
 
             <div>
               <label className="text-gray-600 text-lg mb-1 block">Rank’s</label>
-              <div className="flex items-center gap-2 justify-center">
+              <div className="flex items-center gap-2 justify-center"> {/* Retained original justify-center */}
                 <div className="relative flex items-center justify-center text-white">
                   <FaCertificate className="text-slate-900 text-4xl" />
                   <span className="absolute font-bold text-xs">{getRankLevel(displayUser.rank)}</span>
@@ -241,7 +251,7 @@ const EditProfilePage = ({ user }) => {
             <div className="relative">
               <div 
                 className="w-full border border-gray-300 rounded-md px-4 py-2 bg-white min-h-[46px] flex flex-wrap items-center gap-2 cursor-pointer"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)} // Retained original toggle logic
               >
                 {selectedCategories.map((item) => (
                     <div 
@@ -252,7 +262,7 @@ const EditProfilePage = ({ user }) => {
                         {item.name.trim()}
                         <FaTimes 
                           className="cursor-pointer hover:text-red-500 ml-1" 
-                          onClick={() => handleRemoveCategory(item.category_id)}
+                          onClick={() => handleRemoveCategory(item.category_id)} // Retained original onClick logic
                         />
                     </div>
                 ))}

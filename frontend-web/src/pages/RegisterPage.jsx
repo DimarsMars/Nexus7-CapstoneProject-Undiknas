@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useAuth } from '../context/AuthContext';
 import backgroundLogin from '../assets/images/backgroundLogin.jpg';
 import logoJourneysPutih from '../assets/images/logoJourneysPutih.png';
-import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const RegisterPage = () => {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -18,9 +20,17 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+
+    const { email, password, username, confirmPassword } = formData;
+
     if (password !== confirmPassword) {
       return setError("Passwords do not match.");
     }
@@ -35,7 +45,6 @@ const RegisterPage = () => {
     } catch (err) {
       const errorMessage = err.response?.data?.error?.message || err.message || "An unexpected error occurred.";
       setError(errorMessage.replace(/_/g, ' '));
-      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -49,12 +58,12 @@ const RegisterPage = () => {
           <img src={backgroundLogin} alt="background" className='w-full h-full object-cover' />
           <div className="absolute inset-0 bg-black/30"></div>
           <div className='absolute inset-0 flex flex-col justify-center items-center text-white'>
-            <img src={logoJourneysPutih} alt="logoJourneys" className='w-xl h-auto' />
+            <img src={logoJourneysPutih} alt="Journeys Logo" className='w-xl h-auto' />
             <p className='text-3xl mt-5'>Your travelling friends</p>
           </div>
         </div>
 
-       <div className="flex-1 flex items-center justify-center px-10">
+        <div className="flex-1 flex items-center justify-center px-10">
           <form onSubmit={handleRegister} className="w-full h-full py-16 flex flex-col justify-between">
             <div>
               <h2 className="text-4xl font-bold mb-8 text-center">Register</h2> 
@@ -65,9 +74,10 @@ const RegisterPage = () => {
                 <label className="block mb-1">Email</label>
                 <input
                   type="email"
+                  name="email"
                   placeholder='email'
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   required
                   className="w-full border rounded-lg px-3 py-2"
                 />
@@ -77,23 +87,24 @@ const RegisterPage = () => {
                 <label className="block mb-1">Username</label>
                 <input
                   type="text"
+                  name="username"
                   placeholder='username'
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={formData.username}
+                  onChange={handleChange}
                   required
                   className="w-full border rounded-lg px-3 py-2"
                 />
               </div>
 
-{/* INPUT PASSWORD */}
               <div className="mb-4">
                 <label className="block mb-1">Password</label>
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
+                    name="password"
                     placeholder='password'
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={handleChange}
                     required
                     className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400"
                   />
@@ -107,15 +118,15 @@ const RegisterPage = () => {
                 </div>
               </div>
 
-              {/* INPUT CONFIRM PASSWORD */}
               <div className="mb-4">
                 <label className="block mb-1">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
                     placeholder='confirm password'
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
                     required
                     className="w-full border rounded-lg px-3 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-400"
                   />
@@ -139,16 +150,15 @@ const RegisterPage = () => {
 
               <div className="flex justify-center gap-1 mt-4 text-sm">
                 <span className="text-gray-600">Have an account?</span>
-                <a href="/login" className="text-blue-600 hover:underline">Login</a>
+                <Link to="/login" className="text-blue-600 hover:underline">Login</Link>
               </div>
             </div>
 
           </form>
         </div>
-
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default RegisterPage;

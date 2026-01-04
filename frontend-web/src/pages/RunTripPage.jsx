@@ -2,14 +2,14 @@ import L from 'leaflet';
 import 'leaflet-routing-machine';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import 'leaflet/dist/leaflet.css';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaChevronLeft } from "react-icons/fa";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { useNavigate, useParams } from 'react-router-dom';
 import LocationRouteCard from '../components/LocationRouteCard';
 import apiService from '../services/apiService';
 
-// --- KONFIGURASI ICON MARKER ---
+// --- LEAFLET ICON CONFIGURATION ---
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
 import iconMarker from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -25,7 +25,6 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Icon Khusus untuk Posisi User (Titik Biru misal)
 const UserIcon = L.divIcon({
     className: 'custom-user-icon',
     html: `<div style="background-color: #3b82f6; width: 15px; height: 15px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
@@ -33,43 +32,42 @@ const UserIcon = L.divIcon({
     iconAnchor: [10, 10]
 });
 
-// --- PATCH UNTUK LEAFLET ROUTING MACHINE ---
+// --- LEAFLET ROUTING MACHINE PATCH ---
+// This patch prevents errors that can occur during hot-reloads or component re-renders in React.
 try {
-  // 1. PATCH CLEANUP (Mencegah error 'removeLayer')
   const originalClearLines = L.Routing.Control.prototype._clearLines;
   L.Routing.Control.prototype._clearLines = function() {
-    try {
-      originalClearLines.call(this);
-    } catch (e) {
-      // Diamkan error jika gagal hapus garis
+    if (this._map) { // Check if map exists
+      try {
+        originalClearLines.call(this);
+      } catch (e) {
+        // Suppress 'removeLayer' errors if the layer is already gone
+      }
     }
   };
 
-  // 2. PATCH DRAWING (Mencegah error 'addLayer')
   const originalRouteDone = L.Routing.Control.prototype._routeDone;
   L.Routing.Control.prototype._routeDone = function(response, inputWaypoints, options) {
-    if (!this._map) {
+    if (!this._map) { // Check if map exists before drawing
         return; 
     }
-
     try {
       originalRouteDone.call(this, response, inputWaypoints, options);
     } catch (e) {
+        // Suppress 'addLayer' errors
     }
   };
-
 } catch (e) {
-  console.error("Gagal menerapkan patch pada Leaflet Routing Machine");
+  console.error("Failed to apply patch to Leaflet Routing Machine:", e);
 }
 
-
-// --- KOMPONEN ROUTING MACHINE ---
+// --- ROUTING MACHINE COMPONENT ---
 const RoutingMachine = ({ userLocation, destination, onRouteFound }) => {
   const map = useMap();
   const routingControlRef = useRef(null);
 
   useEffect(() => {
-    if (!map) return;
+    if (!map || !userLocation || !destination) return;
 
     if (routingControlRef.current) {
         try { map.removeControl(routingControlRef.current); } catch(e) {}
@@ -92,18 +90,12 @@ const RoutingMachine = ({ userLocation, destination, onRouteFound }) => {
       router: L.Routing.osrmv1({
          serviceUrl: 'https://router.project-osrm.org/route/v1'
       })
-    });
-
-    control.on('routingerror', function(e) {
-       // Suppress routing errors
-    });
-
-    control.addTo(map);
-    routingControlRef.current = control;
-
-    const handleRoutesFound = (e) => {
-        const summary = e.routes[0].summary;
-        if (onRouteFound) {
+    })
+    .on('routingerror', (e) => { /* Suppress routing errors */ })
+    .on('routesfound', (e) => {
+        if (e.routes && e.routes[0]) {
+            const summary = e.routes[0].summary;
+            // Use setTimeout to ensure the state update doesn't conflict with the render cycle.
             setTimeout(() => {
                 onRouteFound({
                     distance: (summary.totalDistance / 1000).toFixed(1) + ' km',
@@ -111,144 +103,111 @@ const RoutingMachine = ({ userLocation, destination, onRouteFound }) => {
                 });
             }, 0);
         }
-    };
+    })
+    .addTo(map);
 
-    control.on('routesfound', handleRoutesFound);
+    routingControlRef.current = control;
 
     return () => {
         if (map && routingControlRef.current) {
-            try {
-                map.removeControl(routingControlRef.current);
-            } catch (error) {}
-            routingControlRef.current = null;
+            try { map.removeControl(routingControlRef.current); } catch (error) {}
         }
     };
-  }, [map, userLocation.lat, userLocation.lng, destination.lat, destination.lng]);
+  }, [map, userLocation, destination, onRouteFound]);
 
   return null;
 };
 
-// --- KOMPONEN UTAMA ---
+// --- MAIN PAGE COMPONENT ---
 const RunTripPage = () => {
+  // 1. HOOKS
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // 1. STATE DATA TRIP & BOOKMARKS
+  // 2. STATE MANAGEMENT
   const [tripRoute, setTripRoute] = useState([]);
+  const [bookmarks, setBookmarks] = useState(new Map());
+  const [tripSession, setTripSession] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
+  const [routeSummary, setRouteSummary] = useState({ distance: '...', time: '...' });
+  
+  // UI/Loading States
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [bookmarks, setBookmarks] = useState(new Map()); 
-  const [isBookmarking, setIsBookmarking] = useState(false);
-  
-  // State baru untuk loading tombol Verify
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
 
-  // Fetch plan and bookmarks in parallel
+  // 3. DERIVED STATE
+  const currentDestination = tripRoute[0];
+  const allLocations = tripRoute;
+
+  // 4. DATA FETCHING & GEOLOCATION
   useEffect(() => {
     const fetchInitialData = async () => {
+        if (!id) return;
+
         try {
             setIsLoading(true);
-            const [planRes, bookmarksRes] = await Promise.all([
+            const [planRes, bookmarksRes, activeTripsRes] = await Promise.all([
                 apiService.getPlanForRunTrip(id),
-                apiService.getBookmarkRoute()
+                apiService.getBookmarkRoute(),
+                apiService.getActiveTrip()
             ]);
 
-            if (planRes.data && planRes.data.routes) {
-  const completedSteps = planRes.data.completed_steps || [];
+            // Process plan data
+            if (planRes.data?.routes) {
+                const completedSteps = planRes.data.completed_steps || [];
+                const formattedRoutes = planRes.data.routes
+                    .filter(route => !completedSteps.includes(route.step_order))
+                    .map(route => ({
+                        id: route.route_id,
+                        title: route.title,
+                        category: route.description,
+                        lat: route.latitude,
+                        lng: route.longitude,
+                        image: route.image ? `data:image/jpeg;base64,${route.image}` : "https://via.placeholder.com/150",
+                        address: route.address,
+                        step_order: route.step_order,
+                    }));
+                setTripRoute(formattedRoutes);
+            }
 
-  const formattedRoutes = planRes.data.routes
-    .filter(route => !completedSteps.includes(route.step_order)) // ✅ FILTER
-    .map(route => ({
-      id: route.route_id,
-      title: route.title,
-      category: route.description,
-      lat: route.latitude,
-      lng: route.longitude,
-      image: route.image
-        ? `data:image/jpeg;base64,${route.image}`
-        : "https://via.placeholder.com/150",
-      address: route.address,
-      step_order: route.step_order,
-    }));
+            // Process bookmarks data
+            if (bookmarksRes.data) {
+                const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
+                const bookmarkMap = new Map();
+                bookmarkList.forEach(item => bookmarkMap.set(item.route_id, item.bookmark_id));
+                setBookmarks(bookmarkMap);
+            }
 
-  setTripRoute(formattedRoutes);
-}
-
-        if (bookmarksRes.data) {
-            const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
-            const bookmarkMap = new Map();
-            bookmarkList.forEach(item => {
-                bookmarkMap.set(item.route_id, item.bookmark_id);
-            });
-            setBookmarks(bookmarkMap);
+            // Process active trip session
+            if (activeTripsRes.data) {
+                const session = activeTripsRes.data.find(s => s.Plan?.plan_id === parseInt(id));
+                setTripSession(session || null);
             }
         } catch (err) {
             setError("Failed to fetch trip data.");
-            console.error(err);
+            console.error("Initial data fetch error:", err);
         } finally {
             setIsLoading(false);
         }
     };
-
-    if (id) {
-        fetchInitialData();
-    }
+    fetchInitialData();
   }, [id]);
-
-  // 🔥 AMBIL STATUS TRIP SESSION DARI DATABASE
-useEffect(() => {
-  const fetchTripSession = async () => {
-    try {
-      const res = await apiService.getActiveTrip();
-
-      if (res.data) {
-        const session = res.data.find(
-          (s) => s.Plan?.plan_id === parseInt(id)
-        );
-        setTripSession(session || null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch trip session", err);
-    }
-  };
-
-  fetchTripSession();
-}, [id]);
-
-
-
-  // 2. STATE UNTUK NAVIGASI
-  const [userLocation, setUserLocation] = useState(null);
-  const [routeSummary, setRouteSummary] = useState({ distance: '...', time: '...' });
-  const [tripSession, setTripSession] = useState(null);
-  
-
-  // Ambil lokasi tujuan saat ini berdasarkan index
-  const currentDestination = tripRoute[0];
-
-  // 3. DETEKSI LOKASI USER (GEOLOCATION)
-
- useEffect(() => {
-  if (currentDestination?.id) {
-    fetchTripSession(); // ✅ Refresh session untuk lokasi baru
-  }
-}, [currentDestination?.id]);
 
   useEffect(() => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
+      alert("Geolocation is not supported by your browser.");
       return;
     }
 
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
       },
       (error) => {
         console.error("Error getting location:", error);
-        // Lokasi default (Denpasar) jika error agar tidak crash
-        setUserLocation({ lat: -8.6500, lng: 115.2167 });
+        setUserLocation({ lat: -8.6500, lng: 115.2167 }); // Default to Denpasar on error
       },
       { enableHighAccuracy: true }
     );
@@ -256,126 +215,80 @@ useEffect(() => {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // 4. HANDLER TOMBOL (UPDATED: VERIFIKASI LOKASI)
- const handleArrived = async () => {
-  if (!userLocation) {
-    alert("Menunggu sinyal GPS...");
-    return;
-  }
-
-  setIsVerifying(true);
-
-  try {
-    const payload = {
-      latitude: userLocation.lat,
-      longitude: userLocation.lng,
-      step_order: currentDestination.step_order,
-    };
-
-    const response = await apiService.postPlanVerifyLocation(id, payload);
-
-    if (response.data?.error) {
-      const jarak = response.data.distance_km
-        ? `${response.data.distance_km.toFixed(2)} km`
-        : "-";
-      alert(`${response.data.error}\nJarak Anda: ${jarak}`);
-      return;
+  // 5. EVENT HANDLERS
+  const handleArrived = useCallback(async () => {
+    if (!userLocation || !currentDestination) {
+        alert("Waiting for GPS signal or destination data...");
+        return;
     }
 
-    alert(`Berhasil sampai di ${currentDestination.title}!`);
+    setIsVerifying(true);
+    try {
+        const payload = {
+            latitude: userLocation.lat,
+            longitude: userLocation.lng,
+            step_order: currentDestination.step_order,
+        };
+        const response = await apiService.postPlanVerifyLocation(id, payload);
 
-    // ✅ Hapus lokasi yang selesai
-    const updatedRoutes = tripRoute.filter(
-      r => r.step_order !== currentDestination.step_order
-    );
+        if (response.data?.error) {
+            const distance = response.data.distance_km ? `${response.data.distance_km.toFixed(2)} km` : "-";
+            alert(`${response.data.error}\nYour distance: ${distance}`);
+            return;
+        }
 
-    if (updatedRoutes.length === 0) {
-      alert("🎉 Selamat! Anda telah menyelesaikan seluruh perjalanan!");
-      navigate("/myprofile");
-    } else {
-      setTripRoute(updatedRoutes);
+        alert(`Successfully arrived at ${currentDestination.title}!`);
 
-      const nextRoute = updatedRoutes[0];
+        const updatedRoutes = tripRoute.filter(r => r.step_order !== currentDestination.step_order);
 
-      // ✅ Langsung START session untuk rute berikutnya
-      const res = await apiService.postTripSessionAction(id, {
-        action: "start",
-        route_id: nextRoute.id,
-      });
-
-      setTripSession(res.data?.data || {
-        route_id: nextRoute.id,
-        status: "ongoing",
-      });
-
-      alert(`Trip berikutnya dimulai: ${nextRoute.title}`);
+        if (updatedRoutes.length === 0) {
+            alert("🎉 Congratulations! You have completed the entire trip!");
+            navigate("/myprofile");
+        } else {
+            setTripRoute(updatedRoutes);
+            const nextRoute = updatedRoutes[0];
+            
+            // Start the session for the next route
+            const res = await apiService.postTripSessionAction(id, { action: "start", route_id: nextRoute.id });
+            setTripSession(res.data?.data || { route_id: nextRoute.id, status: "ongoing" });
+            alert(`Next trip started: ${nextRoute.title}`);
+        }
+    } catch (error) {
+        const msg = error.response?.data?.error || "Failed to verify location.";
+        alert(msg);
+    } finally {
+        setIsVerifying(false);
     }
-  } catch (error) {
-    const msg =
-      error.response?.data?.error || "Gagal memverifikasi lokasi.";
-    alert(msg);
-  } finally {
-    setIsVerifying(false);
-  }
-};
+  }, [id, userLocation, currentDestination, tripRoute, navigate]);
 
+  const handlePause = useCallback(async () => {
+    if (!currentDestination) return;
 
-const handlePause = async () => {
-  if (!currentDestination) return;
+    try {
+        const isSessionForCurrentRoute = tripSession?.route_id === currentDestination.id;
+        
+        // If no active session for this specific route, start one.
+        if (!tripSession || !isSessionForCurrentRoute) {
+            const res = await apiService.postTripSessionAction(id, { action: "start", route_id: currentDestination.id });
+            setTripSession(res.data?.data);
+            alert("Trip started");
+            return;
+        }
 
-  try {
-    const sessionIsForCurrentRoute = tripSession?.route_id === currentDestination.id;
+        // Otherwise, toggle pause/resume.
+        const isPaused = tripSession.status === "paused";
+        const action = isPaused ? "resume" : "pause";
+        await apiService.postTripSessionAction(id, { action, route_id: currentDestination.id });
 
-    if (!tripSession || !sessionIsForCurrentRoute) {
-      const res = await apiService.postTripSessionAction(id, {
-        action: "start",
-        route_id: currentDestination.id,
-      });
-
-      setTripSession(res.data?.data);
-      alert("Trip started");
-      return;
+        setTripSession(prev => ({ ...prev, status: isPaused ? "ongoing" : "paused" }));
+        alert(isPaused ? "Navigation Resumed" : "Navigation Paused");
+    } catch (error) {
+        console.error("Trip session action error:", error);
+        alert("Failed to perform trip action.");
     }
+  }, [id, currentDestination, tripSession]);
 
-    const isPaused = tripSession.status === "paused";
-    const action = isPaused ? "resume" : "pause";
-
-    await apiService.postTripSessionAction(id, {
-      action,
-      route_id: currentDestination.id,
-    });
-
-    setTripSession(prev => ({
-      ...prev,
-      status: isPaused ? "ongoing" : "paused",
-    }));
-
-    alert(isPaused ? "Navigation Resumed" : "Navigation Paused");
-  } catch (error) {
-    console.error("Trip session error:", error);
-    alert("Gagal menjalankan aksi trip session.");
-  }
-};
-
-
-const fetchTripSession = async () => {
-  try {
-    const res = await apiService.getActiveTrip();
-
-    if (res.data) {
-      const session = res.data.find(
-        (s) => s.Plan?.plan_id === parseInt(id)
-      );
-      setTripSession(session || null);
-    }
-  } catch (err) {
-    console.error("Failed to fetch trip session", err);
-  }
-};
-
-
-
-  const handleBookmark = async (routeId) => {
+  const handleBookmark = useCallback(async (routeId) => {
     if (isBookmarking) return;
     setIsBookmarking(true);
 
@@ -392,16 +305,15 @@ const fetchTripSession = async () => {
                 return newMap;
             });
         } else {
-            await apiService.postBookmarkRoute(routeId);
+            const res = await apiService.postBookmarkRoute(routeId);
             alert("Added to bookmarks!");
+            // Refetch is safer to get the new bookmark_id
             const bookmarksRes = await apiService.getBookmarkRoute();
             if (bookmarksRes.data) {
                 const bookmarkList = Array.isArray(bookmarksRes.data) ? bookmarksRes.data : (bookmarksRes.data.data || []);
-                const bookmarkMap = new Map();
-                bookmarkList.forEach(item => {
-                    bookmarkMap.set(item.route_id, item.bookmark_id);
-                });
-                setBookmarks(bookmarkMap);
+                const newMap = new Map();
+                bookmarkList.forEach(item => newMap.set(item.route_id, item.bookmark_id));
+                setBookmarks(newMap);
             }
         }
     } catch (error) {
@@ -411,8 +323,9 @@ const fetchTripSession = async () => {
     } finally {
         setIsBookmarking(false);
     }
-  };
+  }, [isBookmarking, bookmarks]);
 
+  // 6. RENDER LOGIC
   if (isLoading) {
     return <div className="h-screen flex items-center justify-center">Loading Trip...</div>;
   }
@@ -425,10 +338,10 @@ const fetchTripSession = async () => {
     return <div className="h-screen flex items-center justify-center">Looking for GPS signal...</div>;
   }
   
-  if (tripRoute.length === 0) {
+  if (tripRoute.length === 0 && !isLoading) { // Check isLoading to prevent flash of this screen
       return (
         <div className="h-screen flex flex-col items-center justify-center">
-          <p>This trip has no routes.</p>
+          <p>This trip has no routes remaining or has ended.</p>
           <button onClick={() => navigate(-1)} className="mt-4 bg-slate-800 text-white px-4 py-2 rounded-lg">
             Go Back
           </button>
@@ -436,15 +349,11 @@ const fetchTripSession = async () => {
     );
   }
 
-  
-
-  const allLocations = tripRoute;
-
-    return (
+  return (
         <div className="min-h-screen bg-gray-100 flex items-start justify-center py-10 pt-28 px-4 font-sans">
             <div className="w-full max-w-7xl flex flex-col gap-6 relative">
                 
-                {/* === SECTION 1: MAP & INFO CARD === */}
+                {/* === MAP & INFO CARD === */}
                 <div className="relative">
                     <div className="absolute top-4 left-4 z-400">
                         <button onClick={() => navigate(-1)} className="bg-white p-2 rounded-full shadow-md text-slate-800 hover:bg-gray-50">
@@ -452,7 +361,6 @@ const fetchTripSession = async () => {
                         </button>
                     </div>
 
-                    {/* MAP CONTAINER */}
                     <div className="h-[50vh] w-full rounded-xl shadow-md overflow-hidden z-0 border border-slate-200">
                         <MapContainer 
                             center={[userLocation.lat, userLocation.lng]} 
@@ -461,7 +369,6 @@ const fetchTripSession = async () => {
                             zoomControl={false}
                         >
                             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            
                             <Marker position={[userLocation.lat, userLocation.lng]} icon={UserIcon} />
                             
                             {currentDestination && (
@@ -471,18 +378,16 @@ const fetchTripSession = async () => {
                             )}
 
                           {currentDestination && (
-                        <RoutingMachine 
-                            key={currentDestination.id} // ✅ ini penting
-                            userLocation={userLocation} 
-                            destination={currentDestination}
-                            onRouteFound={setRouteSummary}
-                        />
-                        )}
-
+                                <RoutingMachine 
+                                    key={currentDestination.id} // Re-mounts component when destination changes
+                                    userLocation={userLocation} 
+                                    destination={currentDestination}
+                                    onRouteFound={setRouteSummary}
+                                />
+                            )}
                         </MapContainer>
                     </div>
 
-                    {/* INFO CARD (OVERLAY) */}
                     <div className="absolute bottom-1 left-0 w-full px-4 md:px-8 z-400">
                         <div className="bg-white rounded-xl shadow-lg p-5 border border-slate-100">
                             <div className="flex flex-col gap-1">
@@ -502,13 +407,13 @@ const fetchTripSession = async () => {
 
                 <div className="h-6"></div>
 
-                {/* === SECTION 2: ACTION BUTTONS === */}
+                {/* === ACTION BUTTONS === */}
                 <div className="flex justify-center gap-4">
                     <button 
                         onClick={handleArrived}
-                        disabled={isVerifying}
+                        disabled={isVerifying || !currentDestination}
                         className={`flex-1 text-white py-3 rounded-lg font-bold shadow-md transition ${
-                            isVerifying 
+                            (isVerifying || !currentDestination)
                             ? 'bg-slate-500 cursor-not-allowed' 
                             : 'bg-slate-800 hover:bg-slate-700'
                         }`}
@@ -516,15 +421,15 @@ const fetchTripSession = async () => {
                         {isVerifying ? "Verifying..." : "Arrived!"}
                     </button>
                     <button 
-                        onClick={() => handlePause()}
-                        className="flex-1 bg-white text-slate-800 border border-slate-200 py-3 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition"
-                        >
+                        onClick={handlePause}
+                        disabled={!currentDestination}
+                        className="flex-1 bg-white text-slate-800 border border-slate-200 py-3 rounded-lg font-bold shadow-sm hover:bg-gray-50 transition disabled:bg-slate-200 disabled:cursor-not-allowed"
+                    >
                         {tripSession?.status === "paused" ? "Resume" : "Pause"}
                     </button>
-
                 </div>
 
-                {/* === SECTION 3: TRIP ITINERARY === */}
+                {/* === TRIP ITINERARY === */}
                 <div>
                     <h3 className="text-slate-700 font-bold mb-3">Trip Itinerary</h3>
                     <div className="flex flex-col gap-3">
@@ -553,7 +458,6 @@ const fetchTripSession = async () => {
                         )}
                     </div>
                 </div>
-
             </div>
         </div>
     );

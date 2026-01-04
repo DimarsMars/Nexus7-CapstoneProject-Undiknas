@@ -27,12 +27,7 @@ useEffect(() => {
       try {
         const response = await apiService.getTravellersByCategory();
         
-        let rawData = [];
-        if (response.data && Array.isArray(response.data.data)) {
-            rawData = response.data.data;
-        } else if (Array.isArray(response.data)) {
-            rawData = response.data;
-        }
+        const rawData = Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
 
         const userMap = new Map();
 
@@ -108,7 +103,7 @@ useEffect(() => {
         </div>
 
         <div className="mb-12">
-            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-6">
+            <h2 className="text-lg md::text-xl font-bold text-gray-800 mb-6">
                 Most Active Traveller
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-5">
@@ -119,7 +114,6 @@ useEffect(() => {
                         className="cursor-pointer"
                     >
                       <TravellerCard 
-                          key={person.user_id}
                           userId={person.user_id}
                           image={person.photo}
                           name={person.username}
