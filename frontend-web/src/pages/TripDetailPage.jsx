@@ -72,7 +72,7 @@ const ReviewModal = ({ isOpen, onClose, planId, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={handleClose}>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-500 p-4" onClick={handleClose}>
       <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <textarea
           className="w-full border border-slate-300 rounded-lg p-4 text-gray-700 focus:outline-none focus:border-slate-800 resize-none h-40 placeholder-gray-400"

@@ -73,7 +73,7 @@ const AddReviewModal = ({ isOpen, onClose, routeId, onSubmitSuccess }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-500 p-4" onClick={onClose}>
             <div className="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-[#1e293b]">Add Review</h3>
