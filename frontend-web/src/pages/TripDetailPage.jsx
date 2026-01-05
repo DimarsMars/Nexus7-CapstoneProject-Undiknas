@@ -156,7 +156,12 @@ const TripDetailPage = () => {
 
   const handleSubmitReview = useCallback(async (reviewData) => {
     const response = await apiService.postReviewTrip(reviewData);
-    alert(response.message || "Review submitted successfully!");
+    await Swal.fire({
+      title: 'Success',
+      text: response.message || "Ulasan Anda telah berhasil dikirim",
+      icon: 'success',
+      confirmButtonColor: '#1e293b',
+    });
     // Optional: could add logic here to refetch trip data to show new average rating
   }, []);
 
