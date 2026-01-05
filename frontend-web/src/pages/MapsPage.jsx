@@ -212,20 +212,25 @@ const MapsPage = () => {
 
   // --- Fungsi untuk mengirimkan seluruh data rute (Plan) ke server via API ---
   const handlePostRoute = async () => {
-    if (!title) return 
-    Swal.fire({
+    if (!title) {
+      Swal.fire({
         title: 'Judul Diperlukan',
-        text: 'Silakan berikan judul untuk rencana perjalanan (plan) Anda sebelum menyimpannya.',
+        text: 'Silakan berikan judul untuk rencana perjalanan Anda sebelum menyimpannya.',
         icon: 'warning',
         confirmButtonColor: '#1e293b',
-    });
-    if (currentRouteWaypoints.length === 0) return 
+      });
+      return; // Berhenti di sini jika judul kosong
+    }
+
+    if (currentRouteWaypoints.length === 0) {
     Swal.fire({
         title: 'Rute Belum Ditambahkan',
         text: 'Anda belum menentukan titik lokasi pada peta. Silakan cari lokasi atau klik pada peta, lalu tekan tombol "Add Route" minimal satu kali.',
         icon: 'warning',
         confirmButtonColor: '#1e293b',
     });
+      return; // Berhenti di sini jika tidak ada waypoint
+    }
 
     const formData = new FormData();
     formData.append('title', title);
