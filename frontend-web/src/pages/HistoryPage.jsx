@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'; // Mengimpor hooks int
 import { FaArrowRight, FaHeart, FaTrash } from "react-icons/fa"; // Mengimpor ikon dari font-awesome
 import { useNavigate } from 'react-router-dom'; // Mengimpor hook untuk navigasi antar halaman
 
+import Swal from 'sweetalert2'; // Mengimpor SweetAlert2 untuk notifikasi pop-up
+
 // Mengimpor komponen kartu kustom untuk berbagai kategori trip
 import FavoriteCard from '../components/FavoriteCard';
 import PastTripCard from '../components/PastTripCard';
@@ -63,53 +65,130 @@ const HistoryPage = () => {
 
     // Fungsi untuk menghapus satu item riwayat perjalanan berdasarkan progressId
     const handleDeleteHistory = useCallback(async (progressId) => {
-        const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus riwayat perjalanan ini?");
-        if (!isConfirmed) return;
+        const result = await Swal.fire({
+            title: 'Hapus Riwayat?',
+            text: "Data perjalanan ini akan dihapus permanen dari riwayat Anda.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1e293b',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal',
+        });
+        // Jika user menekan tombol "Batal", hentikan proses
+        if (!result.isConfirmed) return;
 
         try {
             await apiService.deletePastTripPlan(progressId);
             // Memperbarui state secara lokal untuk menghapus item dari tampilan
             setPastTrips((prev) => prev.filter((trip) => trip.progress_id !== progressId));
-            alert("Riwayat perjalanan berhasil dihapus.");
+            // Menampilkan Pop-up Sukses
+            Swal.fire({
+                title: 'Terhapus!',
+                text: 'Riwayat perjalanan berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
         } catch (error) {
             console.error("Gagal menghapus history:", error);
-            alert("Gagal menghapus data. Silakan coba lagi.");
+            // Menampilkan Pop-up Gagal
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan. Silakan coba beberapa saat lagi.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+            });
         }
     }, []);
 
     // Fungsi untuk menghapus seluruh daftar favorit secara massal menggunakan Promise.all
     const handleRemoveAllFavorites = useCallback(async () => {
-        const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus SEMUA favorit Anda?");
-        if (!isConfirmed) return;
+        // Munculkan Pop-up Konfirmasi
+        const result = await Swal.fire({
+            title: 'Hapus Semua Favorit?',
+            text: "Seluruh daftar perjalanan favorit Anda akan dikosongkan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1e293b',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus Semua!',
+            cancelButtonText: 'Batal',
+        });
+        // Jika user membatalkan, berhenti di sini
+        if (!result.isConfirmed) return;
+
         try {
             // Memetakan semua item favorit ke dalam array promise untuk dihapus sekaligus
             const deletePromises = favoriteTrips.map(trip => removeFavorite(trip.favorite_id));
             await Promise.all(deletePromises);
-            alert("Semua favorit berhasil dihapus.");
+            // Menampilkan Feedback Sukses
+            Swal.fire({
+                title: 'Berhasil!',
+                text: 'Daftar favorit Anda telah dikosongkan.',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
         } catch (error) {
             console.error("Gagal menghapus semua favorit:", error);
+
+            // Menampilkan Feedback Gagal
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat menghapus data.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+            });
         }
     }, [favoriteTrips, removeFavorite]);
 
     // Fungsi untuk membatalkan semua perjalanan yang sedang aktif secara massal
     const handleCancelTripNow = useCallback(async () => {
         if (activeTrips.length === 0) {
-            alert("Tidak ada trip aktif.");
+            Swal.fire({
+                title: 'Info',
+                text: 'Tidak ada perjalanan aktif yang bisa dibatalkan.',
+                icon: 'info',
+                confirmButtonColor: '#1e293b',
+            });
             return;
         }
-        const isConfirmed = window.confirm("Yakin ingin membatalkan semua trip yang sedang berjalan?");
-        if (!isConfirmed) return;
+        // Konfirmasi Pembatalan
+        const result = await Swal.fire({
+            title: 'Batalkan Semua Trip?',
+            text: "Seluruh perjalanan yang sedang berjalan akan dihentikan paksa!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1e293b',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Batalkan Semua!',
+            cancelButtonText: 'Batal',
+        });
+        // Jika user menekan "Batal", berhenti di sini
+        if (!result.isConfirmed) return;
 
         try {
             // Mengirim request pembatalan ke API untuk setiap session trip aktif
             await Promise.all(
                 activeTrips.map(trip => apiService.cancelTripSessions(trip.Plan.plan_id))
             );
-            alert("Semua trip berhasil dibatalkan.");
+
             setActiveTrips([]); // Mengosongkan state trip aktif
+            // Feedback Sukses
+            Swal.fire({
+                title: 'Berhasil Dibatalkan',
+                text: 'Semua sesi perjalanan Anda telah dihentikan.',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
         } catch (error) {
             console.error("Gagal cancel trip:", error);
-            alert("Gagal membatalkan trip.");
+            // Feedback Gagal
+            Swal.fire({
+                title: 'Gagal Membatalkan',
+                text: 'Terjadi kesalahan sistem. Silakan coba lagi.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+            });
         }
     }, [activeTrips]);
 

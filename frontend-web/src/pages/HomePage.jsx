@@ -27,7 +27,34 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-gray-100 py-10 pt-28 px-5">
             <HeroSection plans={plans} />
+            <div className="max-w-7xl mx-auto pb-15">
+              <h2 className="text-3xl font-bold text-center text-black mb-10">Newest Plans</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {plans && plans.slice(0, 3).map((plan, index) => (
+                    <TripCard
+                    key={plan.plan_id}
+                    id={plan.plan_id}
+                    title={plan.title}
+                    author={plan.author_name || "Unknown Author"}
+                    rating={plan.rating} 
+                    image={`data:image/jpeg;base64,${plan.banner}`}
+                    className={
+                        index === 0
+                        ? "md:col-span-2 h-64 md:h-80" 
+                        : "h-64"                       
+                    }
+                    onClick={() => handleCardClick(plan.plan_id)}
+                    />
+                ))}
+                </div>
+
+                <div className="text-right mt-4">
+                    <a href="/explore" className="text-gray-600 text-sm font-semibold hover:underline">See More</a>
+                </div>
+            </div>
+
             <div className="max-w-7xl mx-auto pb-25">
+              <h2 className="text-3xl font-bold text-center text-black mb-10">Plans by your Personalisation</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {plans && plans.slice(0, 3).map((plan, index) => (
                     <TripCard
