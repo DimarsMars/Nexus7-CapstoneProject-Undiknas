@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../models/plan_model.dart';
+import '../../models/plan_rating.dart';
 import '../../services/api_service.dart';
 
 class PlanOpenedScreen extends StatefulWidget {
@@ -18,14 +18,20 @@ class PlanOpenedScreen extends StatefulWidget {
 class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
-
-  PlanModel? _plan;
+  bool _isFavorite = false;
+  PlanModelRating? _plan;
   bool _isLoading = true;
+  int? _favoriteId;
 
   @override
   void initState() {
     super.initState();
-    _loadPlan();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    await _loadPlan();
+    await _loadFavoriteStatus();
   }
 
   Future<void> _loadPlan() async {
@@ -39,6 +45,14 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
     });
   }
 
+  Future<void> _loadFavoriteStatus() async {
+    final favId = await ApiService().getFavoriteIdForPlan(widget.planId);
+    setState(() {
+      _favoriteId = favId;
+      _isFavorite = favId != null;
+    });
+  }
+
   @override
   void dispose() {
     _reviewController.dispose();
@@ -46,140 +60,232 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
   }
 
   void _showRateTripModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
-              backgroundColor: Colors.white,
-              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+  final rootContext = context; // Simpan context asli PlanOpenedScreen
+
+  showDialog(
+    context: rootContext,
+    barrierDismissible: true,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return Dialog(
+  backgroundColor: Colors.white,
+  insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(20),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(24),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Review Text Field
-                    TextField(
-                      controller: _reviewController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Write a Review...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4A5B7A),
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+            ],
+          ),
+          child: TextField(
+            controller: _reviewController,
+            maxLines: 5,
+            decoration: InputDecoration(
+              hintText: 'Write a Review...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.all(18),
+            ),
+          ),
+        ),
 
-                    // Star Rating and Add Review Button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Star Rating
-                        Row(
-                          children: List.generate(5, (index) {
-                            return GestureDetector(
-                              onTap: () {
-                                setModalState(() {
-                                  _rating = index + 1;
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 4),
-                                child: Icon(
-                                  Icons.star,
-                                  size: 32,
-                                  color: index < _rating
-                                      ? Colors.amber
-                                      : Colors.grey[300],
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
 
-                        // Add Review Button
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_reviewController.text.isNotEmpty &&
-                                _rating > 0) {
-                              // TODO: Submit review
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Review submitted successfully!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              _reviewController.clear();
-                              setState(() {
-                                _rating = 0;
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: List.generate(5, (index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setModalState(() {
+                                _rating = index + 1;
                               });
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: Icon(
+                                Icons.star,
+                                size: 32,
+                                color: index < _rating
+                                    ? Colors.amber
+                                    : Colors.grey[300],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (_reviewController.text.isNotEmpty && _rating > 0) {
+                            final success = await ApiService().submitTripReview(
+                              widget.planId,
+                              _rating,
+                              _reviewController.text.trim(),
+                            );
+                            if (success) {
+                              Navigator.of(context).pop(); // Tutup dialog
+                              await Future.delayed(Duration(milliseconds: 100));
+                              Navigator.of(rootContext).pop(true); // Tutup screen
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please add a review and rating'),
+                                  content: Text('Failed to submit review.'),
                                   backgroundColor: Colors.red,
                                 ),
                               );
                             }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A5B7A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add review',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please add a review and rating'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4A5B7A),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                        child: const Text(
+                          'Add review',
+                          style:
+                              TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+void _showReportConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.redAccent,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Report Trip?",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A5F),
                 ),
               ),
-            );
-          },
-        );
-      },
-    );
-  }
+              const SizedBox(height: 12),
+              const Text(
+                "Are you sure you want to report this trip?",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.black87,
+                        side: BorderSide(color: Colors.grey.shade300),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        _handleReportTrip(); // Trigger action
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text("Yes, Report"),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+void _handleReportTrip() async {
+  // TODO: Ganti ini jika kamu punya API report
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text("Trip has been reported."),
+      backgroundColor: Colors.red,
+    ),
+  );
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -200,9 +306,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
     final tripTitle = _plan!.title;
     final double rating = _plan!.rating;
     final String description = _plan!.description;
-    final List<String> tags = _plan!.categories
-        .map((category) => '#${category['name']}')
-        .toList();
+    final List<String> tags =
+        _plan!.categories.map((c) => '#${c['name']}').toList();
 
     Uint8List? bannerBytes;
     if (_plan!.bannerBase64.isNotEmpty) {
@@ -218,7 +323,6 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header with back button and title
             Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
@@ -236,11 +340,8 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      Icons.chevron_left,
-                      size: 32,
-                      color: Colors.black,
-                    ),
+                    child: const Icon(Icons.chevron_left,
+                        size: 32, color: Colors.black),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -256,16 +357,11 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                 ],
               ),
             ),
-
-            // Scrollable content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-
-                    // Main image card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: Container(
@@ -283,26 +379,21 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Image
                             if (bannerBytes != null)
-                              ClipRRect(
-                                borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(20),
-                                  topRight: Radius.circular(20),
-                                ),
-                                child: Image.memory(
-                                  bannerBytes,
-                                  height: 260,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                             ClipRRect(
+  borderRadius: BorderRadius.circular(20), // <-- Ujung gambar jadi membulat semua
+  child: Image.memory(
+    bannerBytes,
+    height: 260,
+    width: double.infinity,
+    fit: BoxFit.cover,
+  ),
+),
                             Padding(
                               padding: const EdgeInsets.all(20.0),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Title and Rate button
                                   Row(
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
@@ -317,22 +408,20 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                             Text(
                                               tripTitle,
                                               style: const TextStyle(
-                                                fontSize: 22,
-                                                fontWeight: FontWeight.bold,
-                                              ),
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold),
                                             ),
                                             const SizedBox(height: 8),
-                                            Row(
-                                              children: List.generate(5, (index) {
-                                                return Icon(
-                                                  Icons.star,
-                                                  size: 24,
-                                                  color: index < rating
-                                                      ? Colors.amber
-                                                      : Colors.grey[300],
-                                                );
-                                              }),
-                                            ),
+                                       Row(
+  children: List.generate(5, (index) {
+    return Icon(
+      Icons.star,
+      size: 24,
+      color: index < rating ? Colors.amber : Colors.white,
+    );
+  }),
+),
+
                                           ],
                                         ),
                                       ),
@@ -345,239 +434,246 @@ class _PlanOpenedScreenState extends State<PlanOpenedScreen> {
                                           foregroundColor: Colors.white,
                                           elevation: 0,
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 20,
-                                            vertical: 12,
-                                          ),
+                                              horizontal: 20, vertical: 12),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
                                         ),
-                                        child: const Text(
-                                          'Rate trip',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
+                                        child: const Text('Rate trip',
+                                            style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600)),
                                       ),
                                     ],
                                   ),
                                   const SizedBox(height: 16),
+Row(
+  crossAxisAlignment: CrossAxisAlignment.center,
+  children: [
+    // Set Trip button
+    SizedBox(
+      height: 34,
+      child: ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF1E3A5F),
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          minimumSize: const Size(0, 34),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const Text(
+          'Set Trip',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
 
-                                  // Action buttons
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor:
-                                                const Color(0xFF1E3A5F),
-                                            foregroundColor: Colors.white,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Set Trip',
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () {},
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: Colors.red,
-                                            foregroundColor: Colors.white,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(
-                                                vertical: 12),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Report',
-                                            style: TextStyle(
-                                              fontSize: 15,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(
-                                            color: Colors.grey[300]!,
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                        child: IconButton(
-                                          onPressed: () {},
-                                          icon: const Icon(
-                                              Icons.bookmark_border),
-                                          color: Colors.black,
-                                          iconSize: 22,
-                                          padding: const EdgeInsets.all(8),
-                                          constraints:
-                                              const BoxConstraints(),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+    const SizedBox(width: 8),
+
+    // Report button
+    SizedBox(
+      height: 34,
+      child: ElevatedButton(
+        onPressed: _showReportConfirmation,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          minimumSize: const Size(0, 34),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        child: const Text(
+          'Report',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ),
+
+    // Spacer untuk dorong icon ke kanan
+    const Spacer(),
+
+    // Favorite icon
+    SizedBox(
+      width: 40,
+      height: 40,
+      child: IconButton(
+        onPressed: () async {
+          if (_isFavorite && _favoriteId != null) {
+            final success = await ApiService().removeFavorite(_favoriteId!);
+            if (success) {
+              setState(() {
+                _isFavorite = false;
+                _favoriteId = null;
+              });
+            }
+          } else {
+            final success = await ApiService().addFavorite(widget.planId);
+            if (success) {
+              await _loadFavoriteStatus();
+            }
+          }
+        },
+        icon: Icon(
+          _isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: _isFavorite ? Colors.red : Colors.black,
+          size: 24,
+        ),
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+      ),
+    ),
+  ],
+),
+
                                   const SizedBox(height: 16),
-
-                                  // Tags
                                   Wrap(
                                     spacing: 8,
                                     runSpacing: 8,
                                     children: tags.map((tag) {
                                       return Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
+                                            horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
                                           color: Colors.grey[200],
                                           borderRadius:
                                               BorderRadius.circular(8),
                                         ),
-                                        child: Text(
-                                          tag,
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey[700],
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+                                        child: Text(tag,
+                                            style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[700],
+                                                fontWeight: FontWeight.w500)),
                                       );
                                     }).toList(),
                                   ),
                                   const SizedBox(height: 16),
-
-                                  // Description
-                                  Text(
-                                    description,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[700],
-                                      height: 1.5,
-                                    ),
+                                  Text(description,
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                          height: 1.5)),
+                                  const SizedBox(height: 24),
+                                  Column(
+                                    children: activities.map((activity) {
+                                      return GestureDetector(
+                                        onTap: () => context
+                                            .push('/place-detail', extra: {
+                                          'routeId': activity.routeId,
+                                        }),
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(bottom: 16),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            border: Border.all(
+                                                color: Colors.grey[200]!),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black
+                                                    .withOpacity(0.04),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              if (activity.imageBase64
+                                                  .isNotEmpty)
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                    topLeft:
+                                                        Radius.circular(16),
+                                                    bottomLeft:
+                                                        Radius.circular(16),
+                                                  ),
+                                                  child: Image.memory(
+                                                    base64Decode(activity
+                                                        .imageBase64),
+                                                    width: 100,
+                                                    height: 100,
+                                                    fit: BoxFit.cover,
+                                                  ),
+                                                ),
+                                              const SizedBox(width: 16),
+                                              Expanded(
+                                                child: Padding(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(vertical: 16),
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(activity.title,
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 18,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold)),
+                                                      const SizedBox(
+                                                          height: 6),
+                                                      Text(
+                                                          activity.description,
+                                                          style: TextStyle(
+                                                              fontSize: 13,
+                                                              color: Colors
+                                                                  .grey[600])),
+                                                      Row(
+                                                        children: [
+                                                          const Icon(
+                                                              Icons.location_on,
+                                                              size: 16,
+                                                              color:
+                                                                  Colors.grey),
+                                                          const SizedBox(
+                                                              width: 4),
+                                                          Expanded(
+                                                            child: Text(
+                                                                activity
+                                                                    .address,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        13,
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        500])),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 16),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
                                   ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Activities list
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Column(
-                        children: activities.map((activity) {
-                          return GestureDetector(
-                            onTap: () =>
-                                context.push('/place-detail'), // route detail
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Colors.grey[200]!,
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.04),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  if (activity.imageBase64.isNotEmpty)
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(16),
-                                        bottomLeft: Radius.circular(16),
-                                      ),
-                                      child: Image.memory(
-                                        base64Decode(activity.imageBase64),
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  const SizedBox(width: 16),
-                                  // Activity details
-                                  Expanded(
-  child: Padding(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          activity.title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          activity.description,
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey[600],
-          ),
-        ),
-       Row(
-  children: [
-    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-    const SizedBox(width: 4),
-    Expanded(
-      child: Text(
-        activity.address,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey[500],
-        ),
-      ),
-    ),
-  ],
-),
-
-      ],
-    ),
-  ),
-),
-
-                                  const SizedBox(width: 16),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
                       ),
                     ),
                     const SizedBox(height: 32),

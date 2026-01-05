@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:journeys/services/api_service.dart';
 import '../../../models/traveller_recomen_model.dart';
 import '../../../models/most_active_traveller_model.dart';
@@ -14,10 +15,11 @@ class TravellerScreen extends StatefulWidget {
 }
 
 class _TravellerScreenState extends State<TravellerScreen> {
-  final Set<String> _followedTravellers = {};
+  // ⬅️ WAJIB: pakai userId
+  final Map<int, bool> _followedTravellers = {};
+
   List<TravellerRecommendationModel> youMayLike = [];
   List<MostActiveTravellerModel> mostActiveTravellers = [];
-
   bool isLoading = true;
 
   @override
@@ -27,194 +29,172 @@ class _TravellerScreenState extends State<TravellerScreen> {
   }
 
   Future<void> _loadRecommendations() async {
-  try {
-    final result = await ApiService().getCategoryTravellers();
-    final mostActiveResult = await ApiService().getMostActiveTravellers(); // <- tambah ini
-    setState(() {
-      youMayLike = result;
-      mostActiveTravellers = mostActiveResult; // <- dan ini
-      isLoading = false;
-    });
-  } catch (e) {
-    setState(() => isLoading = false);
-  }
-}
+    try {
+      final result = await ApiService().getCategoryTravellers();
+      final mostActiveResult = await ApiService().getMostActiveTravellers();
 
+      // ambil status follow dari backend
+      for (var t in result) {
+        final status = await ApiService().isFollowing(t.user.userId);
+        _followedTravellers[t.user.userId] = status;
+      }
+
+      for (var t in mostActiveResult) {
+        final status = await ApiService().isFollowing(t.userId);
+        _followedTravellers[t.userId] = status;
+      }
+
+      setState(() {
+        youMayLike = result;
+        mostActiveTravellers = mostActiveResult;
+        isLoading = false;
+      });
+    } catch (_) {
+      setState(() => isLoading = false);
+    }
+  }
+
+  // ⬅️ LOGIKA FOLLOW / UNFOLLOW ASLI
+  Future<void> _toggleFollow(int userId) async {
+    final isFollowed = _followedTravellers[userId] ?? false;
+
+    try {
+      if (isFollowed) {
+        await ApiService().unfollowUser(userId);
+      } else {
+        await ApiService().followUser(userId);
+      }
+
+      setState(() {
+        _followedTravellers[userId] = !isFollowed;
+      });
+    } catch (e) {
+      debugPrint('Follow error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, String>> mostActive = [
-      {'name': 'Jackson', 'title': 'Traveller', 'image': 'assets/icons/jackson.jpg'},
-      {'name': 'Bob', 'title': 'Map Maker', 'image': 'assets/icons/bob.jpg'},
-      {'name': 'Maria', 'title': 'Blogger', 'image': 'assets/icons/maria_alice.jpg'},
-    ];
-
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFE9EBEE),
       body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Search Bar
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Find traveller...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 15,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey[400],
-                      size: 22,
-                    ),
+                    hintStyle: GoogleFonts.poppins(color: Colors.grey),
+                    prefixIcon: const Icon(Icons.search, color: Colors.grey),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                 ),
               ),
             ),
 
-            // Back Button and Title
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.go('/home'),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.chevron_left,
-                        size: 28,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'You may like (Categories #)',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Content
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // You may like section
+                    const SizedBox(height: 8),
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: Row(
+    children: [
+      GestureDetector(
+        onTap: () => context.go('/home'), // <- Arahkan balik ke Home
+        child: const Icon(Icons.arrow_back, color: Color(0xFF1B263B)),
+      ),
+      const SizedBox(width: 8),
+      Text(
+        'You may like (category)',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF1B263B),
+        ),
+      ),
+    ],
+  ),
+),
+                    const SizedBox(height: 20),
+
+                    // YOU MAY LIKE
                     SizedBox(
-                      height: 240,
+                      height: 260,
                       child: isLoading
                           ? const Center(child: CircularProgressIndicator())
                           : ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
                               itemCount: youMayLike.length,
                               itemBuilder: (context, index) {
                                 final traveller = youMayLike[index].user;
-                                final name = traveller.username;
-                                final title = traveller.role;
-
-                               dynamic imageData;
-                                if (traveller.photoBase64.isNotEmpty) {
-                                  final clean = traveller.photoBase64.split(',').last;
-                                  imageData = base64Decode(clean);
-                                } else {
-                                  imageData = 'assets/icons/profile.jpg'; // Gambar dummy kamu
-                                }
-
-
                                 return _buildTravellerCard(
-                                  name: name,
-                                  title: title,
-                                  imageUrl: imageData,
-                                  isFollowed: _followedTravellers.contains(name),
+                                  userId: traveller.userId,
+                                  name: traveller.username,
+                                  title: traveller.role,
+                                  photoBase64: traveller.photoBase64,
+                                  isFollowed: _followedTravellers[traveller.userId] ?? false,
                                 );
                               },
                             ),
                     ),
+
                     const SizedBox(height: 32),
 
-                    // Most Active Traveller Header
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Text(
-                        'Most Active Traveller',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Most Active section
-                   SizedBox(
-  height: 240,
-  child: isLoading
-      ? const Center(child: CircularProgressIndicator())
-      : ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          itemCount: mostActiveTravellers.length,
-          itemBuilder: (context, index) {
-            final traveller = mostActiveTravellers[index];
-            final name = traveller.username;
-            final title = traveller.role;
-
-            dynamic imageData;
-            if (traveller.photoBase64.isNotEmpty) {
-              final clean = traveller.photoBase64.split(',').last;
-              imageData = base64Decode(clean);
-            } else {
-              imageData = 'assets/icons/profile.jpg';
-            }
-
-            return _buildTravellerCard(
-              name: name,
-              title: title,
-              imageUrl: imageData,
-              isFollowed: _followedTravellers.contains(name),
-            );
-          },
-        ),
+ Padding(
+  padding: const EdgeInsets.fromLTRB(48, 0, 16, 0), // <- 48 untuk menyamakan dengan ikon panah
+  child: Align(
+    alignment: Alignment.centerLeft,
+    child: Text(
+      'Most Active Traveller',
+      style: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF1B263B),
+      ),
+    ),
+  ),
 ),
+                    const SizedBox(height: 20),
 
+                    // MOST ACTIVE
+                    SizedBox(
+                      height: 260,
+                      child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              itemCount: mostActiveTravellers.length,
+                              itemBuilder: (context, index) {
+                                final traveller = mostActiveTravellers[index];
+                                return _buildTravellerCard(
+                                  userId: traveller.userId,
+                                  name: traveller.username,
+                                  title: traveller.role,
+                                  photoBase64: traveller.photoBase64,
+                                  isFollowed: _followedTravellers[traveller.userId] ?? false,
+                                );
+                              },
+                            ),
+                    ),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -226,106 +206,86 @@ class _TravellerScreenState extends State<TravellerScreen> {
     );
   }
 
+  // ================= CARD =================
   Widget _buildTravellerCard({
+    required int userId,
     required String name,
     required String title,
-    required dynamic imageUrl,
+    required String photoBase64,
     required bool isFollowed,
   }) {
-    Image imageWidget;
-
-    if (imageUrl is Uint8List) {
-      imageWidget = Image.memory(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
-    } else if (imageUrl is String) {
-      imageWidget = Image.asset(imageUrl, width: 80, height: 80, fit: BoxFit.cover);
-    } else {
-      imageWidget = Image.asset('assets/icons/default_avatar.png', width: 80, height: 80);
+    Widget imageWidget;
+    try {
+      imageWidget = photoBase64.isNotEmpty
+          ? Image.memory(base64Decode(photoBase64.split(',').last), fit: BoxFit.cover)
+          : Image.asset('assets/icons/profile.jpg', fit: BoxFit.cover);
+    } catch (_) {
+      imageWidget = Image.asset('assets/icons/profile.jpg', fit: BoxFit.cover);
     }
 
     return GestureDetector(
-      onTap: () => context.push('/traveller-detail', extra: name),
+     onTap: () async {
+  await context.push('/traveller-detail', extra: {'userId': userId});
+  _loadRecommendations(); // refresh data setelah kembali
+},
+
       child: Container(
-        width: 160,
-        margin: const EdgeInsets.only(right: 16),
+        width: 155,
+        margin: const EdgeInsets.only(right: 16, bottom: 20, top: 5),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: imageWidget,
-              ),
-            ),
+CircleAvatar(
+  radius: 42,
+  backgroundColor: Colors.grey[200],
+  backgroundImage: photoBase64.isNotEmpty
+      ? MemoryImage(base64Decode(photoBase64.split(',').last))
+      : null,
+  child: photoBase64.isEmpty
+      ? const Icon(
+          Icons.person,
+          size: 42,
+          color: Colors.grey,
+        )
+      : null,
+),
+
             const SizedBox(height: 12),
-            Text(
-              name,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (_followedTravellers.contains(name)) {
-                    _followedTravellers.remove(name);
-                  } else {
-                    _followedTravellers.add(name);
-                  }
-                });
-              },
+            Text(name, style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+            Text(title, style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 32,
+              width: 100,
+              child: ElevatedButton(
+                onPressed: () => _toggleFollow(userId),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isFollowed ? Colors.grey[400] : const Color(0xFF1E3A5F),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                isFollowed ? 'Followed' : 'Follow',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+  backgroundColor: isFollowed ? Colors.grey[300] : const Color(0xFF1B263B),
+  foregroundColor: isFollowed ? Colors.black : Colors.white,
+  elevation: 0,
+  padding: EdgeInsets.zero,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(8),
+  ),
+),
+
+                child: Text(
+                  isFollowed ? 'unfollow' : 'Follow',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
               ),
             ),
-            const SizedBox(height: 16),
           ],
         ),
       ),

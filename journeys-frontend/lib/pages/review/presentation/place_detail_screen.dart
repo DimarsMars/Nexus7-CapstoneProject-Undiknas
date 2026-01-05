@@ -1,8 +1,18 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:journeys/services/api_service.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
+import '../../../models/place_detail.dart';
+import '../../../models/place_review.dart';
+
 class PlaceDetailScreen extends StatefulWidget {
-  const PlaceDetailScreen({super.key});
+  final int routeId;
+
+  const PlaceDetailScreen({super.key, required this.routeId});
 
   @override
   State<PlaceDetailScreen> createState() => _PlaceDetailScreenState();
@@ -13,6 +23,53 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
   final TextEditingController _reviewController = TextEditingController();
   int _rating = 0;
 
+  int? _bookmarkId;
+
+  PlaceDetail? _place;
+  List<PlaceReview> _reviews = [];
+  bool _isLoading = true;
+  bool _isBookmarked = false;
+  List<Uint8List> _selectedImages = [];
+  double _averageRating = 0;
+
+  final List<String> _dummyMorePictures = [
+    'assets/icons/review.jpg',
+    'assets/icons/review.jpg',
+    'assets/icons/review.jpg',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+ Future<void> _loadData() async {
+  try {
+    final place = await ApiService().getPlaceDetail(widget.routeId);
+    final reviews = await ApiService().getPlaceReviews(widget.routeId);
+    final bookmarkId = await ApiService().getBookmarkIdForRoute(widget.routeId);
+
+    double avg = 0;
+    if (reviews.isNotEmpty) {
+      avg = reviews.map((r) => r.rating).reduce((a, b) => a + b) / reviews.length;
+    }
+
+    setState(() {
+      _place = place;
+      _reviews = reviews;
+      _averageRating = avg;
+      _bookmarkId = bookmarkId;
+      _isBookmarked = bookmarkId != null;
+      _isLoading = false;
+    });
+  } catch (e) {
+    debugPrint("Error loading place detail: $e");
+    setState(() => _isLoading = false);
+  }
+}
+
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -20,567 +77,674 @@ class _PlaceDetailScreenState extends State<PlaceDetailScreen> {
     super.dispose();
   }
 
-  void _showAddReviewModal() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Dialog(
+  Future<void> _showAddReviewModal() async {
+  final result = await showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          return MediaQuery.removeViewInsets(
+            context: context,
+            removeBottom: true,
+            child: Dialog(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 600),
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Add Review',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Add Review',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(false);
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      if (_selectedImages.isNotEmpty)
+                        SizedBox(
+                          height: 90,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _selectedImages.length,
+                            itemBuilder: (context, index) {
+                              return Stack(
+                                children: [
+                                  Container(
+                                    width: 80,
+                                    height: 80,
+                                    margin: const EdgeInsets.only(right: 8),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      image: DecorationImage(
+                                        image: MemoryImage(_selectedImages[index]),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 4,
+                                    right: 4,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setModalState(() {
+                                          _selectedImages.removeAt(index);
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.black54,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(Icons.close,
+                                            size: 14, color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
-                        IconButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _reviewController.clear();
-                            setModalState(() {
-                              _rating = 0;
-                            });
-                          },
-                          icon: const Icon(Icons.close),
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
+                      if (_selectedImages.isNotEmpty)
+                        const SizedBox(height: 12),
+                      GestureDetector(
+                        onTap: () async {
+                          final picker = ImagePicker();
+                          final pickedFiles = await picker.pickMultiImage(imageQuality: 70);
+                          if (!mounted) return;
 
-                    // Add Image Button
-                    GestureDetector(
-                      onTap: () {
-                        // TODO: Implement image picker
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Image picker will be implemented'),
+                          if (pickedFiles.isNotEmpty) {
+                            final bytes = await Future.wait(
+                              pickedFiles.map((e) => e.readAsBytes()),
+                            );
+                            setModalState(() {
+                              _selectedImages.addAll(bytes);
+                            });
+                          }
+                        },
+                        child: Container(
+                          height: 150,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey[300]!,
+                              width: 2,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      },
-                      child: Container(
-                        height: 150,
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                            width: 2,
-                            style: BorderStyle.solid,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.add,
-                                size: 48,
-                                color: Colors.grey[400],
-                              ),
+                              Icon(Icons.add, size: 48, color: Colors.grey[400]),
                               const SizedBox(height: 8),
                               Text(
-                                'Add Image',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
-                                ),
+                                'Add Images',
+                                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
                               ),
                             ],
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Review Text Field
-                    TextField(
-                      controller: _reviewController,
-                      maxLines: 5,
-                      decoration: InputDecoration(
-                        hintText: 'Write a Review...',
-                        hintStyle: TextStyle(
-                          color: Colors.grey[400],
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _reviewController,
+                        maxLines: 5,
+                        decoration: InputDecoration(
+                          hintText: 'Write a Review...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
                           ),
+                          contentPadding: const EdgeInsets.all(16),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: Colors.grey[300]!,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: Color(0xFF4A5B7A),
-                            width: 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.all(16),
                       ),
-                    ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                   Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Wrap(
+                              spacing: 4,
+                              children: List.generate(5, (index) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    setModalState(() => _rating = index + 1);
+                                  },
+                                  child: Icon(
+                                    Icons.star,
+                                    size: 24, // Ukuran lebih kecil, tidak overflow
+                                    color: index < _rating ? Colors.amber : Colors.grey[300],
+                                  ),
+                                );
+                              }),
+                            ),
+                          ),
+                          ElevatedButton(
+                            onPressed: () async {
+                              if (_reviewController.text.isNotEmpty && _rating > 0) {
+                                final success = await ApiService().submitPlaceReview(
+                                  routeId: widget.routeId,
+                                  rating: _rating,
+                                  comment: _reviewController.text,
+                                  imageBytesList: _selectedImages,
+                                );
 
-                    // Star Rating
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: List.generate(5, (index) {
-                            return GestureDetector(
-                              onTap: () {
-                                setModalState(() {
-                                  _rating = index + 1;
-                                });
-                              },
-                              child: Icon(
-                                Icons.star,
-                                size: 32,
-                                color: index < _rating
-                                    ? Colors.amber
-                                    : Colors.grey[300],
-                              ),
-                            );
-                          }),
-                        ),
-                        // Add Review Button
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_reviewController.text.isNotEmpty && _rating > 0) {
-                              // TODO: Submit review
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Review submitted successfully!'),
-                                  backgroundColor: Colors.green,
-                                ),
-                              );
-                              _reviewController.clear();
-                              setState(() {
-                                _rating = 0;
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Please add a review and rating'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A5B7A),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                                _reviewController.clear();
+                                _selectedImages.clear();
+
+                                Navigator.of(context).pop(success);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Please add a review and rating')),
+                                );
+                              }
+                            },
+                            child: const Text('Add review'),
                           ),
-                          child: const Text(
-                            'Add review',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+
+                    ],
+                  ),
                 ),
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      );
+    },
+  );
+
+  if (!mounted) return;
+
+  if (result == true) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Review submitted successfully!')),
+    );
+    await _loadData();
+    setState(() => _rating = 0);
+  } else if (result == false) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Failed to submit review')),
     );
   }
+}
+
+
+
 
   @override
   Widget build(BuildContext context) {
-    final List<String> images = [
-      'assets/icons/serenity-oasis.jpg',
-      'assets/icons/serenity-oasis.jpg',
-      'assets/icons/serenity-oasis.jpg',
-    ];
-
-    final List<String> reviewImages = [
-      'assets/icons/picture_review1.jpg',
-      'assets/icons/picture_review2.jpg',
-      'assets/icons/picture_review3.jpg',
-    ];
+    final List<String> image =
+        _place != null && _place!.imageBase64.isNotEmpty
+            ? [_place!.imageBase64]
+            : ['assets/icons/serenity-oasis.jpg'];
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.grey[300]!,
-                    width: 1,
-                  ),
-                ),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Find a place...',
-                    hintStyle: TextStyle(
-                      color: Colors.grey[400],
-                      fontSize: 15,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.search,
-                      color: Colors.grey[400],
-                      size: 22,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title and Rating
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const Icon(
-                              Icons.chevron_left,
-                              size: 32,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'Serenity Oasis',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          Row(
-                            children: List.generate(5, (index) {
-                              return Icon(
-                                Icons.star,
-                                size: 20,
-                                color: index < 4
-                                    ? Colors.amber
-                                    : Colors.grey[300],
-                              );
-                            }),
-                          ),
-                        ],
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: const TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Find a place...',
+                          prefixIcon:
+                              Icon(Icons.search, color: Colors.grey),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Image Carousel
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Stack(
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            height: 280,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0),
+                            child: Row(
+                              children: [
+                                GestureDetector(
+                                  onTap: () =>
+                                      Navigator.of(context).pop(),
+                                  child: const Icon(Icons.chevron_left,
+                                      size: 32),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _place?.title ?? 'Place Name',
+                                    style: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Row(
+  children: List.generate(5, (index) {
+    return Icon(
+      Icons.star,
+      size: 20,
+      color: index < _averageRating.round()
+          ? Colors.amber
+          : Colors.grey[300],
+    );
+  }),
+),
+
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0),
+                            child: Stack(
+                              children: [
+                                Container(
+                                  height: 280,
+                                  decoration: BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                          color: Colors.black
+                                              .withOpacity(0.1),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4)),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius:
+                                        BorderRadius.circular(20),
+                                    child: PageView.builder(
+                                      controller: _pageController,
+                                      itemCount: image.length,
+                                      itemBuilder: (context, index) {
+                                        final img = image[index];
+                                        return img.startsWith('/') ||
+                                                img.length > 100
+                                            ? Image.memory(
+                                                base64Decode(img),
+                                                fit: BoxFit.cover)
+                                            : Image.asset(img,
+                                                fit: BoxFit.cover);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  bottom: 16,
+                                  left: 0,
+                                  right: 0,
+                                  child: Center(
+                                    child: SmoothPageIndicator(
+                                      controller: _pageController,
+                                      count: image.length,
+                                      effect: ScrollingDotsEffect(
+                                        activeDotColor:
+                                            const Color(0xFF1E3A5F),
+                                        dotColor: Colors.white
+                                            .withOpacity(0.5),
+                                        dotHeight: 8,
+                                        dotWidth: 8,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: PageView.builder(
-                                controller: _pageController,
-                                itemCount: images.length,
-                                itemBuilder: (context, index) {
-                                  return Image.asset(
-                                    images[index],
-                                    fit: BoxFit.cover,
+                          ),
+                          const SizedBox(height: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0),
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton(
+                                onPressed: _showAddReviewModal,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                      255, 74, 91, 122),
+                                  foregroundColor: Colors.white,
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 20, vertical: 12),
+                                  shape:
+                                      RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(10),
+                                  ),
+                                ),
+                                child: const Text('Add review',
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight:
+                                            FontWeight.w600)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0),
+                            child: Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                    "Review from the people's",
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight:
+                                            FontWeight.bold)),
+                                IconButton(
+                                  onPressed: () async {
+                                    if (_isBookmarked &&
+                                        _bookmarkId != null) {
+                                      final success =
+                                          await ApiService()
+                                              .removeBookmark(
+                                                  _bookmarkId!);
+                                      if (success) {
+                                        setState(() {
+                                          _isBookmarked = false;
+                                          _bookmarkId = null;
+                                        });
+                                      }
+                                    } else {
+                                      final success =
+                                          await ApiService()
+                                              .addBookmark(
+                                                  widget.routeId);
+                                      if (success) {
+                                        final newId = await ApiService()
+                                            .getBookmarkIdForRoute(
+                                                widget.routeId);
+                                        setState(() {
+                                          _isBookmarked = true;
+                                          _bookmarkId = newId;
+                                        });
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(
+                                    _isBookmarked
+                                        ? Icons.bookmark
+                                        : Icons.bookmark_border,
+                                    color: _isBookmarked
+                                        ? const Color.fromARGB(
+                                            255, 74, 91, 122)
+                                        : Colors.black,
+                                    size: 24,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_reviews.isNotEmpty)
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16),
+                              child: Row(
+                                children: _reviews.map((review) {
+                                  return Container(
+                                    width: 320,
+                                    margin:
+                                        const EdgeInsets.only(right: 16, bottom: 8),
+                                    padding:
+                                        const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius:
+                                          BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                            color: Colors.black
+                                                .withOpacity(0.05),
+                                            blurRadius: 8)
+                                      ],
+                                      border: Border.all(
+                                          color: Colors.grey[200]!),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            ClipRRect(
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                topLeft:
+                                                    Radius.circular(16),
+                                                bottomRight:
+                                                    Radius.circular(16),
+                                              ),
+                                              child: review.imageBase64List
+                                                      .isNotEmpty
+                                                  ? Image.memory(
+                                                      base64Decode(review
+                                                          .imageBase64List[0]),
+                                                      width: 100,
+                                                      height: 120,
+                                                      fit: BoxFit.contain)
+                                                  : Image.asset(
+                                                      'assets/icons/review.jpg',
+                                                      width: 100,
+                                                      height: 120,
+                                                      fit: BoxFit.contain),
+                                            ),
+                                            Expanded(
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(
+                                                        12),
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Row(
+                                                      children: List.generate(
+                                                          5, (starIndex) {
+                                                        return Icon(
+                                                          starIndex <
+                                                                  review.rating
+                                                              ? Icons.star
+                                                              : Icons
+                                                                  .star_border,
+                                                          size: 18,
+                                                          color: Colors.amber,
+                                                        );
+                                                      }),
+                                                    ),
+                                                    const SizedBox(
+                                                        height: 6),
+                                                    const Text('Review',
+                                                        style: TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold)),
+                                                    const SizedBox(
+                                                        height: 4),
+                                                    Container(
+                                                      height: 50,
+                                                      width:
+                                                          double.infinity,
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .all(6),
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color: Colors
+                                                                .grey[300]!),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(
+                                                                    8),
+                                                      ),
+                                                      child:
+                                                          SingleChildScrollView(
+                                                        child: Text(
+                                                          review.comment,
+                                                          style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors
+                                                                  .grey[
+                                                                      600]),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text(
+        'More picture from the reviews',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+      ),
+      const SizedBox(height: 8),
+      Builder(
+        builder: (context) {
+          final allImages = review.imageBase64List.skip(1).toList();
+          final previewImages = allImages.take(3).toList();
+          final hasMore = allImages.length > 3;
+
+          return Row(
+            children: [
+              ...previewImages.map((img) => Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: MemoryImage(base64Decode(img)),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  )),
+              if (hasMore) ...[
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.vertical(top: Radius.circular(20)),
+                      ),
+                      builder: (_) {
+                        return DraggableScrollableSheet(
+                          expand: false,
+                          initialChildSize: 0.6,
+                          minChildSize: 0.4,
+                          maxChildSize: 0.95,
+                          builder: (_, controller) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: GridView.builder(
+                                controller: controller,
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  mainAxisSpacing: 12,
+                                  crossAxisSpacing: 12,
+                                ),
+                                itemCount: allImages.length,
+                                itemBuilder: (_, index) {
+                                  final imageBytes =
+                                      base64Decode(allImages[index]);
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Image.memory(imageBytes,
+                                        fit: BoxFit.cover),
                                   );
                                 },
                               ),
-                            ),
-                          ),
-                          // Page Indicator
-                          Positioned(
-                            bottom: 16,
-                            left: 0,
-                            right: 0,
-                            child: Center(
-                              child: SmoothPageIndicator(
-                                controller: _pageController,
-                                count: images.length,
-                                effect: ScrollingDotsEffect(
-                                  activeDotColor: const Color(0xFF1E3A5F),
-                                  dotColor: Colors.white.withOpacity(0.5),
-                                  dotHeight: 8,
-                                  dotWidth: 8,
-                                  spacing: 8,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Add Review Button
-                          Positioned(
-                            bottom: 16,
-                            right: 16,
-                            child: ElevatedButton(
-                              onPressed: _showAddReviewModal,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF4A5B7A),
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text(
-                                'Add review',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  child: const Text(
+                    'See More Picture',
+                    style: TextStyle(
+                      fontSize: 10,
+                      decoration: TextDecoration.underline,
                     ),
-                    const SizedBox(height: 24),
-
-                    // Review Section Header
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Review from the people's",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () {},
-                            icon: const Icon(Icons.bookmark_border),
-                            iconSize: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Review Card
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey[200]!,
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Review Image
-                            ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                bottomLeft: Radius.circular(16),
-                              ),
-                              child: Image.asset(
-                                'assets/icons/review.jpg',
-                                width: 140,
-                                height: 180,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // Review Content
-                            Expanded(
-                              child: Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Stars
-                                    Row(
-                                      children: List.generate(5, (index) {
-                                        return const Icon(
-                                          Icons.star,
-                                          size: 20,
-                                          color: Colors.amber,
-                                        );
-                                      }),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    // Review Title
-                                    const Text(
-                                      'Review',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    // Review Text
-                                    Text(
-                                      'The Scenery is cute, the place is comfy, the people are very friendly. I came here with my family, and we feel very nice being here',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                        height: 1.4,
-                                      ),
-                                      maxLines: 5,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // More Pictures Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'More picture from the reviews',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {},
-                            style: TextButton.styleFrom(
-                              padding: EdgeInsets.zero,
-                              minimumSize: const Size(0, 0),
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            ),
-                            child: const Text(
-                              'See More Picture',
-                              style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 13,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Picture Grid
-                    SizedBox(
-                      height: 90,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        itemCount: reviewImages.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            width: 90,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                reviewImages[index],
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
+              ],
+            ],
+          );
+        },
+      ),
+    ],
+  ),
+),
+
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
