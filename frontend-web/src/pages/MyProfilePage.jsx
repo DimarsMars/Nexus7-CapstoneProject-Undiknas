@@ -283,7 +283,7 @@ const MyProfilePage = () => {
                                     id={trip.plan_id}
                                     title={trip.title}
                                     author={trip.author_name || "Unknown Author"}
-                                    rating={trip.rating || 5}
+                                    rating={trip.rating}
                                     image={getImageSrc(trip.banner)}
                                     // Membuat kartu pertama lebih besar di tampilan desktop
                                     className={index === 0 ? "h-56 md:col-span-2 md:h-72" : "h-56 md:h-60"}
