@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
 import 'package:journeys/models/traveller_profile_model.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class TravellerDetailScreen extends StatefulWidget {
   final int userId;
@@ -74,12 +75,12 @@ class _TravellerDetailScreenState extends State<TravellerDetailScreen> {
       }
     }
 
-return Scaffold(
+    return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leadingWidth: 120, // Menambah lebar agar teks "Back" muat
+        leadingWidth: 120,
         leading: InkWell(
           onTap: () => context.pop(),
           child: const Row(
@@ -129,14 +130,11 @@ return Scaffold(
                               as ImageProvider,
                     ),
                     const SizedBox(height: 16),
-
-                    // Label Name
                     const Text(
                       'Name',
                       style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 4),
-
                     Text(
                       profile!.username,
                       style: const TextStyle(
@@ -145,15 +143,11 @@ return Scaffold(
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Label Rank
                     const Text(
                       'Rank',
                       style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 4),
-
-                    // ✅ RANK DENGAN ICON (DIKEMBALIKAN)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -189,9 +183,7 @@ return Scaffold(
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -201,7 +193,6 @@ return Scaffold(
                       ],
                     ),
                     const SizedBox(height: 16),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -226,8 +217,76 @@ return Scaffold(
                           ),
                         ),
                         const SizedBox(width: 12),
+
+                        /// 🔴 TOMBOL REPORT (POPUP)
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) {
+                                return AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  contentPadding:
+                                      const EdgeInsets.fromLTRB(24, 24, 24, 16),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.warning_rounded,
+                                        color: Colors.red,
+                                        size: 48,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      const Text(
+                                        'Report User?',
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        'Are you sure you want to report this User?',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            color: Colors.black54),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: OutlinedButton(
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child: const Text('Cancel'),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: ElevatedButton(
+                                              style:
+                                                  ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                              ),
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                              child:
+                                                  const Text('Yes, Report'),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.red,
                             foregroundColor: Colors.white,
@@ -273,68 +332,75 @@ return Scaffold(
                     }
                   }
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      image: planImg != null
-                          ? DecorationImage(
-                              image: MemoryImage(planImg),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      final planId = plan['plan_id'];
+                      if (planId != null) {
+                        context.push('/plan-opened/$planId');
+                      }
+                    },
                     child: Container(
-  decoration: BoxDecoration(
-    borderRadius: BorderRadius.circular(10),
-    color: Colors.black.withOpacity(0.4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        image: planImg != null
+                            ? DecorationImage(
+                                image: MemoryImage(planImg),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          color: Colors.black.withOpacity(0.4),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                plan['title'] ?? '',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                             Text(
+  plan['author_name'] ?? 'Anonymous',
+  style: GoogleFonts.inter(
+    color: Colors.white.withOpacity(0.85),
+    fontSize: 11,
   ),
-  child: Padding(
-    padding: const EdgeInsets.all(8),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          plan['title'] ?? '',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'By ${plan['author_name'] ?? 'Unknown'}',
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-            fontStyle: FontStyle.italic,
-          ),
-        ),
-        const SizedBox(height: 4),
-Row(
-  children: List.generate(5, (i) {
-    return Icon(
-      Icons.star,
-      size: 14,
-      color: i < (plan['rating'] ?? 0)
-          ? Colors.amber
-          : Colors.white,
-    );
-  }),
 ),
-      ],
-    ),
-  ),
-),
-
+                              const SizedBox(height: 4),
+                              Row(
+                                children: List.generate(5, (i) {
+                                  return Icon(
+                                    Icons.star,
+                                    size: 14,
+                                    color: i < (plan['rating'] ?? 0)
+                                        ? Colors.amber
+                                        : Colors.white,
+                                  );
+                                }),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
