@@ -1,9 +1,14 @@
+// Mengimpor paket dasar Flutter dan material design
 import 'package:flutter/material.dart';
+// Mengimpor model data untuk riwayat perjalanan dan favorit
 import 'package:journeys/models/past_trip_model.dart';
 import 'package:journeys/models/favorite_trip_model.dart';
+// Mengimpor layanan API untuk komunikasi dengan server
 import 'package:journeys/services/api_service.dart';
+// Mengimpor paket untuk konversi data seperti base64
 import 'dart:convert';
 
+// Widget utama HistoryScreen sebagai StatefulWidget karena memiliki data yang dinamis
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -11,26 +16,30 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _MyHistoryScreen();
 }
 
+// State untuk mengelola logika dan data pada halaman History
 class _MyHistoryScreen extends State<HistoryScreen> {
+  // Inisialisasi layanan API
   final ApiService _apiService = ApiService();
-  
-  // State for Past Trips
+
+  // State untuk mengelola data Past Trips (Riwayat Perjalanan)
   List<PastTripModel> _pastTrips = [];
   bool _isLoadingPastTrips = true;
   String? _errorPastTrips;
 
-  // State for Favorite Trips
+  // State untuk mengelola data Favorite Trips (Perjalanan Favorit)
   List<FavoriteTripModel> _favoriteTrips = [];
   bool _isLoadingFavorites = true;
   String? _errorFavorites;
 
+  // Fungsi lifecycle yang dipanggil pertama kali saat halaman dimuat
   @override
   void initState() {
     super.initState();
-    _fetchPastTrips();
-    _fetchFavoriteTrips();
+    _fetchPastTrips(); // Mengambil data riwayat perjalanan
+    _fetchFavoriteTrips(); // Mengambil data favorit
   }
 
+  // Fungsi asinkron untuk mengambil data riwayat perjalanan dari API
   Future<void> _fetchPastTrips() async {
     try {
       if (!mounted) return;
@@ -55,7 +64,8 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     }
   }
 
-    Future<void> _fetchFavoriteTrips() async {
+  // Fungsi asinkron untuk mengambil data perjalanan favorit dari API
+  Future<void> _fetchFavoriteTrips() async {
     try {
       if (!mounted) return;
       setState(() {
@@ -79,6 +89,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     }
   }
 
+  // Menangani penghapusan item riwayat perjalanan dengan dialog konfirmasi
   Future<void> _handleDeleteHistory(int progressId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -101,7 +112,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     if (confirm == true) {
       try {
         await _apiService.deletePastTrip(progressId);
-        _fetchPastTrips(); // Refresh the list
+        _fetchPastTrips(); // Memperbarui daftar setelah dihapus
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip history deleted successfully')),
@@ -117,6 +128,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     }
   }
 
+  // Menangani penghapusan item dari daftar favorit
   Future<void> _handleRemoveFavorite(int favoriteId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -135,10 +147,11 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ],
       ),
     );
+
     if (confirm == true) {
       try {
         await _apiService.removeFavoriteTrip(favoriteId);
-        _fetchFavoriteTrips(); // Refresh the list
+        _fetchFavoriteTrips(); // Memperbarui daftar favorit
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Removed from favorites')),
@@ -154,8 +167,9 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     }
   }
 
+  // Menangani penghapusan seluruh daftar favorit sekaligus
   Future<void> _handleRemoveAllFavorites() async {
-     final confirm = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove All Favorites'),
@@ -172,43 +186,44 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ],
       ),
     );
-     if (confirm == true) {
-        try {
-          // Create a list of futures to delete each favorite
-          final List<Future> deleteFutures = _favoriteTrips.map((trip) {
-            return _apiService.removeFavoriteTrip(trip.favoriteId);
-          }).toList();
 
-          // Wait for all delete operations to complete
-          await Future.wait(deleteFutures);
+    if (confirm == true) {
+      try {
+        // Membuat daftar proses (Future) untuk menghapus tiap item favorit
+        final List<Future> deleteFutures = _favoriteTrips.map((trip) {
+          return _apiService.removeFavoriteTrip(trip.favoriteId);
+        }).toList();
 
-          _fetchFavoriteTrips(); // Refresh the list
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('All favorites have been removed')),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('An error occurred while removing favorites: $e')),
-            );
-          }
+        // Menjalankan semua proses penghapusan secara paralel
+        await Future.wait(deleteFutures);
+
+        _fetchFavoriteTrips(); // Memperbarui UI
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All favorites have been removed')),
+          );
         }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('An error occurred while removing favorites: $e')),
+          );
+        }
+      }
     }
   }
 
+  // Definisi konstanta warna untuk tema halaman
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
   static const Color _lightGreyText = Colors.black;
-
   static const Color _backgroundColor = Color(0xFFe9ebee);
 
+  // Widget builder utama untuk merender UI halaman
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -219,8 +234,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
           fontWeight: FontWeight.bold,
         ),
       ),
-
-
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
@@ -238,21 +251,21 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                 ),
               ],
             ),
-            
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- SECTION 1: YOUR TRIP NOW ---
+                  // --- SEKSI 1: PERJALANAN AKTIF SAAT INI ---
                   _buildSectionHeader('Your trip now', 'Cancel Trip'),
                   const SizedBox(height: 16),
                   _buildCurrentTripCard(),
 
                   const SizedBox(height: 32),
 
-                  // --- SECTION 2: FAVOURITES ---
-                  _buildSectionHeader('Favourites', 'Remove all', onPressed: _handleRemoveAllFavorites),
+                  // --- SEKSI 2: DAFTAR FAVORIT ---
+                  _buildSectionHeader('Favourites', 'Remove all',
+                      onPressed: _handleRemoveAllFavorites),
                   const SizedBox(height: 16),
                   _isLoadingFavorites
                       ? const Center(child: CircularProgressIndicator())
@@ -275,7 +288,9 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                                     return _buildTripCard(
                                       title: fav.plan.title,
                                       description: fav.plan.description,
-                                      location: fav.plan.routes.isNotEmpty ? fav.plan.routes.first.address : 'No location',
+                                      location: fav.plan.routes.isNotEmpty
+                                          ? fav.plan.routes.first.address
+                                          : 'No location',
                                       icon: Icons.favorite,
                                       banner: fav.plan.bannerBase64,
                                       onIconPressed: () => _handleRemoveFavorite(fav.favoriteId),
@@ -286,7 +301,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
 
                   const SizedBox(height: 32),
 
-                  // --- SECTION 3: YOUR PAST TRIP'S ---
+                  // --- SEKSI 3: RIWAYAT PERJALANAN MASA LALU ---
                   _buildSectionHeader('Your past trip\'s', 'Remove all'),
                   const SizedBox(height: 16),
                   _isLoadingPastTrips
@@ -310,7 +325,9 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                                     return _buildTripCard(
                                       title: trip.title,
                                       description: trip.description,
-                                      location: trip.routes.isNotEmpty ? trip.routes.first.address : 'No location',
+                                      location: trip.routes.isNotEmpty
+                                          ? trip.routes.first.address
+                                          : 'No location',
                                       icon: Icons.delete_outline,
                                       banner: trip.banner,
                                       onIconPressed: () => _handleDeleteHistory(trip.progressId),
@@ -318,21 +335,21 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                                     );
                                   },
                                 ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
+  // Widget Helper untuk membangun bagian Header setiap seksi
   Widget _buildSectionHeader(String title, String buttonText, {VoidCallback? onPressed}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Judul Section
         Text(
           title,
           style: const TextStyle(
@@ -341,7 +358,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             color: Color(0xFF1F3651),
           ),
         ),
-        // Tombol Aksi
         ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
@@ -359,12 +375,12 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     );
   }
 
+  // Widget Helper untuk membangun kartu perjalanan yang sedang berlangsung (hardcoded placeholder)
   Widget _buildCurrentTripCard() {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        // Style dari profile_screen.dart
         borderRadius: BorderRadius.circular(4.0),
         boxShadow: [
           BoxShadow(
@@ -390,7 +406,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
               size: 40,
             ),
           ),
-
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -426,7 +441,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Tombol Panah
           Container(
             decoration: BoxDecoration(
               color: _darkGrey,
@@ -434,8 +448,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             ),
             child: IconButton(
               onPressed: () {},
-              icon: const Icon(Icons.arrow_forward_ios,
-                  color: Colors.white, size: 16),
+              icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
             ),
           ),
         ],
@@ -443,7 +456,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     );
   }
 
-  /// Helper untuk kartu "Favourites" dan "Past Trip's"
+  // Widget Helper umum untuk membangun kartu daftar "Favourites" dan "Past Trips"
   Widget _buildTripCard({
     required String title,
     required String description,
@@ -479,8 +492,10 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                   ? Image.memory(
                       base64Decode(banner.split(',').last),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.grey,
+                          size: 40),
                     )
                   : const Icon(
                       Icons.image_not_supported_outlined,
@@ -490,7 +505,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Kolom Teks
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -528,7 +542,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Ikon (Bookmark/Delete)
           IconButton(
             onPressed: onIconPressed,
             icon: Icon(icon, color: iconColor ?? _darkGrey, size: 24),
@@ -538,4 +551,3 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     );
   }
 }
-

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaPlus, FaTimes } from "react-icons/fa";
+// Import komponen inti dari React Leaflet untuk integrasi peta
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
@@ -18,11 +19,9 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-// ================================================================================================
-// LEAFLET CONFIG & HELPER COMPONENTS
-// ================================================================================================
+// --- LEAFLET CONFIG & HELPER COMPONENTS ---
 
-// --- Leaflet Default Icon ---
+// --- Konfigurasi Ikon Default Leaflet agar marker muncul dengan benar di UI ---
 let DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
@@ -31,7 +30,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// --- Map Routing Machine Component ---
+// --- Komponen untuk menangani pembuatan garis rute (Polyline) di peta menggunakan Leaflet Routing Machine ---
 const RoutingMachine = ({ points }) => {
   const map = useMap();
   useEffect(() => {
@@ -55,7 +54,7 @@ const RoutingMachine = ({ points }) => {
   return null;
 };
 
-// --- Map View Updater Component ---
+// --- Komponen untuk melakukan transisi perpindahan pandangan peta (FlyTo) secara halus ---
 const MapUpdater = ({ center }) => {
   const map = useMap();
   useEffect(() => {
@@ -64,19 +63,16 @@ const MapUpdater = ({ center }) => {
   return null;
 };
 
-// --- Map Click Handler Component ---
+// --- Komponen untuk menangkap event klik pada peta agar bisa mendapatkan koordinat lat/lng ---
 const MapClickHandler = ({ onMapClick }) => {
     useMapEvents({ click: (e) => onMapClick(e.latlng) });
     return null;
 };
 
-
-// ================================================================================================
 // MAIN MAPS PAGE COMPONENT
-// ================================================================================================
 
 const MapsPage = () => {
-  // --- Hooks ---
+  // --- Hooks untuk navigasi dan akses data global dari Context ---
   const navigate = useNavigate();
   const { 
     fetchAllPlan, 
@@ -88,27 +84,26 @@ const MapsPage = () => {
     uploadWaypointImage
   } = useData(); 
   
-  // --- State Management ---
-  // Plan Details
+  // --- State Management: Form Detail Rencana Perjalanan ---
   const [title, setTitle] = useState("");
   const [planDescription, setPlanDescription] = useState("");
   const [status, setStatus] = useState("");
 
-  // Map Interaction (No longer includes waypoints state)
+  // --- State Management: Interaksi Peta dan Lokasi Preview ---
   const [mapCenter, setMapCenter] = useState([-8.5069, 115.2625]);
   const [previewLocation, setPreviewLocation] = useState(null); 
   const [whatAreYouDoing, setWhatAreYouDoing] = useState("");
   
-  // Search
+  // --- State Management: Pencarian Lokasi ---
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
-  // Categories
+  // --- State Management: Daftar Kategori dari Database ---
   const [categories, setCategories] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]); 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // --- Data Fetching ---
+  // --- Effect untuk mengambil daftar kategori saat pertama kali halaman dimuat ---
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -121,11 +116,9 @@ const MapsPage = () => {
     fetchCategories();
   }, []);
 
-  // ================================================================================================
-  // EVENT HANDLERS
-  // ================================================================================================
+  // --- EVENT HANDLERS ---
 
-  // --- Map & Search Handlers ---
+  // --- Fungsi untuk mencari koordinat berdasarkan teks input menggunakan ArcGIS Geocoding ---
   const handleSearch = async () => {
     if (!searchQuery) return;
     setIsSearching(true);
@@ -154,6 +147,7 @@ const MapsPage = () => {
     }
   };
 
+  // --- Fungsi untuk menangani klik pada peta dan melakukan Reverse Geocoding (Lat/Lng -> Alamat) ---
   const handleMapClick = async (latlng) => {
     const { lat, lng } = latlng;
     setPreviewLocation({ lat, lng, name: "Fetching address...", address: "Loading..." });
@@ -173,7 +167,7 @@ const MapsPage = () => {
     }
   };
 
-  // --- Waypoint & Route Handlers (Now using Context) ---
+  // --- Fungsi untuk menambahkan lokasi terpilih ke dalam daftar waypoint rute ---
   const handleAddRoute = () => {
     if (!previewLocation) {
         alert("Silakan cari atau klik lokasi di peta terlebih dahulu!");
@@ -185,7 +179,7 @@ const MapsPage = () => {
     setWhatAreYouDoing("");
   };
 
-  // --- Category Handlers ---
+  // --- Fungsi untuk menangani pemilihan kategori dari dropdown ---
   const handleSelectCategory = (category) => {
       if (!selectedCategories.some(c => c.category_id === category.category_id)) {
           setSelectedCategories([...selectedCategories, category]);
@@ -193,11 +187,12 @@ const MapsPage = () => {
       setIsDropdownOpen(false); 
   };
 
+  // --- Fungsi untuk menghapus kategori yang telah dipilih ---
   const handleRemoveCategory = (categoryId) => {
       setSelectedCategories(selectedCategories.filter(c => c.category_id !== categoryId));
   };
 
-  // --- Plan Submission Handler ---
+  // --- Fungsi untuk mengirimkan seluruh data rute (Plan) ke server via API ---
   const handlePostRoute = async () => {
     if (!title) return alert("Please add a title for your plan.");
     if (currentRouteWaypoints.length === 0) return alert("Please add at least one route point.");
@@ -207,6 +202,7 @@ const MapsPage = () => {
     formData.append('description', planDescription);
     formData.append('category_ids', selectedCategories.map(c => c.category_id).join(','));
 
+    // Menyiapkan data rute dalam format JSON untuk dikirim ke backend
     const routesData = currentRouteWaypoints.map((point, index) => {
       let imageBase64 = "";
       if (point.image) {
@@ -229,7 +225,7 @@ const MapsPage = () => {
       alert("Your plan has been created successfully!");
       await fetchAllPlan(true);
 
-      // Reset state
+      // Reset state form setelah berhasil post data
       setTitle("");
       setPlanDescription("");
       setSelectedCategories([]);
@@ -240,10 +236,9 @@ const MapsPage = () => {
     }
   };
 
-  // ================================================================================================
-  // RENDER LOGIC
-  // ================================================================================================
-  
+  // --- RENDER LOGIC ---
+
+  // Filter kategori agar tidak menampilkan yang sudah dipilih di dalam list dropdown
   const availableCategories = categories.filter(
       c => !selectedCategories.some(selected => selected.category_id === c.category_id)
   );
@@ -252,12 +247,12 @@ const MapsPage = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-10 pt-30 px-4 font-sans">
       <div className="w-full max-w-7xl flex flex-col gap-6">
         
-        {/* --- Header --- */}
+        {/* --- Bagian Header --- */}
         <div className="flex items-center gap-4 mb-2">
             <h1 className="text-xl font-bold text-black">Forge Your Route</h1>
         </div>
 
-        {/* --- Plan Details Form --- */}
+        {/* --- Formulir Detail Rencana (Judul, Deskripsi, Status) --- */}
         <div className="flex flex-col gap-3">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-11 flex items-center px-4">
             <input 
@@ -294,16 +289,19 @@ const MapsPage = () => {
           </div>
         </div>
 
-        {/* --- Map Display --- */}
+        {/* --- Tampilan Peta Interaktif menggunakan Leaflet --- */}
         <div className="relative w-full h-96 bg-slate-200 rounded-xl overflow-hidden shadow-sm border border-slate-300 z-0">
           <MapContainer center={mapCenter} zoom={13} className="h-full w-full" zoomControl={false}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            {/* Menampilkan rute antar waypoint jika tersedia */}
             <RoutingMachine points={currentRouteWaypoints} />
             
+            {/* Menampilkan marker permanen untuk setiap waypoint yang sudah ditambahkan */}
             {currentRouteWaypoints.map((point, idx) => (
                 <Marker key={idx} position={[point.lat, point.lng]}><Popup>{point.name}</Popup></Marker>
             ))}
             
+            {/* Menampilkan marker preview sementara saat mencari/klik peta */}
             {previewLocation && (
                 <Marker position={[previewLocation.lat, previewLocation.lng]} opacity={0.6}>
                     <Popup>Click 'Add Route' to confirm this location.</Popup>
@@ -315,7 +313,7 @@ const MapsPage = () => {
           </MapContainer>
         </div>
 
-        {/* --- Location Search & Add --- */}
+        {/* --- Input Pencarian Lokasi dan Deskripsi Aktivitas --- */}
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 h-12 flex items-center px-4">
             <input 
                 type="text" 
@@ -343,7 +341,7 @@ const MapsPage = () => {
             />
         </div>
 
-        {/* --- Action Buttons --- */}
+        {/* --- Tombol Aksi untuk Manajemen Rute dan Bookmark --- */}
         <div className="flex justify-center gap-4">
           <button 
             onClick={handleAddRoute}
@@ -356,12 +354,13 @@ const MapsPage = () => {
           </button>
         </div>
 
-        {/* --- Category Selector --- */}
+        {/* --- Sistem Pemilihan Kategori Tag --- */}
         <div className="relative">
           <div 
              className="bg-white rounded-lg shadow-sm border border-slate-200 min-h-11 flex flex-wrap items-center px-4 py-1 gap-2 cursor-pointer"
              onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
           >
+             {/* Render tag kategori yang sudah terpilih */}
              {selectedCategories.map((item) => (
                  <div 
                     key={item.category_id} 
@@ -384,6 +383,7 @@ const MapsPage = () => {
              </div>
           </div>
 
+          {/* Render List Dropdown Kategori */}
           {isDropdownOpen && (
             <div className="absolute top-full mt-1 left-0 w-full bg-white rounded-lg shadow-lg border border-slate-200 z-50 overflow-hidden">
                 <div className="max-h-60 overflow-y-auto">
@@ -406,7 +406,7 @@ const MapsPage = () => {
           )}
         </div>
 
-        {/* --- Waypoint List --- */}
+        {/* --- Daftar Lokasi (Waypoint) yang telah ditambahkan ke rute --- */}
         <div className="flex flex-col gap-4 mt-2">
             {currentRouteWaypoints.length === 0 ? (
                 <p className="text-center text-slate-400 text-sm">Belum ada lokasi yang ditambahkan.</p>
@@ -424,7 +424,7 @@ const MapsPage = () => {
             )}
         </div>
 
-        {/* --- Submit Button --- */}
+        {/* --- Tombol Final untuk mempublikasikan Rute ke server --- */}
         <div className="flex justify-center">
           <button 
             onClick={handlePostRoute}

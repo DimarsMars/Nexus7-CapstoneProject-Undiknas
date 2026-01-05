@@ -1,21 +1,32 @@
-import { useCallback, useEffect, useState } from 'react'; // Added useCallback
-import { FaArrowRight, FaHeart, FaTrash } from "react-icons/fa";
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react'; // Mengimpor hooks inti React
+import { FaArrowRight, FaHeart, FaTrash } from "react-icons/fa"; // Mengimpor ikon dari font-awesome
+import { useNavigate } from 'react-router-dom'; // Mengimpor hook untuk navigasi antar halaman
+
+// Mengimpor komponen kartu kustom untuk berbagai kategori trip
 import FavoriteCard from '../components/FavoriteCard';
 import PastTripCard from '../components/PastTripCard';
 import TripNowCard from '../components/TripNowCard';
+
+// Mengimpor data global dari context dan layanan API
 import { useData } from '../context/DataContext';
 import apiService from '../services/apiService';
 
 const HistoryPage = () => {
+    // Inisialisasi hook navigasi
     const navigate = useNavigate();
+
+    // Mengambil data favorit dan fungsi penghapusan dari DataContext
     const { favoriteTrips, removeFavorite } = useData();
+
+    // State untuk menyimpan daftar perjalanan (past trip dan active trip) serta status loading
     const [pastTrips, setPastTrips] = useState([]);
     const [activeTrips, setActiveTrips] = useState([]);
     const [loadingHistory, setLoadingHistory] = useState(true);
     const [loadingActiveTrips, setLoadingActiveTrips] = useState(true);
 
+    // Effect hook untuk memicu pengambilan data saat komponen pertama kali dimuat
     useEffect(() => {
+        // Fungsi asinkron untuk mengambil data riwayat perjalanan masa lalu dari API
         const fetchHistoryData = async () => {
             try {
                 setLoadingHistory(true);
@@ -30,6 +41,7 @@ const HistoryPage = () => {
             }
         };
 
+        // Fungsi asinkron untuk mengambil data perjalanan yang sedang aktif dari API
         const fetchActiveTrips = async () => {
             try {
                 setLoadingActiveTrips(true);
@@ -44,16 +56,19 @@ const HistoryPage = () => {
             }
         };
 
+        // Menjalankan proses fetching data
         fetchHistoryData();
         fetchActiveTrips();
     }, []);
 
+    // Fungsi untuk menghapus satu item riwayat perjalanan berdasarkan progressId
     const handleDeleteHistory = useCallback(async (progressId) => {
         const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus riwayat perjalanan ini?");
         if (!isConfirmed) return;
 
         try {
             await apiService.deletePastTripPlan(progressId);
+            // Memperbarui state secara lokal untuk menghapus item dari tampilan
             setPastTrips((prev) => prev.filter((trip) => trip.progress_id !== progressId));
             alert("Riwayat perjalanan berhasil dihapus.");
         } catch (error) {
@@ -62,10 +77,12 @@ const HistoryPage = () => {
         }
     }, []);
 
+    // Fungsi untuk menghapus seluruh daftar favorit secara massal menggunakan Promise.all
     const handleRemoveAllFavorites = useCallback(async () => {
         const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus SEMUA favorit Anda?");
         if (!isConfirmed) return;
         try {
+            // Memetakan semua item favorit ke dalam array promise untuk dihapus sekaligus
             const deletePromises = favoriteTrips.map(trip => removeFavorite(trip.favorite_id));
             await Promise.all(deletePromises);
             alert("Semua favorit berhasil dihapus.");
@@ -74,6 +91,7 @@ const HistoryPage = () => {
         }
     }, [favoriteTrips, removeFavorite]);
 
+    // Fungsi untuk membatalkan semua perjalanan yang sedang aktif secara massal
     const handleCancelTripNow = useCallback(async () => {
         if (activeTrips.length === 0) {
             alert("Tidak ada trip aktif.");
@@ -83,11 +101,12 @@ const HistoryPage = () => {
         if (!isConfirmed) return;
 
         try {
+            // Mengirim request pembatalan ke API untuk setiap session trip aktif
             await Promise.all(
                 activeTrips.map(trip => apiService.cancelTripSessions(trip.Plan.plan_id))
             );
             alert("Semua trip berhasil dibatalkan.");
-            setActiveTrips([]);
+            setActiveTrips([]); // Mengosongkan state trip aktif
         } catch (error) {
             console.error("Gagal cancel trip:", error);
             alert("Gagal membatalkan trip.");
@@ -99,7 +118,7 @@ const HistoryPage = () => {
         <div className="min-h-screen bg-gray-100 py-10 px-5 pt-24 md:pt-30">
             <div className="max-w-7xl mx-auto space-y-10 text-left">
                 
-                {/* --- SECTION 1: YOUR TRIP NOW --- */}
+                {/* --- SEKSI 1: PERJALANAN AKTIF SAAT INI --- */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-slate-900">Your Trip Now</h2>
@@ -114,6 +133,7 @@ const HistoryPage = () => {
                         {loadingActiveTrips ? (
                             <div className="p-4 text-center text-gray-400">Loading active trips...</div>
                         ) : activeTrips.length > 0 ? (
+                            // Melakukan iterasi untuk menampilkan daftar trip aktif
                             activeTrips.map((session) => (
                                 <TripNowCard 
                                     key={session.session_id}
@@ -133,7 +153,7 @@ const HistoryPage = () => {
                     </div>
                 </div>
 
-                {/* --- SECTION 2: FAVOURITES --- */}
+                {/* --- SEKSI 2: DAFTAR FAVORIT --- */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-slate-900">Favourites</h2>
@@ -146,6 +166,7 @@ const HistoryPage = () => {
                     </div>
                     <div className="flex flex-col gap-4">
                         {favoriteTrips && favoriteTrips.length > 0 ? (
+                            // Melakukan iterasi untuk menampilkan daftar trip yang difavoritkan
                             favoriteTrips.map((item) => (
                                 <FavoriteCard 
                                     key={item.favorite_id} 
@@ -165,10 +186,10 @@ const HistoryPage = () => {
                     </div>
                 </div>
 
-                {/* --- SECTION 3: YOUR PAST TRIPS --- */}
+                {/* --- SEKSI 3: RIWAYAT PERJALANAN MASA LALU --- */}
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-slate-900">Your Past Trips</h2> {/* Typo fixed */}
+                        <h2 className="text-xl font-bold text-slate-900">Your Past Trips</h2> 
                         <button className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition">
                             Remove all
                         </button>
@@ -177,6 +198,7 @@ const HistoryPage = () => {
                         {loadingHistory ? (
                              <div className="p-4 text-center text-gray-400">Loading history...</div>
                         ) : pastTrips && pastTrips.length > 0 ? (
+                            // Melakukan iterasi untuk menampilkan daftar riwayat perjalanan
                             pastTrips.map((trip) => (
                                 <PastTripCard 
                                     key={trip.plan_id}

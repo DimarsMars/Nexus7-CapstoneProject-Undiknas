@@ -8,10 +8,10 @@ import 'package:journeys/models/user_model.dart';
 import 'package:journeys/services/api_service.dart';
 import 'presentation/edit_profile_screen.dart';
 import 'presentation/my_route_screen.dart';
-import 'package:journeys/models/my_trip_review_model.dart';
 import 'package:journeys/models/review_on_my_plan_model.dart';
 import 'presentation/level_popup.dart'; 
 
+// Widget utama untuk layar profil menggunakan StatefulWidget untuk menangani perubahan data
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -19,24 +19,28 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _MyProfileScreen();
 }
 
+// State class yang mengelola logika, pengambilan data, dan tampilan layar profil
 class _MyProfileScreen extends State<ProfileScreen> {
+  // Inisialisasi layanan API dan variabel penyimpanan data profil/user
   final ApiService _apiService = ApiService();
   ProfileModel? _profile;
   UserModel? _user;
   List<ReviewOnMyPlanModel> _reviewsOnMyPlans = [];
-  bool _isLoading = true;
+  bool _isLoading = true; // State untuk mengontrol tampilan loading
 
+  // Lifecycle initState: dipanggil pertama kali saat layar dibuat untuk memicu pengambilan data
   @override
   void initState() {
     super.initState();
     _fetchData();
   }
 
+  // Fungsi asinkron untuk mengambil data profil, user, dan ulasan secara paralel menggunakan Future.wait
   Future<void> _fetchData() async {
     try {
       if (!mounted) return;
-      // setState(() => _isLoading = true);
 
+      // Mengambil data dari tiga endpoint API sekaligus untuk efisiensi
       final results = await Future.wait([
         _apiService.getProfile(),
         _apiService.getUserMe(),
@@ -45,10 +49,11 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
       if (mounted) {
         setState(() {
+          // Memasukkan hasil response API ke dalam variabel state
           _profile = results[0] as ProfileModel;
           _user = results[1] as UserModel;
           _reviewsOnMyPlans = results[2] as List<ReviewOnMyPlanModel>;
-          _isLoading = false;
+          _isLoading = false; // Mematikan status loading setelah data didapat
         });
       }
     } catch (e) {
@@ -56,6 +61,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
         setState(() {
           _isLoading = false;
         });
+        // Menampilkan pesan error jika proses pengambilan data gagal
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to load profile data: $e')),
         );
@@ -63,6 +69,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
     }
   }
 
+  // Fungsi untuk menangani proses logout dari Firebase dan navigasi kembali ke halaman login
   Future<void> _handleLogout() async {
     try {
       await FirebaseAuth.instance.signOut();
@@ -78,7 +85,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
     }
   }
 
-  // --- FUNGSI UNTUK MEMUNCULKAN POP UP ---
+  // Fungsi untuk memunculkan Bottom Sheet yang menampilkan progres level pengguna
   void _showLevelPopup() {
     showModalBottomSheet(
       context: context,
@@ -90,6 +97,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
     );
   }
 
+  // Metode build untuk merender seluruh antarmuka pengguna layar profil
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,6 +111,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
           fontWeight: FontWeight.bold,
         ),
       ),
+      // Logika percabangan: Tampilkan loading, pesan error, atau konten utama
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _profile == null || _user == null
@@ -131,6 +140,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const SizedBox(height: 20),
+                              // Widget untuk menampilkan Foto Profil (Base64 atau Default Icon)
                               Container(
                                 width: 120.0,
                                 height: 120.0,
@@ -151,6 +161,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                                     : null,
                               ),
                               const SizedBox(height: 30),
+                              // Label dan Tampilan Nama Pengguna (Kapitalisasi huruf pertama)
                               const Text(
                                 'Name',
                                 textAlign: TextAlign.center,
@@ -184,7 +195,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 5),
 
-                              // --- BAGIAN ICON BADGE ---
+                              // Tombol interaktif untuk menampilkan detail Level/Rank dalam bentuk Badge
                               GestureDetector(
                                 onTap: _showLevelPopup,
                                 child: Row(
@@ -227,6 +238,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
                               const SizedBox(height: 40),
 
+                              // Tombol Edit Profil untuk menavigasi ke EditProfileScreen
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 90.0),
@@ -238,6 +250,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                                           builder: (context) =>
                                               const EditProfileScreen()),
                                     );
+                                    // Refresh data jika user baru saja melakukan update profil
                                     if (result == true) {
                                       setState(() => _isLoading = true);
                                       await _fetchData();
@@ -264,6 +277,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
                               const SizedBox(height: 40),
 
+                              // Daftar Menu Informasi Profil (Bahasa, Lokasi, Rute, Rating)
                               _buildMenuItem(context,
                                   'Languages: ${_profile!.languages ?? ''}'),
                               _buildMenuItem(context,
@@ -290,6 +304,8 @@ class _MyProfileScreen extends State<ProfileScreen> {
                                 ),
                               ),
                               const SizedBox(height: 10),
+                              
+                              // Tombol Logout untuk keluar dari aplikasi
                               TextButton(
                                 onPressed: _handleLogout,
                                 child: const Text(
@@ -308,6 +324,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
     );
   }
 
+  // Widget Helper untuk membangun item menu daftar agar tampilan kode lebih bersih dan modular
   Widget _buildMenuItem(BuildContext context, String title,
       {VoidCallback? onTap}) {
     return InkWell(
