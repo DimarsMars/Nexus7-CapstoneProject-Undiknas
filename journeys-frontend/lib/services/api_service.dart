@@ -1,25 +1,49 @@
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:journeys/models/plan_rating.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/user_model.dart';
+
+// --- IMPORTS MODELS (Gabungan Punya Anda & Teman) ---
 import 'api_client.dart';
+import '../models/user_model.dart';
+import '../models/profile_model.dart';
 import '../models/category_model.dart';
 import '../models/plan_model.dart';
-import '../models/route_model.dart';
+import '../models/plan_rating.dart'; // Model Teman
 import '../models/traveller_model.dart';
 import '../models/traveller_recomen_model.dart';
 import '../models/most_active_traveller_model.dart';
-import '../models/traveller_profile_model.dart';
-import '../models/place_review.dart';
+import '../models/traveller_profile_model.dart'; // Model Teman
+import '../models/user_xp_model.dart'; // Model Punya Anda
+import '../models/past_trip_model.dart'; // Model Punya Anda
+import '../models/favorite_trip_model.dart'; // Model Punya Anda
+import '../models/my_trip_review_model.dart'; // Model Punya Anda
+import '../models/review_on_my_plan_model.dart'; // Model Punya Anda
 import '../models/place_detail.dart';
-import 'dart:typed_data';
-import 'package:http/http.dart' as http;
+import '../models/place_review.dart';
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
   final _client = ApiClient();
-  final String _loginUrl = 'http://192.168.1.11:8080/auth/login';
+
+  // --- CONFIGURATION ---
+  // Satu variabel untuk semua endpoint agar konsisten
+  static const String _baseUrl = 'http://192.168.1.7:8080';
+
+  // --- HELPER ---
+  // Helper untuk mengambil token agar tidak duplicate code
+  Future<Map<String, String>?> _getHeaders() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    final idToken = await user.getIdToken();
+    return {'Authorization': 'Bearer $idToken'};
+  }
+
+  // ===========================================================================
+  // AUTHENTICATION (Login & Register)
+  // ===========================================================================
 
   Future<UserModel> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
@@ -29,13 +53,13 @@ class ApiService {
 
     final idToken = await credential.user!.getIdToken();
 
-    final response = await _client.post(_loginUrl, {
+    final response = await _client.post('$_baseUrl/auth/login', {
       'idToken': idToken,
     });
 
     final user = UserModel.fromJson(response['user']);
 
-    // Simpan data jika perlu
+    // Simpan data di SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('user_id', user.userId);
     await prefs.setString('username', user.username);
@@ -44,429 +68,520 @@ class ApiService {
   }
 
   Future<UserModel> register(String email, String password, String username) async {
-  final credential = await _auth.createUserWithEmailAndPassword(
-    email: email,
-    password: password,
-  );
+    final credential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-  final idToken = await credential.user!.getIdToken();
+    final idToken = await credential.user!.getIdToken();
 
-  final response = await _client.post('http://192.168.1.11:8080/auth/register', {
-    'idToken': idToken,
-    'username': username,
-  });
+    final response = await _client.post('$_baseUrl/auth/register', {
+      'idToken': idToken,
+      'username': username,
+    });
 
-  final user = UserModel.fromJson(response['user']);
+    final user = UserModel.fromJson(response['user']);
 
-  final prefs = await SharedPreferences.getInstance();
-  await prefs.setInt('user_id', user.userId);
-  await prefs.setString('username', user.username);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('user_id', user.userId);
+    await prefs.setString('username', user.username);
 
-  return user;
-}
+    return user;
+  }
 
-Future<UserModel> getUserMe() async {
-  final user = _auth.currentUser;
-  if (user == null) throw Exception("User not logged in");
+  // ===========================================================================
+  // MY PROFILE FEATURES (Dari Code Anda)
+  // ===========================================================================
 
-  final idToken = await user.getIdToken();
-
-  final response = await _client.get(
-    'http://192.168.1.7:8080/user/me',
-    headers: {
-      'Authorization': 'Bearer $idToken',
-    },
-  );
-
-  final data = response['data'];
-  return UserModel.fromJson(data);
-}
-
-Future<ProfileModel> getProfile() async {
-  final user = _auth.currentUser;
-  if (user == null) throw Exception("User not logged in");
-
-  final idToken = await user.getIdToken();
-
-  final response = await _client.get(
-    'http://192.168.1.7:8080/profile/me',
-    headers: {
-      'Authorization': 'Bearer $idToken',
-    },
-  );
-
-  final data = response['data'];
-  return ProfileModel.fromJson(data);
-}
-
-Future<UserXpModel> getUserXP() async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception("User not logged in");
-    final idToken = await user.getIdToken();
+  Future<UserModel> getUserMe() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
     final response = await _client.get(
-      'http://192.168.1.7:8080/user/xp',
-      headers: {'Authorization': 'Bearer $idToken'},
+      '$_baseUrl/user/me',
+      headers: headers,
+    );
+
+    return UserModel.fromJson(response['data']);
+  }
+
+  Future<ProfileModel> getProfile() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    final response = await _client.get(
+      '$_baseUrl/profile/me',
+      headers: headers,
+    );
+
+    return ProfileModel.fromJson(response['data']);
+  }
+
+  Future<UserXpModel> getUserXP() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    final response = await _client.get(
+      '$_baseUrl/user/xp',
+      headers: headers,
     );
     
     return UserXpModel.fromJson(response);
   }
 
-Future<List<CategoryModel>> getCategories() async {
-  final user = _auth.currentUser;
+  // Fitur Update Profile dengan Gambar (Dari Code Anda)
+  Future<void> updateUserProfile({
+    required String birthDate,
+    required String description,
+    required String status,
+    File? photo,
+  }) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  if (user == null) throw Exception("User not logged in");
+    http.MultipartFile? photoFile;
+    if (photo != null) {
+      photoFile = await http.MultipartFile.fromPath('photo', photo.path);
+    }
 
-  final idToken = await user.getIdToken();
+    await _client.putMultipart(
+      '$_baseUrl/profile/update',
+      headers: headers,
+      fields: {
+        'birth_date': birthDate,
+        'description': description,
+        'status': status,
+        'location': 'Solo', // Default value
+        'languages': 'ID',  // Default value
+      },
+      file: photoFile,
+    );
+  }
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/category/',
-    headers: {
-      'Authorization': 'Bearer $idToken',
-    },
-  );
+  // ===========================================================================
+  // OTHER USER PROFILE & SOCIALS (Dari Code Teman + Tambahan Anda)
+  // ===========================================================================
 
-  final data = response['data'] as List<dynamic>;
-  return data.map((json) => CategoryModel.fromJson(json)).toList();
-}
+  // Dari Teman: Menggunakan TravellerProfileModel
+  Future<TravellerProfileModel> getUserProfile(int id) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/user/profile/$id',
+      headers: headers,
+    );
 
-Future<List<PlanModel>> getAllPlans() async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    return TravellerProfileModel.fromJson(response['data']);
+  }
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/plans/all',
-    headers: idToken != null
-        ? {'Authorization': 'Bearer $idToken'}
-        : null,
-  );
+  // Dari Teman (Socials)
+  Future<Map<String, dynamic>> getUserSocials(int userId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  final data = response['data'] as List<dynamic>;
-  return data.map((json) => PlanModel.fromJson(json)).toList();
-}
+    final response = await _client.get(
+      '$_baseUrl/profile/socials/$userId',
+      headers: headers,
+    );
+    
+    // Safety check untuk response structure
+    if (response.containsKey('data')) {
+      return response['data'];
+    }
+    return response;
+  }
 
- Future<PlanModelRating?> getPlanDetail(int planId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<bool> checkIsFollowing(int userId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/plans/$planId/detail',
-    headers: idToken != null
-        ? {'Authorization': 'Bearer $idToken'}
-        : null,
-  );
+    final response = await _client.get(
+      '$_baseUrl/follow/status/$userId',
+      headers: headers,
+    );
 
-  final data = response['data'];
-  if (data == null) return null;
+    if (response.containsKey('data')) {
+       return response['data']['is_following'] ?? false;
+    }
+    return response['is_following'] ?? false;
+  }
 
-  final planJson = data['plan'] ?? {};
-  final routesJson = data['routes'] as List<dynamic>? ?? [];
+  // Metode isFollowing versi teman (endpoint sedikit berbeda pathnya)
+  Future<bool> isFollowing(int id) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/follow/$id/is-following',
+      headers: headers,
+    );
+    return response['is_following'] ?? false;
+  }
 
-  return PlanModelRating.fromJson({
-    ...planJson,
-    'routes': routesJson,
-    'rating': data['rating'] ?? 0,
-  });
-}
+  Future<Map<String, dynamic>> getSocialCounts(int id) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/follow/$id/socials',
+      headers: headers,
+    );
 
+    return {
+      'followers': response['followers_count'] ?? 0,
+      'following': response['following_count'] ?? 0,
+    };
+  }
 
-Future<List<TravellerModel>> getAllTravellers() async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<bool> followUser(int id) async {
+    final headers = await _getHeaders();
+    final response = await _client.post(
+      '$_baseUrl/follow/$id',
+      {},
+      headers: headers,
+    );
+    return response != null;
+  }
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/user/all',
-    headers: idToken != null
-        ? {'Authorization': 'Bearer $idToken'}
-        : null,
-  );
+  Future<bool> unfollowUser(int id) async {
+    final headers = await _getHeaders();
+    final response = await _client.delete(
+      '$_baseUrl/follow/$id',
+      headers: headers,
+    );
+    return response != null;
+  }
 
-  final data = response['data'] as List<dynamic>;
-  return data.map((json) => TravellerModel.fromJson(json)).toList();
-}
+  // ===========================================================================
+  // CATEGORIES, PLANS & TRAVELLERS (Gabungan)
+  // ===========================================================================
 
-Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<List<CategoryModel>> getCategories() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/user/recomendations/category',
-    headers: idToken != null
-        ? {'Authorization': 'Bearer $idToken'}
-        : null,
-  );
+    final response = await _client.get(
+      '$_baseUrl/category/',
+      headers: headers,
+    );
 
-  final data = response['data'] as List<dynamic>;
-  return data
-      .map((json) => TravellerRecommendationModel.fromJson(json))
-      .toList();
-}
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => CategoryModel.fromJson(json)).toList();
+  }
 
-Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<List<PlanModel>> getAllPlans() async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/plans/all',
+      headers: headers,
+    );
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/user/mostactive',
-    headers: idToken != null
-        ? {'Authorization': 'Bearer $idToken'}
-        : null,
-  );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => PlanModel.fromJson(json)).toList();
+  }
 
-  final data = response['data'] as List<dynamic>;
-  return data
-      .map((json) => MostActiveTravellerModel.fromJson(json))
-      .toList();
-}
+  Future<List<PlanModel>> getMyPlans() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-// GET /user/profile/:id
-Future<TravellerProfileModel> getUserProfile(int id) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final response = await _client.get(
+      '$_baseUrl/plans/',
+      headers: headers,
+    );
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/user/profile/$id',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => PlanModel.fromJson(json)).toList();
+  }
 
-  final data = response['data'];
-  return TravellerProfileModel.fromJson(data);
-}
+  // Dari Teman: Return PlanModelRating (Lebih lengkap)
+  Future<PlanModelRating?> getPlanDetail(int planId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/plans/$planId/detail',
+      headers: headers,
+    );
 
-// GET /follow/:id/is-following
-Future<bool> isFollowing(int id) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final data = response['data'];
+    if (data == null) return null;
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/follow/$id/is-following',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    final planJson = data['plan'] ?? {};
+    final routesJson = data['routes'] as List<dynamic>? ?? [];
 
-  return response['is_following'] ?? false;
-}
+    return PlanModelRating.fromJson({
+      ...planJson,
+      'routes': routesJson,
+      'rating': data['rating'] ?? 0,
+    });
+  }
 
-// GET /follow/:id/socials
-Future<Map<String, dynamic>> getSocialCounts(int id) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<List<TravellerModel>> getAllTravellers() async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/user/all',
+      headers: headers,
+    );
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/follow/$id/socials',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => TravellerModel.fromJson(json)).toList();
+  }
 
-  return {
-    'followers': response['followers_count'] ?? 0,
-    'following': response['following_count'] ?? 0,
-  };
-}
+  Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/user/recomendations/category',
+      headers: headers,
+    );
 
-// POST /follow/:id
-Future<bool> followUser(int id) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => TravellerRecommendationModel.fromJson(json)).toList();
+  }
 
-  final response = await _client.post(
-    'http://192.168.1.11:8080/follow/$id',
-    {},
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+  Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/user/mostactive',
+      headers: headers,
+    );
 
-  return response != null;
-}
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => MostActiveTravellerModel.fromJson(json)).toList();
+  }
 
-// DELETE /follow/:id
-Future<bool> unfollowUser(int id) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  // ===========================================================================
+  // HISTORY & FAVORITES (Gabungan)
+  // ===========================================================================
 
-  final response = await _client.delete(
-    'http://192.168.1.11:8080/follow/$id',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+  // Dari Code Anda (Past Trips)
+  Future<List<PastTripModel>> getPastTrips() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  return response != null;
-}
+    final response = await _client.get(
+      '$_baseUrl/plans/history',
+      headers: headers,
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => PastTripModel.fromJson(json)).toList();
+  }
 
-// GET /plans/route/:id
-Future<PlaceDetail?> getPlaceDetail(int routeId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<void> deletePastTrip(int progressId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/plans/route/$routeId',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    await _client.delete(
+      '$_baseUrl/plans/completed-plans/$progressId',
+      headers: headers,
+    );
+  }
 
-  final data = response['data'];
-  if (data == null) return null;
+  // Dari Code Anda (List Favorites)
+  Future<List<FavoriteTripModel>> getFavoriteTrips() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  return PlaceDetail.fromJson(data);
-}
+    final response = await _client.get(
+      '$_baseUrl/favorites/',
+      headers: headers,
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => FavoriteTripModel.fromJson(json)).toList();
+  }
 
+  // Dari Code Teman (Add/Remove/Check Favorites)
+  Future<bool> addFavorite(int planId) async {
+    final headers = await _getHeaders();
+    final response = await _client.post(
+      '$_baseUrl/favorites/$planId',
+      {},
+      headers: headers,
+    );
+    return response['message'] != null;
+  }
 
-Future<List<PlaceReview>> getPlaceReviews(int routeId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<bool> removeFavorite(int favoriteId) async {
+    final headers = await _getHeaders();
+    final response = await _client.delete(
+      '$_baseUrl/favorites/$favoriteId',
+      headers: headers,
+    );
+    return response['message'] != null;
+  }
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/reviews/place/$routeId',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+  // Wrapper agar kompatibel dengan code Anda yang mungkin memanggil removeFavoriteTrip
+  Future<void> removeFavoriteTrip(int favoriteId) async {
+    await removeFavorite(favoriteId);
+  }
 
-  final List<dynamic> data = response['data'] ?? []; // ✅ fix null case
-  return data.map((e) => PlaceReview.fromJson(e)).toList();
-}
+  Future<int?> getFavoriteIdForPlan(int planId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/favorites/',
+      headers: headers,
+    );
 
-// Tambah ke Favorite
-Future<bool> addFavorite(int planId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final favorites = response['data'] as List<dynamic>;
+    for (final fav in favorites) {
+      final favPlan = fav['plan'];
+      if (favPlan != null && favPlan['plan_id'] == planId) {
+        return fav['favorite_id'];
+      }
+    }
+    return null;
+  }
 
-  final response = await _client.post(
-    'http://192.168.1.11:8080/favorites/$planId',
-    {},
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+  // ===========================================================================
+  // REVIEWS & PLACE DETAILS (Gabungan)
+  // ===========================================================================
 
-  return response['message'] != null;
-}
+  // Dari Code Teman (Place Detail)
+  Future<PlaceDetail?> getPlaceDetail(int routeId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/plans/route/$routeId',
+      headers: headers,
+    );
 
-// Hapus dari Favorite
-Future<bool> removeFavorite(int favoriteId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final data = response['data'];
+    if (data == null) return null;
 
-  final response = await _client.delete(
-    'http://192.168.1.11:8080/favorites/$favoriteId',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    return PlaceDetail.fromJson(data);
+  }
 
-  return response['message'] != null;
-}
+  // Dari Code Teman (Place Reviews)
+  Future<List<PlaceReview>> getPlaceReviews(int routeId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/reviews/place/$routeId',
+      headers: headers,
+    );
 
-// Cek apakah plan sudah difavoritkan
-Future<int?> getFavoriteIdForPlan(int planId) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+    final List<dynamic> data = response['data'] ?? [];
+    return data.map((e) => PlaceReview.fromJson(e)).toList();
+  }
 
-  final response = await _client.get(
-    'http://192.168.1.11:8080/favorites/',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+  // Dari Code Anda (My Reviews)
+  Future<List<MyTripReviewModel>> getMyTripReviews() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
 
-  final favorites = response['data'] as List<dynamic>;
-  for (final fav in favorites) {
-    final favPlan = fav['plan'];
-    if (favPlan != null && favPlan['plan_id'] == planId) {
-      return fav['favorite_id'];
+    final response = await _client.get(
+      '$_baseUrl/reviews/trip/me',
+      headers: headers,
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => MyTripReviewModel.fromJson(json)).toList();
+  }
+
+  Future<List<ReviewOnMyPlanModel>> getReviewsOnMyPlans() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    final response = await _client.get(
+      '$_baseUrl/reviews/trip/my-plans',
+      headers: headers,
+    );
+    final data = response['data'] as List<dynamic>;
+    return data.map((json) => ReviewOnMyPlanModel.fromJson(json)).toList();
+  }
+
+  Future<void> deleteReviewTrips(int reviewId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    await _client.delete(
+      '$_baseUrl/reviews/my/$reviewId',
+      headers: headers,
+    );
+  }
+
+  // Dari Code Teman (Submit Review dengan return boolean)
+  Future<bool> submitTripReview(int planId, int rating, String comment) async {
+    final headers = await _getHeaders();
+    final response = await _client.post(
+      '$_baseUrl/reviews/trip',
+      {
+        'plan_id': planId,
+        'rating': rating,
+        'comment': comment,
+      },
+      headers: headers,
+    );
+
+    return response['message'] == 'Review berhasil ditambahkan';
+  }
+
+  // Dari Code Teman (Submit Place Review + Image Multipart)
+  Future<bool> submitPlaceReview({
+    required int routeId,
+    required int rating,
+    required String comment,
+    List<Uint8List> imageBytesList = const [],
+  }) async {
+    final user = _auth.currentUser;
+    final idToken = await user?.getIdToken();
+
+    final uri = Uri.parse('$_baseUrl/reviews/place');
+
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $idToken'
+      ..fields['route_id'] = routeId.toString()
+      ..fields['rating'] = rating.toString()
+      ..fields['comment'] = comment;
+
+    for (int i = 0; i < imageBytesList.length; i++) {
+      request.files.add(http.MultipartFile.fromBytes(
+        'image', 
+        imageBytesList[i],
+        filename: 'review_$i.jpg',
+      ));
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print("Review error: ${response.body}");
+      return false;
     }
   }
 
-  return null;
-}
+  // ===========================================================================
+  // BOOKMARKS (Dari Code Teman)
+  // ===========================================================================
 
-Future<bool> submitTripReview(int planId, int rating, String comment) async {
-  final user = _auth.currentUser;
-  final idToken = user != null ? await user.getIdToken() : null;
+  Future<int?> getBookmarkIdForRoute(int routeId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/bookmarks/',
+      headers: headers,
+    );
 
-  final response = await _client.post(
-    'http://192.168.1.11:8080/reviews/trip',
-    {
-      'plan_id': planId,
-      'rating': rating,
-      'comment': comment,
-    },
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
+    if (response['data'] == null) return null;
 
-  return response['message'] == 'Review berhasil ditambahkan';
-}
+    final bookmarks = List<Map<String, dynamic>>.from(response['data']);
+    final found = bookmarks.firstWhere(
+      (b) => b['route']['route_id'] == routeId,
+      orElse: () => {},
+    );
 
-
-Future<int?> getBookmarkIdForRoute(int routeId) async {
-  final user = _auth.currentUser;
-  final idToken = await user?.getIdToken();
-
-  final response = await _client.get(
-    'http://192.168.1.11:8080/bookmarks/',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
-
-  if (response['data'] == null) return null;
-
-  final bookmarks = List<Map<String, dynamic>>.from(response['data']);
-  final found = bookmarks.firstWhere(
-    (b) => b['route']['route_id'] == routeId,
-    orElse: () => {},
-  );
-
-  return found.isNotEmpty ? found['bookmark_id'] : null;
-}
-
-Future<bool> addBookmark(int routeId) async {
-  final user = _auth.currentUser;
-  final idToken = await user?.getIdToken();
-
-  final response = await _client.post(
-    'http://192.168.1.11:8080/bookmarks/$routeId',
-    {},
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
-
-  return response != null && response['message'] != null;
-}
-
-Future<bool> removeBookmark(int bookmarkId) async {
-  final user = _auth.currentUser;
-  final idToken = await user?.getIdToken();
-
-  final response = await _client.delete(
-    'http://192.168.1.11:8080/bookmarks/$bookmarkId',
-    headers: idToken != null ? {'Authorization': 'Bearer $idToken'} : null,
-  );
-
-  return response != null && response['message'] != null;
-}
-
-Future<bool> submitPlaceReview({
-  required int routeId,
-  required int rating,
-  required String comment,
-  List<Uint8List> imageBytesList = const [],
-}) async {
-  final user = _auth.currentUser;
-  final idToken = await user?.getIdToken();
-
-  final uri = Uri.parse('http://192.168.1.11:8080/reviews/place');
-
-  final request = http.MultipartRequest('POST', uri)
-    ..headers['Authorization'] = 'Bearer $idToken'
-    ..fields['route_id'] = routeId.toString()
-    ..fields['rating'] = rating.toString()
-    ..fields['comment'] = comment;
-
-  for (int i = 0; i < imageBytesList.length; i++) {
-    request.files.add(http.MultipartFile.fromBytes(
-      'image', // harus disesuaikan dengan field array di backend
-      imageBytesList[i],
-      filename: 'review_$i.jpg',
-    ));
+    return found.isNotEmpty ? found['bookmark_id'] : null;
   }
 
-  final streamedResponse = await request.send();
-  final response = await http.Response.fromStream(streamedResponse);
+  Future<bool> addBookmark(int routeId) async {
+    final headers = await _getHeaders();
+    final response = await _client.post(
+      '$_baseUrl/bookmarks/$routeId',
+      {},
+      headers: headers,
+    );
 
-  if (response.statusCode == 200) {
-    return true;
-  } else {
-    print("Review error: ${response.body}");
-    return false;
+    return response != null && response['message'] != null;
+  }
+
+  Future<bool> removeBookmark(int bookmarkId) async {
+    final headers = await _getHeaders();
+    final response = await _client.delete(
+      '$_baseUrl/bookmarks/$bookmarkId',
+      headers: headers,
+    );
+
+    return response != null && response['message'] != null;
   }
 }
-
-
-
-}
-

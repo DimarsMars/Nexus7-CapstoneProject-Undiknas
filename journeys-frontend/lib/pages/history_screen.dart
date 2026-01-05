@@ -538,4 +538,3 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     );
   }
 }
-

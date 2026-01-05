@@ -11,8 +11,11 @@ import 'package:journeys/pages/review/presentation/traveller_screen.dart';
 import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
 import 'package:journeys/pages/main_wrapper.dart';
 import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart';
+
+// --- TAMBAHAN DARI KODE ANDA (Import) ---
 import 'package:journeys/pages/profile/profile_screen.dart';
 import 'package:journeys/pages/history_screen.dart';
+// ----------------------------------------
 
 import '../../pages/auth/presentation/intro_screen.dart';
 import '../../pages/auth/presentation/login_screen.dart';
@@ -68,61 +71,66 @@ final GoRouter appRouter = GoRouter(
             return const TravellerScreen();
           },
         ),
-        // Categories dimasukkan ke dalam ShellRoute agar Nav Bar muncul
         GoRoute(
           path: '/categories',
           builder: (BuildContext context, GoRouterState state) {
             return const CategoriesScreen();
           },
         ),
-         GoRoute(
-  path: '/plan-opened/:id',
-  builder: (context, state) {
-    final planId = int.parse(state.pathParameters['id']!);
-    return PlanOpenedScreen(planId: planId);
-  },
-),
-
-
-      GoRoute(
-  path: '/place-detail',
-  builder: (BuildContext context, GoRouterState state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    final routeId = extra?['routeId'] as int?;
-
-    if (routeId == null) {
-      return const Scaffold(body: Center(child: Text('Route ID not provided')));
-    }
-
-    return PlaceDetailScreen(routeId: routeId);
-  },
-),
-
-        GoRoute(
-  path: '/traveller-detail',
-  builder: (BuildContext context, GoRouterState state) {
-    final extra = state.extra as Map<String, dynamic>?;
-
-    final userId = extra?['userId'] as int?;
-    if (userId == null) {
-      return const Scaffold(
-        body: Center(child: Text('User ID not provided')),
-      );
-    }
-
-    return TravellerDetailScreen(userId: userId);
-  },
-),
+        
+        // --- TAMBAHAN DARI KODE ANDA (Route Profile) ---
         GoRoute(
           path: '/profile',
           builder: (BuildContext context, GoRouterState state) {
             return const ProfileScreen();
           },
         ),
+        // --- TAMBAHAN DARI KODE ANDA (Route History) ---
         GoRoute(
           path: '/history',
           builder: (BuildContext context, GoRouterState state) {
             return const HistoryScreen();
+          },
+        ),
+        // -----------------------------------------------
+
+        GoRoute(
+          path: '/plan-opened/:id',
+          builder: (context, state) {
+            final planId = int.parse(state.pathParameters['id']!);
+            return PlanOpenedScreen(planId: planId);
+          },
+        ),
+        
+        // Menggunakan versi teman Anda (lebih aman karena mengecek extra routeId)
+        GoRoute(
+          path: '/place-detail',
+          builder: (BuildContext context, GoRouterState state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final routeId = extra?['routeId'] as int?;
+
+            if (routeId == null) {
+              return const Scaffold(body: Center(child: Text('Route ID not provided')));
+            }
+
+            return PlaceDetailScreen(routeId: routeId);
+          },
+        ),
+
+        // Menggunakan versi teman Anda (lebih aman karena mengecek extra userId)
+        GoRoute(
+          path: '/traveller-detail',
+          builder: (BuildContext context, GoRouterState state) {
+            final extra = state.extra as Map<String, dynamic>?;
+
+            final userId = extra?['userId'] as int?;
+            if (userId == null) {
+              return const Scaffold(
+                body: Center(child: Text('User ID not provided')),
+              );
+            }
+
+            return TravellerDetailScreen(userId: userId);
           },
         ),
       ],

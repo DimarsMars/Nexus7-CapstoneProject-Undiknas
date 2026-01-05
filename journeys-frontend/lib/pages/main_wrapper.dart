@@ -18,7 +18,7 @@ class MainWrapper extends StatelessWidget {
       currentIndex = 1;
     } else if (location.startsWith('/history')) {
       currentIndex = 2;
-    } else if (location.startsWith('/traveller')) {
+    } else if (location.startsWith('/profile')) {
       currentIndex = 3;
     }
 
@@ -42,7 +42,7 @@ class MainWrapper extends StatelessWidget {
               case 0: context.go('/home'); break;
               case 1: context.go('/explore'); break;
               case 2: context.go('/history'); break;
-              case 3: context.go('/traveller'); break;
+              case 3: context.go('/profile'); break;
             }
           },
           destinations: const <NavigationDestination>[
