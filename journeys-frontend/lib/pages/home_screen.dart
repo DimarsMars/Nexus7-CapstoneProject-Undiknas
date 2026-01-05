@@ -11,7 +11,6 @@ import 'package:journeys/services/api_service.dart';
 import 'package:journeys/theme/app_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -46,8 +45,10 @@ class _HomeScreenState extends State<HomeScreen> {
         plans = result;
         isLoading = false;
       });
-    } catch (_) {
-      setState(() => isLoading = false);
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -59,8 +60,10 @@ class _HomeScreenState extends State<HomeScreen> {
         travellers = result.take(5).toList();
         isTravellerLoading = false;
       });
-    } catch (_) {
-      setState(() => isTravellerLoading = false);
+    } catch (e) {
+      setState(() {
+        isTravellerLoading = false;
+      });
     }
   }
 
@@ -72,13 +75,19 @@ class _HomeScreenState extends State<HomeScreen> {
         categories = result;
         isCategoryLoading = false;
       });
-    } catch (_) {
-      setState(() => isCategoryLoading = false);
+    } catch (e) {
+      setState(() {
+        isCategoryLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // HANYA BAGIAN INI YANG DITAMBAHKAN:
+    List<PlanModel> newestPlans = List.from(plans);
+    newestPlans.sort((a, b) => b.planId.compareTo(a.planId));
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -90,7 +99,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SEARCH BAR AREA (Disamakan dengan ExploreScreen)
             Container(
               width: double.infinity,
               color: Colors.white,
@@ -131,23 +139,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 20),
-
-            // KATEGORI ATAS
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
@@ -155,15 +152,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
- boxShadow: [
-  BoxShadow(
-    color: Colors.black.withOpacity(0.2), // <- lebih pekat
-    blurRadius: 14,                        // <- lebih besar
-    spreadRadius: 3,                       // <- lebih luas
-    offset: const Offset(0, 6),            // <- lebih ke bawah
-  ),
-],
-
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 14,
+                      spreadRadius: 3,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: isCategoryLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -190,10 +186,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // FEATURED PLANS
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Newest Plans',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             SizedBox(
               height: 240,
               child: isLoading
@@ -201,14 +204,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   : ListView.builder(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.only(left: 16),
-                      itemCount: plans.length,
+                      itemCount: newestPlans.length,
                       itemBuilder: (context, index) {
-                        final plan = plans[index];
+                        final plan = newestPlans[index];
                         Uint8List? imageBytes;
                         if (plan.bannerBase64.isNotEmpty) {
                           imageBytes = base64Decode(plan.bannerBase64);
                         }
-
                         return GestureDetector(
                           onTap: () async {
                             final result = await context
@@ -274,34 +276,28 @@ class _HomeScreenState extends State<HomeScreen> {
                                         plan.authorName.isNotEmpty
                                             ? plan.authorName
                                             : "Anonymous",
- style: GoogleFonts.inter(
-  color: Colors.white.withOpacity(0.85),
-  fontSize: 11,
-  fontStyle: FontStyle.normal,
-),
-
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white.withOpacity(0.85),
+                                          fontSize: 11,
+                                        ),
                                       ),
                                       const SizedBox(height: 6),
-Row(
-  children: List.generate(5, (index) {
-    double starFill = plan.rating - index;
-    IconData icon;
-    Color color;
-
-    if (starFill >= 1) {
-      icon = Icons.star;
-      color = Colors.amber;
-    } else if (starFill >= 0.5) {
-      icon = Icons.star_half;
-      color = Colors.amber;
-    } else {
-      icon = Icons.star;
-      color = Colors.white;
-    }
-
-    return Icon(icon, size: 14, color: color);
-  }),
-
+                                      Row(
+                                        children: List.generate(5, (starIdx) {
+                                          double starFill =
+                                              plan.rating - starIdx;
+                                          return Icon(
+                                            starFill >= 1
+                                                ? Icons.star
+                                                : (starFill >= 0.5
+                                                    ? Icons.star_half
+                                                    : Icons.star),
+                                            size: 14,
+                                            color: starFill >= 0.5
+                                                ? Colors.amber
+                                                : Colors.white,
+                                          );
+                                        }),
                                       ),
                                     ],
                                   ),
@@ -313,9 +309,130 @@ Row(
                       },
                     ),
             ),
-
-            const SizedBox(height: 20),
-
+            const SizedBox(height: 24),
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Plans by your personalisation',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 240,
+              child: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.only(left: 16),
+                      itemCount: plans.length,
+                      itemBuilder: (context, index) {
+                        final plan = plans[index];
+                        Uint8List? imageBytes;
+                        if (plan.bannerBase64.isNotEmpty) {
+                          imageBytes = base64Decode(plan.bannerBase64);
+                        }
+                        return GestureDetector(
+                          onTap: () async {
+                            final result = await context
+                                .push('/plan-opened/${plan.planId}');
+                            if (result == true) {
+                              _loadPlans();
+                            }
+                          },
+                          child: Container(
+                            width: 180,
+                            margin: const EdgeInsets.only(right: 16),
+                            child: Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: imageBytes != null
+                                      ? Image.memory(
+                                          imageBytes,
+                                          width: 180,
+                                          height: 240,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          width: 180,
+                                          height: 240,
+                                          color: Colors.grey[300],
+                                        ),
+                                ),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Colors.transparent,
+                                        Colors.black.withOpacity(0.7),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  left: 12,
+                                  right: 12,
+                                  bottom: 12,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        plan.title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        plan.authorName.isNotEmpty
+                                            ? plan.authorName
+                                            : "Anonymous",
+                                        style: GoogleFonts.inter(
+                                          color: Colors.white.withOpacity(0.85),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: List.generate(5, (starIdx) {
+                                          double starFill =
+                                              plan.rating - starIdx;
+                                          return Icon(
+                                            starFill >= 1
+                                                ? Icons.star
+                                                : (starFill >= 0.5
+                                                    ? Icons.star_half
+                                                    : Icons.star),
+                                            size: 14,
+                                            color: starFill >= 0.5
+                                                ? Colors.amber
+                                                : Colors.white,
+                                          );
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Align(
@@ -339,10 +456,9 @@ Row(
               ),
             ),
             const SizedBox(height: 16),
-
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: Center(
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
                 child: Text(
                   'Forge Your Route',
                   style: TextStyle(
@@ -353,13 +469,10 @@ Row(
               ),
             ),
             const SizedBox(height: 12),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: GestureDetector(
-                onTap: () {
-                  context.go('/explore');
-                },
+                onTap: () => context.go('/explore'),
                 child: Container(
                   height: 90,
                   decoration: BoxDecoration(
@@ -400,7 +513,7 @@ Row(
                 ),
               ),
             ),
-
+            const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -408,18 +521,10 @@ Row(
                 children: [
                   const Text(
                     "Plan's Category",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => context.go('/categories'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
                     child: const Text(
                       'See More',
                       style: TextStyle(
@@ -433,7 +538,6 @@ Row(
               ),
             ),
             const SizedBox(height: 16),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: isCategoryLoading
@@ -444,7 +548,6 @@ Row(
                         categories.length.clamp(0, 4),
                         (index) {
                           final category = categories[index];
-
                           return Expanded(
                             child: Padding(
                               padding:
@@ -483,12 +586,10 @@ Row(
                                   Text(
                                     category.name,
                                     style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
                                   ),
                                 ],
                               ),
@@ -498,9 +599,7 @@ Row(
                       ),
                     ),
             ),
-
             const SizedBox(height: 24),
-
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Row(
@@ -508,18 +607,10 @@ Row(
                 children: [
                   const Text(
                     "Follow These Traveller",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   TextButton(
                     onPressed: () => context.go('/traveller'),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
                     child: const Text(
                       'See More',
                       style: TextStyle(
@@ -533,7 +624,6 @@ Row(
               ),
             ),
             const SizedBox(height: 16),
-
             SizedBox(
               height: 120,
               child: isTravellerLoading
@@ -550,9 +640,8 @@ Row(
                             final base64String =
                                 traveller.photoBase64.split(',').last;
                             imageBytes = base64Decode(base64String);
-                          } catch (_) {}
+                          } catch (e) {}
                         }
-
                         return Padding(
                           padding: const EdgeInsets.only(right: 20),
                           child: Column(
@@ -564,17 +653,18 @@ Row(
                                     ? MemoryImage(imageBytes)
                                     : null,
                                 child: imageBytes == null
-                                    ? const Icon(Icons.person,
-                                        size: 35, color: Colors.grey)
+                                    ? const Icon(
+                                        Icons.person,
+                                        size: 35,
+                                        color: Colors.grey,
+                                      )
                                     : null,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 traveller.username,
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                    fontSize: 12, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
