@@ -3,6 +3,7 @@ import { FaCertificate, FaPen, FaTimes, FaChevronDown } from "react-icons/fa"; /
 import { useNavigate } from 'react-router-dom'; // Mengimpor hook untuk navigasi halaman
 import { useAuth } from '../context/AuthContext'; // Mengimpor context autentikasi pengguna
 import apiService from '../services/apiService'; // Mengimpor layanan untuk komunikasi API
+import Swal from 'sweetalert2'; // Mengimpor SweetAlert untuk notifikasi
 
 const EditProfilePage = () => {
   const navigate = useNavigate(); // Inisialisasi fungsi navigasi
@@ -146,12 +147,19 @@ const EditProfilePage = () => {
 
     try {
       await apiService.updateUserProfile(formDataToSend);
-      alert("Profile Updated!");
+    
+      Swal.fire({
+        title: 'Berhasil!',
+        text: 'Profil Anda telah diperbarui.',
+        icon: 'success',
+        confirmButtonColor: '#1e293b',
+      }).then(() => {
+        navigate('/myprofile');
+      });
+
       setProfileDescription(descriptionString); 
-      navigate('/myprofile');
     } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Failed to update profile. Please try again.");
+      Swal.fire('Gagal!', 'Terjadi kesalahan saat update profil.', 'error');
     }
   }, [authUser, selectedCategories, formData, navigate]);
 

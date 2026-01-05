@@ -2,6 +2,8 @@ import { FaCertificate } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
+import Swal from 'sweetalert2'; // Import SweetAlert untuk notifikasi
+
 // Import komponen kustom untuk menampilkan data trip dan ulasan
 import TripCard from '../components/TripCard';
 import ReviewCard from '../components/ReviewCard';
@@ -113,16 +115,40 @@ const MyProfilePage = () => {
     // Fungsi asinkron untuk menghapus ulasan berdasarkan ID ulasan
     const handleDeleteReview = async (reviewId) => {
         // Konfirmasi keamanan sebelum menghapus data
-        if (!window.confirm("Apakah Anda yakin ingin menghapus ulasan ini?")) return;
+        const result = await Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Ulasan yang dihapus tidak dapat dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#1e293b',
+        cancelButtonColor: '#ef4444',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal',
+    });
+
+    // Jika user menekan tombol "Batal", hentikan fungsi
+    if (!result.isConfirmed) return;
 
         try {
             // Memanggil API delete dan memperbarui state secara lokal untuk sinkronisasi UI
             await apiService.deleteReviewTrips(reviewId);
             setMyReviews((prevReviews) => prevReviews.filter((review) => review.review_id !== reviewId));
-            alert("Ulasan berhasil dihapus.");
+            // Menampilkan Pop-up Berhasil
+            Swal.fire({
+                title: 'Terhapus!',
+                text: 'Ulasan Anda telah berhasil dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
         } catch (error) {
             console.error("Gagal menghapus review:", error);
-            alert("Gagal menghapus ulasan. Silakan coba lagi.");
+            // Menampilkan Pop-up Gagal
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Gagal menghapus ulasan. Silakan coba lagi.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+            });
         }
     };
 
