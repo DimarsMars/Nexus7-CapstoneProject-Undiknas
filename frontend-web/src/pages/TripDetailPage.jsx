@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import RouteCard from '../components/RouteCard';
 import { useData } from '../context/DataContext';
 import apiService from '../services/apiService';
+import Swal from 'sweetalert2';
 
 // --- 1. Custom Hook for Data Fetching ---
 const useTripDetail = (id) => {
@@ -48,7 +49,12 @@ const ReviewModal = ({ isOpen, onClose, planId, onSubmit }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert("Please provide a star rating.");
+      Swal.fire({
+        title: 'Rating Diperlukan',
+        text: 'Silakan berikan penilaian bintang sebelum mengirimkan ulasan Anda.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+      });
       return;
     }
     setIsSubmitting(true);
@@ -129,7 +135,12 @@ const TripDetailPage = () => {
 
   const handleSetTrip = useCallback(async () => {
     if (!tripData?.routes?.length) {
-      alert("This trip has no routes to start.");
+      Swal.fire({
+        title: 'Rute Tidak Tersedia',
+        text: 'Maaf, perjalanan ini tidak memiliki titik tujuan (routes) sehingga tidak dapat dimulai. Silakan periksa kembali data perjalanan Anda.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+      });
       return;
     }
     try {

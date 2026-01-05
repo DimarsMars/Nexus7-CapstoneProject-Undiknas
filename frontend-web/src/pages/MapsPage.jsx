@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaPlus, FaTimes } from "react-icons/fa";
+
+import Swal from 'sweetalert2';
+
 // Import komponen inti dari React Leaflet untuk integrasi peta
 import { MapContainer, TileLayer, useMap, Marker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -137,11 +140,21 @@ const MapsPage = () => {
         setPreviewLocation(newPreview);
         setMapCenter([location.y, location.x]); 
       } else {
-        alert("Lokasi tidak ditemukan!");
+        Swal.fire({
+          title: 'Lokasi Tidak Ditemukan',
+          text: 'Maaf, kami tidak dapat menemukan lokasi yang Anda cari. Silakan periksa kembali ejaan atau coba kata kunci lain.',
+          icon: 'error',
+          confirmButtonColor: '#1e293b',
+        });
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Gagal mencari lokasi.");
+      Swal.fire({
+        title: 'Pencarian Gagal',
+        text: 'Terjadi kesalahan sistem saat mencari lokasi. Silakan periksa koneksi internet Anda atau coba lagi nanti.',
+        icon: 'error',
+        confirmButtonColor: '#1e293b',
+      });
     } finally {
       setIsSearching(false);
     }
@@ -170,7 +183,12 @@ const MapsPage = () => {
   // --- Fungsi untuk menambahkan lokasi terpilih ke dalam daftar waypoint rute ---
   const handleAddRoute = () => {
     if (!previewLocation) {
-        alert("Silakan cari atau klik lokasi di peta terlebih dahulu!");
+        Swal.fire({
+          title: 'Lokasi Belum Dipilih',
+          text: 'Silakan cari atau klik lokasi di peta terlebih dahulu!',
+          icon: 'warning',
+          confirmButtonColor: '#1e293b',
+        });
         return;
     }
     addWaypoint({ ...previewLocation, description: whatAreYouDoing });
@@ -194,8 +212,20 @@ const MapsPage = () => {
 
   // --- Fungsi untuk mengirimkan seluruh data rute (Plan) ke server via API ---
   const handlePostRoute = async () => {
-    if (!title) return alert("Please add a title for your plan.");
-    if (currentRouteWaypoints.length === 0) return alert("Please add at least one route point.");
+    if (!title) return 
+    Swal.fire({
+        title: 'Judul Diperlukan',
+        text: 'Silakan berikan judul untuk rencana perjalanan (plan) Anda sebelum menyimpannya.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+    });
+    if (currentRouteWaypoints.length === 0) return 
+    Swal.fire({
+        title: 'Rute Belum Ditambahkan',
+        text: 'Anda belum menentukan titik lokasi pada peta. Silakan cari lokasi atau klik pada peta, lalu tekan tombol "Add Route" minimal satu kali.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+    });
 
     const formData = new FormData();
     formData.append('title', title);
@@ -222,7 +252,12 @@ const MapsPage = () => {
 
     try {
       await apiService.createPlan(formData);
-      alert("Your plan has been created successfully!");
+      await Swal.fire({
+        title: 'Berhasil!',
+        text: 'Rencana perjalanan Anda telah berhasil dibuat dan disimpan.',
+        icon: 'success',
+        confirmButtonColor: '#1e293b',
+      });
       await fetchAllPlan(true);
 
       // Reset state form setelah berhasil post data
