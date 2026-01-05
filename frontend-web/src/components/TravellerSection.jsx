@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from "react";
 import apiService from "../services/apiService";
 
 const TravellerSection = () => {
   const [travellers, setTravellers] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTravellers = async () => {
@@ -23,6 +24,10 @@ const TravellerSection = () => {
     fetchTravellers();
   }, []);
 
+  const handleTravellerClick = (id) => {
+    navigate(`/profile/${id}`);
+  };
+
   return (
     <section className="px-5 my-16">
       <div className="max-w-7xl mx-auto">
@@ -32,7 +37,11 @@ const TravellerSection = () => {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-2 justify-items-center">
             
             {travellers.slice(0, 5).map((person) => (
-                <div key={person.user_id} className="flex flex-col items-center group cursor-pointer">
+                <div 
+                    key={person.user_id} 
+                    className="flex flex-col items-center group cursor-pointer"
+                    onClick={() => handleTravellerClick(person.user_id)}
+                >
                     <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden shadow-lg border-4 border-transparent group-hover:border-white transition-all duration-300 transform group-hover:scale-105">
                         <img 
                             src={person.photo || "https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg"} 
