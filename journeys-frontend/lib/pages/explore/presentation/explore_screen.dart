@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:journeys/services/api_service.dart';
-import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/category_model.dart';
+import 'package:journeys/models/plan_model.dart';
+import 'package:journeys/services/api_service.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});

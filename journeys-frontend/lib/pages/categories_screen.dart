@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/services/api_service.dart';
+
 import '../models/category_model.dart';
 
 class CategoriesScreen extends StatefulWidget {

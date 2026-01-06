@@ -8,19 +8,11 @@ import 'package:journeys/models/profile_model.dart';
 import 'package:journeys/models/review_on_my_plan_model.dart';
 import 'package:journeys/models/user_model.dart';
 import 'package:journeys/services/api_service.dart';
-<<<<<<< HEAD
 
 import 'presentation/edit_profile_screen.dart';
 import 'presentation/level_popup.dart';
 import 'presentation/my_route_screen.dart';
 
-=======
-import 'presentation/edit_profile_screen.dart';
-import 'presentation/my_route_screen.dart';
-import 'package:journeys/models/review_on_my_plan_model.dart';
-import 'presentation/level_popup.dart'; 
-
->>>>>>> dev-dimars
 // Widget utama untuk layar profil menggunakan StatefulWidget untuk menangani perubahan data
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -151,11 +143,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                             children: [
                               const SizedBox(height: 20),
                               // Widget untuk menampilkan Foto Profil (Base64 atau Default Icon)
-<<<<<<< HEAD
                               SizedBox( // Maintain overall dimensions
-=======
-                              Container(
->>>>>>> dev-dimars
                                 width: 120.0,
                                 height: 230.0,
                                 child: Center( // Center the CircleAvatar
@@ -287,14 +275,6 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
                               const SizedBox(height: 40),
 
-<<<<<<< HEAD
-=======
-                              // Daftar Menu Informasi Profil (Bahasa, Lokasi, Rute, Rating)
-                              _buildMenuItem(context,
-                                  'Languages: ${_profile!.languages ?? ''}'),
-                              _buildMenuItem(context,
-                                  'Location: ${_profile!.location ?? ''}'),
->>>>>>> dev-dimars
                               _buildMenuItem(context, 'My Route\'s',
                                   onTap: () {
                                 Navigator.push(

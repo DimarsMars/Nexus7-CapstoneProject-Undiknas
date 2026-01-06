@@ -9,7 +9,6 @@ import 'package:journeys/models/profile_model.dart';
 import 'package:journeys/models/user_model.dart';
 import 'package:journeys/services/api_service.dart';
 
-// Widget utama untuk layar pengeditan profil
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -18,30 +17,20 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _MyEditProfileScreen extends State<EditProfileScreen> {
-  // Definisi palet warna untuk konsistensi UI
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _lightGreyText = Color(0xFF6C7B8A);
   static const Color _borderColor = Color(0xFFCBD2D9);
 
-  // Inisialisasi layanan API
   final ApiService _apiService = ApiService();
-<<<<<<< HEAD
 
   Uint8List? _imageBytes;
   XFile? _pickedXFile;
-=======
-  
-  // Variabel untuk menangani pemilihan gambar profil
-  File? _imageFile;
->>>>>>> dev-dimars
   final ImagePicker _picker = ImagePicker();
 
-  // Controller dan variabel untuk input data diri (Tanggal lahir dan Nama)
   DateTime? _selectedDate;
   final TextEditingController _birthDateController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
 
-  // Daftar opsi status hubungan untuk dropdown
   String? _selectedStatus;
   final List<String> _statusOptions = [
     'Married',
@@ -51,40 +40,35 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     'Family Friendly'
   ];
 
-  // State untuk manajemen multi-select kategori minat (Description)
   bool _isDescriptionDropdownOpen = false;
   List<CategoryModel> _allCategories = [];
   List<CategoryModel> _selectedCategories = [];
 
-  // State untuk manajemen status loading dan penyimpanan data model
   bool _isLoading = true;
   bool _isSaving = false;
   UserModel? _user;
   ProfileModel? _profile;
 
-  // Inisialisasi awal saat layar dibuka
   @override
   void initState() {
     super.initState();
     _loadInitialData();
   }
 
-  // Membersihkan controller saat widget dihancurkan untuk mencegah kebocoran memori
   @override
   void dispose() {
     _birthDateController.dispose();
-    _nameController.dispose(); 
+    _nameController.dispose(); // Pastikan ini ada
     super.dispose();
   }
 
-  // Fungsi untuk memicu urutan pengambilan data dari server
   Future<void> _loadInitialData() async {
+    // Gabungkan fetch agar lebih efisien
     await _fetchCategories().then((_) {
       _loadProfileData();
     });
   }
 
-  // Fungsi asinkron untuk mengambil data profil dan akun user secara paralel
   Future<void> _loadProfileData() async {
     try {
       final results = await Future.wait([
@@ -101,7 +85,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
 
           _nameController.text = user.username;
 
-          // Parsing data tanggal lahir jika tersedia dari database
           if (profile.birthDate != null && profile.birthDate!.isNotEmpty) {
             try {
               _selectedDate = DateTime.parse(profile.birthDate!);
@@ -112,7 +95,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
             }
           }
 
-<<<<<<< HEAD
           if (profile.status != null &&
               _statusOptions.contains(profile.status)) {
             _selectedStatus = profile.status;
@@ -129,17 +111,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                 .where((cat) =>
                     categoryNames.contains(cat.name.trim().toLowerCase()))
                 .toList();
-=======
-          // Sinkronisasi status dropdown dengan data profil
-          if (profile.status != null && _statusOptions.contains(profile.status)) {
-            _selectedStatus = profile.status;
-          }
-
-          // Konversi string deskripsi (comma separated) menjadi list kategori terpilih
-          if (profile.description != null && profile.description!.isNotEmpty && _allCategories.isNotEmpty) {
-            final categoryNames = profile.description!.split(',').map((e) => e.trim().toLowerCase()).toList();
-            _selectedCategories = _allCategories.where((cat) => categoryNames.contains(cat.name.trim().toLowerCase())).toList();
->>>>>>> dev-dimars
           }
 
           _isLoading = false;
@@ -155,7 +126,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     }
   }
 
-  // Fungsi untuk mengambil daftar kategori yang tersedia dari API
   Future<void> _fetchCategories() async {
     try {
       final categories = await _apiService.getCategories();
@@ -169,7 +139,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     }
   }
 
-  // Fungsi untuk membuka galeri dan memilih gambar profil baru
   Future<void> _pickImage() async {
     final XFile? pickedFile =
         await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
@@ -182,7 +151,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     }
   }
 
-  // Fungsi untuk memunculkan Date Picker (kalender) untuk memilih tanggal lahir
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -190,7 +158,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
-        // Kustomisasi tema warna pada dialog kalender
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
@@ -217,24 +184,16 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     }
   }
 
-  // Fungsi utama untuk mengirimkan seluruh pembaruan profil ke server
   Future<void> _handleSave() async {
     setState(() => _isSaving = true);
 
     try {
-      // Format tanggal menjadi YYYY-MM-DD sesuai kebutuhan backend
       final String birthDate = _selectedDate != null
           ? "${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}"
           : "";
-<<<<<<< HEAD
       final String description =
           _selectedCategories.map((c) => c.name.trim()).join(', ');
-=======
-      // Gabungkan nama-nama kategori menjadi satu string tunggal
-      final String description = _selectedCategories.map((c) => c.name.trim()).join(', ');
->>>>>>> dev-dimars
 
-      // Memanggil service update profil
       await _apiService.updateUserProfile(
         birthDate: birthDate,
         description: description,
@@ -261,7 +220,7 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop(true); // Kembali ke halaman sebelumnya dengan status sukses
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {
@@ -279,7 +238,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     }
   }
 
-  // Pembangunan antarmuka pengguna utama
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -310,7 +268,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          // Bagian Foto Profil dengan tombol edit (Stack)
                           Stack(
                             children: [
                               CircleAvatar(
@@ -354,7 +311,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 30),
-                          // Form Input: Nama
                           _buildLabel('Name', center: true),
                           const SizedBox(height: 8),
                           _buildTextField(
@@ -364,7 +320,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                             hint: 'Loading name...',
                           ),
                           const SizedBox(height: 20),
-                          // Tampilan Badge Rank (Read-only)
                           _buildLabel('Rank\'s', center: true),
                           const SizedBox(height: 8),
                           Row(
@@ -410,7 +365,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          // Form Input: Tanggal Lahir
                           _buildLabel('Birth Date'),
                           const SizedBox(height: 8),
                           _buildTextField(
@@ -421,17 +375,14 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                             onTap: () => _selectDate(context),
                           ),
                           const SizedBox(height: 20),
-                          // Form Input: Kategori Minat (Deskripsi)
                           _buildLabel('Description (likes)'),
                           const SizedBox(height: 8),
                           _buildDescriptionField(),
                           const SizedBox(height: 20),
-                          // Form Input: Status
                           _buildLabel('Status'),
                           const SizedBox(height: 8),
                           _buildStatusField(),
                           const SizedBox(height: 40),
-                          // Tombol Aksi: Save dan Cancel
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -475,7 +426,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                             ],
                           ),
                           const SizedBox(height: 24),
-                          // Catatan Disclaimer di bawah form
                           const Text(
                             'Personal information on your profile is meant to be used to provide better recommendations to other users in this app.',
                             textAlign: TextAlign.center,
@@ -494,7 +444,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  // Widget Helper untuk membangun label input
   Widget _buildLabel(String text, {bool center = false}) {
     return Align(
       alignment: center ? Alignment.center : Alignment.centerLeft,
@@ -508,7 +457,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  // Widget Helper untuk membangun input teks standar
   Widget _buildTextField({
     required String hint,
     IconData? icon,
@@ -543,9 +491,7 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  // Widget kustom untuk pemilihan multi-kategori (Description Likes)
   Widget _buildDescriptionField() {
-    // Memfilter kategori yang belum dipilih untuk ditampilkan di list dropdown
     final availableCategories = _allCategories
         .where((cat) =>
             !_selectedCategories.any((selected) => selected.id == cat.id))
@@ -611,7 +557,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
             ),
           ),
         ),
-        // Dropdown list yang muncul saat field deskripsi diklik
         if (_isDescriptionDropdownOpen)
           Container(
             height: 200,
@@ -644,7 +589,6 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
     );
   }
 
-  // Widget Helper untuk membangun dropdown pilihan Status hubungan
   Widget _buildStatusField() {
     return DropdownButtonFormField<String>(
       value: _selectedStatus,

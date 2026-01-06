@@ -17,10 +17,70 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
   final TextEditingController searchController = TextEditingController();
 
 List<Map<String, dynamic>> savedPlaces = [];
-
+/*************  ✨ Windsurf Command ⭐  *************/
+/// Called when this object is inserted into the tree.
+///
+/// The framework will call this method exactly once for each State object,
+/// after the widget that owns this State object is inserted into the tree.
+///
+/// The framework might call this method again if it rebuilds the widget tree.
+/// For example, if the parent of the widget that owns this State object is
+/// rebuilt with a new set of arguments, the framework will call
+/// initState again.
+///
+/// Subclasses of State must override this method. Most subclasses
+/// only need to perform initialization that is specific to the subclass.
+/// Subclasses that wish to perform initialization that is not specific
+/// to the subclass should invoke the superclass's implementation of
+/// initState.
+///
+/// If a subclass has an override for initState, the subclass should
+/*******  97f93247-e309-49c8-9ea8-41cad35e5835  *******/
   @override
   void initState() {
-    super.initState();
+/// The framework does not test whether the implementation of this method
+/// validly initialized the object. Instead, the framework assumes that
+/// the implementation of this method will not return until the object is
+
+/// fully initialized.
+///
+/// If the object is a StatefulWidget, the framework will call the
+/// StatefulWidget's createState method to obtain the State object that is
+/// associated with the widget that owns this State object.
+///
+/// If the object is a State object, the framework will call the
+/// State object's reassemble method to reassemble the object.
+///
+/// The framework will not call build until after it has called initState for
+/// this object and all of the object's ancestors.
+///
+/// The framework will call initState exactly once for each State object.
+/// After a State object has been initialized, the framework does not call
+/// initState again when the widget's parent rebuilds the widget tree.
+/// Instead, the framework will call the State object's reassemble method
+/// to reassemble the object.
+///
+/// The framework might call initState again if it rebuilds the widget tree
+/// of a widget that owns a State object. If the framework rebuilds the
+/// widget tree of a widget that owns a State object, the framework will call
+/// initState again for that State object.
+///
+/// The framework will not call build until after it has called initState for
+/// this object and all of the object's ancestors.
+///
+/// The framework will call initState exactly once for each State object.
+/// After a State object has been initialized, the framework does not call
+/// initState again when the widget's parent rebuilds the widget tree.
+/// Instead, the framework will call the State object's reassemble method
+/// to reassemble the object.
+///
+/// The framework might call initState again if it rebuilds the widget tree
+/// of a widget that owns a State object. If the framework rebuilds the
+/// widget tree of a widget that owns a State object, the framework will call
+/// initState again for that State object.
+///
+/// The framework will not call build until after it has called initState for
+
     _bookmarks = apiService.getAllBookmarks();
   }
 
