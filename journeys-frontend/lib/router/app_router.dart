@@ -15,7 +15,6 @@ import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart'
 import 'package:journeys/pages/review/presentation/traveller_screen.dart';
 import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
 import 'package:journeys/pages/route_screen.dart';
-import 'package:journeys/pages/trip_schedule_screen.dart';
 
 // ----------------------------------------
 
@@ -157,47 +156,5 @@ final GoRouter appRouter = GoRouter(
         return const TripReviewScreen();
       },
     ),
-
-<<<<<<< HEAD
- GoRoute(
-  path: '/trip-schedule',
-  pageBuilder: (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    final planId = extra?['planId'];
-    final key = extra?['key'] as ValueKey?;
-
-    if (planId == null) {
-      return const MaterialPage(
-        child: Scaffold(
-          body: Center(child: Text('Plan ID missing')),
-        ),
-      );
-    }
-
-    return MaterialPage(
-      key: key, // ✅ penting agar rebuild saat key berbeda
-      child: TripScheduleScreen(planId: planId),
-    );
-=======
-  GoRoute(
-  path: '/trip-schedule',
-  builder: (context, state) {
-    final extra = state.extra as Map<String, dynamic>?;
-    final planId = extra?['planId'];
-    if (planId == null) {
-      return const Scaffold(
-        body: Center(child: Text('Plan ID missing')),
-      );
-    }
-    return TripScheduleScreen(planId: planId);
->>>>>>> e5acd956ecfa092fc67c0108da8a8c89090751d8
-  },
-),
-
-
-<<<<<<< HEAD
-
-=======
->>>>>>> e5acd956ecfa092fc67c0108da8a8c89090751d8
   ],
 );
