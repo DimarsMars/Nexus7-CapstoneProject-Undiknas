@@ -1,9 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:convert'; 
 import 'package:journeys/models/my_trip_review_model.dart';
-import 'package:journeys/models/review_on_my_plan_model.dart';
 import 'package:journeys/models/profile_model.dart';
+import 'package:journeys/models/review_on_my_plan_model.dart';
 import 'package:journeys/models/user_xp_model.dart';
 import 'package:journeys/services/api_service.dart';
 
@@ -173,12 +174,14 @@ class _LevelProgressBottomSheetState extends State<LevelProgressBottomSheet> {
                                           alignment: Alignment.center,
                                           children: [
                                             const Icon(
-                                              CupertinoIcons.shield_fill,
+                                              Icons.brightness_7,
                                               size: 80,
                                               color: Color(0xFF1C314A),
                                             ),
                                             Text(
-                                              _profile!.rank.split(' ').last,
+                                              (_profile!.rank.isNotEmpty && _profile!.rank.contains('lvl'))
+                                                ? _profile!.rank.split(' ').last.replaceAll('lvl', '')
+                                                : '0',
                                               style: const TextStyle(
                                                 fontSize: 30,
                                                 fontWeight: FontWeight.bold,
@@ -212,7 +215,7 @@ class _LevelProgressBottomSheetState extends State<LevelProgressBottomSheet> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              _userXP!.rank,
+                                              _userXP!.rank.replaceAll(RegExp(r'lvl\s*\d+'), '').trim(),
                                               // maxLines: 1, // Opsional: biar teks rank tidak turun ke bawah
                                               // overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
