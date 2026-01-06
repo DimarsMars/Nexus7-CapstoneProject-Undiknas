@@ -8,6 +8,7 @@ import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import { useNavigate, useParams } from 'react-router-dom';
 import LocationRouteCard from '../components/LocationRouteCard';
 import apiService from '../services/apiService';
+import Swal from 'sweetalert2'; // Import SweetAlert untuk notifikasi
 
 // --- LEAFLET ICON CONFIGURATION ---
 import iconRetina from 'leaflet/dist/images/marker-icon-2x.png';
@@ -236,13 +237,23 @@ const RunTripPage = () => {
             alert(`${response.data.error}\nYour distance: ${distance}`);
             return;
         }
-
-        alert(`Successfully arrived at ${currentDestination.title}!`);
+        // Success notification
+        await Swal.fire({
+            title: 'Selamat! Anda Sampai',
+            text: `Anda telah berhasil tiba di ${currentDestination.title}!`,
+            icon: 'success',
+            confirmButtonColor: '#1e293b',
+        });
 
         const updatedRoutes = tripRoute.filter(r => r.step_order !== currentDestination.step_order);
 
         if (updatedRoutes.length === 0) {
-            alert("🎉 Congratulations! You have completed the entire trip!");
+            await Swal.fire({
+                title: '🎉 Selamat!',
+                text: `Anda telah berhasil menyelesaikan trip!`,
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
             navigate("/myprofile");
         } else {
             setTripRoute(updatedRoutes);
@@ -251,7 +262,12 @@ const RunTripPage = () => {
             // Start the session for the next route
             const res = await apiService.postTripSessionAction(id, { action: "start", route_id: nextRoute.id });
             setTripSession(res.data?.data || { route_id: nextRoute.id, status: "ongoing" });
-            alert(`Next trip started: ${nextRoute.title}`);
+            await Swal.fire({
+                title: 'Trip Selanjutnya!',
+                text: `Perjalanan ke ${nextRoute.title} telah dimulai. Ikuti peta untuk mencapai tujuan!`,
+                icon: 'info',
+                confirmButtonColor: '#1e293b',
+            });
         }
     } catch (error) {
         const msg = error.response?.data?.error || "Failed to verify location.";
@@ -271,7 +287,12 @@ const RunTripPage = () => {
         if (!tripSession || !isSessionForCurrentRoute) {
             const res = await apiService.postTripSessionAction(id, { action: "start", route_id: currentDestination.id });
             setTripSession(res.data?.data);
-            alert("Trip started");
+            Swal.fire({
+                title: 'Perjalanan Dimulai!',
+                text: 'Semoga perjalanan Anda menyenangkan. Peta navigasi kini telah aktif!',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
             return;
         }
 
@@ -281,7 +302,14 @@ const RunTripPage = () => {
         await apiService.postTripSessionAction(id, { action, route_id: currentDestination.id });
 
         setTripSession(prev => ({ ...prev, status: isPaused ? "ongoing" : "paused" }));
-        alert(isPaused ? "Navigation Resumed" : "Navigation Paused");
+        Swal.fire({
+            title: isPaused ? 'Navigasi Dilanjutkan' : 'Navigasi Dijeda',
+            text: isPaused 
+                ? 'Sesi perjalanan Anda telah aktif kembali. Silakan lanjutkan mengikuti rute.' 
+                : 'Sesi perjalanan Anda dihentikan sementara. Pelacakan waktu dan rute dijeda.',
+            icon: isPaused ? 'info' : 'warning',
+            confirmButtonColor: '#1e293b',
+        });
     } catch (error) {
         console.error("Trip session action error:", error);
         alert("Failed to perform trip action.");
@@ -298,7 +326,12 @@ const RunTripPage = () => {
     try {
         if (isCurrentlyBookmarked && bookmarkId) {
             await apiService.deleteBookmarkRoute(bookmarkId);
-            alert("Bookmark removed successfully!");
+            Swal.fire({
+                title: 'Berhasil',
+                text: 'Bookmark Berhasil Dihapus!',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
             setBookmarks(prev => {
                 const newMap = new Map(prev);
                 newMap.delete(routeId);
@@ -306,7 +339,12 @@ const RunTripPage = () => {
             });
         } else {
             const res = await apiService.postBookmarkRoute(routeId);
-            alert("Added to bookmarks!");
+            Swal.fire({
+                title: 'Berhasil',
+                text: 'Berhasil Ditambahkan ke Bookmark!',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
             // Refetch is safer to get the new bookmark_id
             const bookmarksRes = await apiService.getBookmarkRoute();
             if (bookmarksRes.data) {
