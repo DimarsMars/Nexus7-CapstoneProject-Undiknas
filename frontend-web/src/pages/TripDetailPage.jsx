@@ -214,7 +214,7 @@ const TripDetailPage = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 pb-4">
               <div className="flex gap-3">
-                <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">Set Trip</button>
+                <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">Start</button>
                 <button onClick={handleReport} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">Report</button>
               </div>
               <button onClick={handleLike} aria-label={isLiked ? "Unsave Trip" : "Save Trip"}>
