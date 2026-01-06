@@ -158,6 +158,7 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
+<<<<<<< HEAD
  GoRoute(
   path: '/trip-schedule',
   pageBuilder: (context, state) {
@@ -177,10 +178,26 @@ final GoRouter appRouter = GoRouter(
       key: key, // ✅ penting agar rebuild saat key berbeda
       child: TripScheduleScreen(planId: planId),
     );
+=======
+  GoRoute(
+  path: '/trip-schedule',
+  builder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    final planId = extra?['planId'];
+    if (planId == null) {
+      return const Scaffold(
+        body: Center(child: Text('Plan ID missing')),
+      );
+    }
+    return TripScheduleScreen(planId: planId);
+>>>>>>> e5acd956ecfa092fc67c0108da8a8c89090751d8
   },
 ),
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e5acd956ecfa092fc67c0108da8a8c89090751d8
   ],
 );

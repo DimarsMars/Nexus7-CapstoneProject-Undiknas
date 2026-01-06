@@ -24,97 +24,48 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
   static const softGrey = Color(0xff6B7280);
 
   bool isPaused = false;
+  bool isArrived = false;
   bool isLoading = true;
 
-  LatLng? currentLocation;
-  LatLng? destination;
+  /// CURRENT USER LOCATION (DUMMY / GPS)
+  final LatLng currentLocation = LatLng(-8.670458, 115.212629);
 
   List<Map<String, dynamic>> routeSteps = [];
   int currentStepIndex = 0;
 
-  late StreamSubscription<Position> positionStream;
+  /// CURRENT DESTINATION
+  LatLng? destination;
 
-  // ================= INIT =================
+  // =================================================
+  // INIT
+  // =================================================
   @override
   void initState() {
     super.initState();
-    _initializeAll();
+    fetchRouteSteps();
   }
 
-  Future<void> _initializeAll() async {
-    await _initCurrentLocation();
-    _startLocationUpdates();
-    _loadTripSession();
-  }
-
-  // ================= LOCATION =================
-  Future<void> _initCurrentLocation() async {
-    final permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) return;
-
-    final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.best,
+  // =================================================
+  // GET ROUTE STEPS (MULTIPLE)
+  // =================================================
+  Future<void> fetchRouteSteps() async {
+    final response = await http.get(
+      Uri.parse("http://localhost:8080/plans/route/1"),
     );
 
-    currentLocation = LatLng(position.latitude, position.longitude);
-    mapController.move(currentLocation!, 12);
-  }
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
 
-  void _startLocationUpdates() {
-    positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.best,
-        distanceFilter: 10,
-      ),
-    ).listen((position) {
-      if (!mounted) return;
-      setState(() {
-        currentLocation = LatLng(position.latitude, position.longitude);
-      });
-    });
-  }
+      /// JIKA BACKEND SUDAH ARRAY
+      final List data = json['data'] is List
+          ? json['data']
+          : [json['data']];
 
-  @override
-  void dispose() {
-    positionStream.cancel();
-    super.dispose();
-  }
-
-  // ================= TRIP SESSION =================
-  Future<void> _loadTripSession() async {
-    try {
-      final sessions = await ApiService().getActiveTripSessions();
-      final session = sessions.firstWhere(
-        (s) => s['plan_id'] == widget.planId,
-        orElse: () => {},
-      );
-
-      if (session.isEmpty) {
-        context.pop();
-        return;
-      }
-
-      final planDetail =
-          await ApiService().getPlanDetailForTrip(widget.planId);
-      final steps = planDetail?.routes ?? [];
-
-      final index =
-          steps.indexWhere((s) => s.routeId == session['route_id']);
+      data.sort((a, b) =>
+          a['step_order'].compareTo(b['step_order']));
 
       setState(() {
-        routeSteps = steps
-            .map((e) => {
-                  'route_id': e.routeId,
-                  'step_order': e.stepOrder,
-                  'title': e.title,
-                  'latitude': e.latitude,
-                  'longitude': e.longitude,
-                  'tags': e.tags,
-                })
-            .toList();
-
-        currentStepIndex = index;
+        routeSteps = List<Map<String, dynamic>>.from(data);
         destination = LatLng(
           routeSteps[index]['latitude'],
           routeSteps[index]['longitude'],
@@ -122,99 +73,139 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
         isPaused = session['status'] == 'paused';
         isLoading = false;
       });
-    } catch (e) {
-      debugPrint(e.toString());
-      context.pop();
+    } else {
+      debugPrint("ROUTE ERROR ${response.statusCode}");
     }
   }
 
-  // ================= ACTIONS =================
-  Future<void> onArrived() async {
-    if (currentLocation == null) return;
-
-    final step = routeSteps[currentStepIndex];
-    final response = await ApiService().verifyLocation(
-      widget.planId,
-      step['step_order'],
-      currentLocation!,
-    );
-
-    if (!mounted || response == null) return;
-
-    if (response['next_route'] != null) {
-      final next = response['next_route'];
-
-      await ApiService().postTripSessionAction(
-        planId: widget.planId,
-        action: 'start',
-        routeId: next['route_id'],
-      );
-
+  // =================================================
+  // ARRIVED → NEXT STEP
+  // =================================================
+  void onArrived() {
+    if (currentStepIndex < routeSteps.length - 1) {
       setState(() {
         currentStepIndex++;
-        destination = LatLng(next['latitude'], next['longitude']);
-        isPaused = false;
+        destination = LatLng(
+          routeSteps[currentStepIndex]['latitude'],
+          routeSteps[currentStepIndex]['longitude'],
+        );
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Arrived at ${routeSteps[currentStepIndex - 1]['title']}",
+          ),
+        ),
+      );
     } else {
-      context.go('/home');
+      setState(() => isArrived = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Trip Completed 🎉")),
+      );
     }
   }
 
-  Future<void> onPause() async {
-    final step = routeSteps[currentStepIndex];
-    final action = isPaused ? 'resume' : 'pause';
+  void onPause() {
+    setState(() => isPaused = !isPaused);
+  }
 
-    final success = await ApiService().postTripSessionAction(
-      planId: widget.planId,
-      action: action,
-      routeId: step['route_id'],
+  void onNextLocation(String name) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Navigate to $name")),
     );
-
-    if (success && mounted) {
-      setState(() => isPaused = !isPaused);
-    }
   }
+}
+
+
 
   // ================= UI =================
   @override
   Widget build(BuildContext context) {
-    if (isLoading || currentLocation == null || destination == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Trip Schedule')),
-      body: Stack(
-        children: [
-          FlutterMap(
-            mapController: mapController,
-            options: MapOptions(
-              initialCenter: currentLocation!,
-              initialZoom: 12,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.journeys',
-              ),
-              const CurrentLocationLayer(),
-            ],
-          ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildBottomPanel(),
-          ),
-        ],
+      backgroundColor: const Color(0xffF3F4F6),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        title: const Text(
+          "Trip Schedule",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
       ),
+      body: destination == null
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(
+              children: [
+                /// ================= MAP =================
+                FlutterMap(
+                  mapController: mapController,
+                  options: MapOptions(
+                    initialCenter: currentLocation,
+                    initialZoom: 12,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.journeys',
+                    ),
+
+                    /// MARKERS
+                    MarkerLayer(
+                      markers: [
+                        /// CURRENT LOCATION
+                        Marker(
+                          point: currentLocation,
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.navigation,
+                            color: primaryBlue,
+                            size: 30,
+                          ),
+                        ),
+
+                        /// ALL STEPS
+                        ...routeSteps.map(
+                          (step) => Marker(
+                            point: LatLng(
+                              step['latitude'],
+                              step['longitude'],
+                            ),
+                            width: 40,
+                            height: 40,
+                            child: const Icon(
+                              Icons.location_on,
+                              color: Colors.redAccent,
+                              size: 34,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const CurrentLocationLayer(),
+                  ],
+                ),
+
+                /// ================= BOTTOM PANEL =================
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: buildBottomPanel(),
+                ),
+              ],
+            ),
     );
   }
 
-  Widget _buildBottomPanel() {
+  // =================================================
+  // BOTTOM PANEL
+  // =================================================
+  Widget buildBottomPanel() {
+    final currentStep = routeSteps[currentStepIndex];
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
@@ -224,24 +215,108 @@ class _TripScheduleScreenState extends State<TripScheduleScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onArrived,
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: primaryBlue),
-              child: const Text('Arrived'),
+          Text(
+            "Current Location",
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onPause,
-              style:
-                  ElevatedButton.styleFrom(backgroundColor: darkBlue),
-              child: Text(isPaused ? 'Resume' : 'Pause'),
+          const SizedBox(height: 4),
+          Text(
+            "Going to · ${currentStep['title']}",
+            style: const TextStyle(color: softGrey),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isArrived ? "Arrived" : "Step ${currentStepIndex + 1} of ${routeSteps.length}",
+            style: TextStyle(
+              color: isArrived ? Colors.green : softGrey,
+              fontWeight: FontWeight.w500,
             ),
           ),
+
+          const SizedBox(height: 14),
+
+          /// BUTTONS
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isArrived ? null : onArrived,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryBlue,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Arrived",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: onPause,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        isPaused ? Colors.orange : darkBlue,
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    isPaused ? "Resume" : "Pause",
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+          const Text(
+            "Next Locations",
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+
+          /// NEXT STEPS LIST
+          ...routeSteps
+              .skip(currentStepIndex + 1)
+              .map(
+                (step) => buildNextLocation(
+                  step['title'],
+                  step['tags'] != null && step['tags'].isNotEmpty
+                      ? step['tags'][0]
+                      : '',
+                ),
+              ),
         ],
+      ),
+    );
+  }
+
+  Widget buildNextLocation(String title, String subtitle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xffF9FAFB),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.place, color: primaryBlue),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing:
+            const Icon(Icons.arrow_forward_ios, size: 14),
+        onTap: () => onNextLocation(title),
       ),
     );
   }

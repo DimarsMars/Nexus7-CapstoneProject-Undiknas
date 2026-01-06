@@ -559,8 +559,7 @@ final selectedCategoryIds = allCategories
 
   // ================= UI =================
   @override
-  @override
-Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xffF3F4F6),
     appBar: AppBar(
@@ -601,18 +600,19 @@ Widget build(BuildContext context) {
 
           const SizedBox(height: 10),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              mainButton("Add Route", addRoute),
-              mainButton("Bookmark's", () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BookmarkScreen()),
-                );
-              }),
-            ],
-          ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                mainButton("Add Route", addRoute),
+                mainButton("Bookmark's", () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const BookmarkScreen()),
+                  );
+                }),
+              ],
+            ),
 
           const SizedBox(height: 16),
 
@@ -753,18 +753,17 @@ Widget build(BuildContext context) {
 
           const SizedBox(height: 14),
 
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xff1A3250),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
-            ),
-            onPressed: postRouteToBackend,
-            child: const Text(
-              "Post Route",
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
+            ElevatedButton(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xff1A3250),
+    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+  ),
+  onPressed: postRouteToBackend, // 🔥 WAJIB INI
+  child: const Text(
+    "Post Route",
+    style: TextStyle(color: Colors.white),
+  ),
+),
         ],
       ),
     ),
@@ -1003,13 +1002,25 @@ Widget build(BuildContext context) {
   }
 
   Widget mainButton(String text, VoidCallback onTap) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xff1A3250),
+  return ElevatedButton(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xff1A3250),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 4,
       ),
-      onPressed: onTap,
-      child:
-          Text(text, style: const TextStyle(color: Colors.white)),
-    );
-  }
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(6), // ← kecil = lebih kotak
+      ),
+    ),
+    onPressed: onTap,
+    child: Text(
+      text,
+      style: const TextStyle(
+        color: Colors.white,
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
+}
 }
