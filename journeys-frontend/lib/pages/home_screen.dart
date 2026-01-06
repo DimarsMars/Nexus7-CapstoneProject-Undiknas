@@ -4,12 +4,11 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:journeys/models/category_model.dart';
 import 'package:journeys/models/plan_model.dart';
 import 'package:journeys/models/traveller_model.dart';
 import 'package:journeys/services/api_service.dart';
-import 'package:journeys/theme/app_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -472,7 +471,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: GestureDetector(
-                onTap: () => context.go('/explore'),
+                onTap: () => context.go('/route'),
                 child: Container(
                   height: 90,
                   decoration: BoxDecoration(

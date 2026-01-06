@@ -454,7 +454,34 @@ Row(
     SizedBox(
       height: 34,
       child: ElevatedButton(
-        onPressed: () {},
+  onPressed: () async {
+  if (_plan == null || _plan!.routes.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('This trip has no routes to start')),
+    );
+    return;
+  }
+
+  final firstRoute = _plan!.routes.first;
+
+  try {
+    final res = await ApiService().postTripSessionStart(
+      widget.planId,
+      firstRoute.routeId,
+    );
+
+    if (!mounted) return;
+    context.push('/trip-schedule', extra: {
+      'planId': widget.planId,
+    });
+  } catch (err) {
+    final msg = err.toString();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to start trip: $msg')),
+    );
+  }
+},
+
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1E3A5F),
           foregroundColor: Colors.white,
