@@ -231,6 +231,96 @@ String? _errorActiveTrip;
     }
   }
 
+  Future<void> _handleCancelTrip() async {
+    if (_activeTrips.isEmpty) return;
+
+    final trip = _activeTrips.first;
+    final plan = trip['Plan'] ?? {};
+    final planId = plan['plan_id'] ?? trip['plan_id'];
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Trip'),
+        content: const Text('Are you sure you want to cancel this trip?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _apiService.cancelTripSessions(planId);
+        _fetchActiveTrip();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trip cancelled')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to cancel trip: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleRemoveAllPastTrips() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove All Past Trips'),
+        content: const Text('Are you sure you want to delete all your past trip history?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Remove All', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        final List<Future> deleteFutures = _pastTrips.map((trip) {
+          return _apiService.deletePastTrip(trip.progressId);
+        }).toList();
+
+        await Future.wait(deleteFutures);
+        _fetchPastTrips();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All past trips have been deleted')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete past trips: $e')),
+          );
+        }
+      }
+    }
+  }
+
+
+
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
   static const Color _lightGreyText = Colors.black;
@@ -272,7 +362,7 @@ String? _errorActiveTrip;
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionHeader('Your trip now', 'Cancel Trip'),
+                  _buildSectionHeader('Your trip now', 'Cancel Trip', onPressed: _activeTrips.isNotEmpty ? _handleCancelTrip : null),
                   const SizedBox(height: 16),
                   _buildCurrentTripCard(),
                   const SizedBox(height: 32),
@@ -308,7 +398,8 @@ String? _errorActiveTrip;
                                   },
                                 ),
                   const SizedBox(height: 32),
-                  _buildSectionHeader('Your past trip\'s', 'Remove all'),
+                  _buildSectionHeader('Your past trip\'s', 'Remove all', onPressed: _pastTrips.isNotEmpty ? _handleRemoveAllPastTrips : null),
+
                   const SizedBox(height: 16),
                   _isLoadingPastTrips
                       ? const Center(child: CircularProgressIndicator())
@@ -328,15 +419,17 @@ String? _errorActiveTrip;
                                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                                   itemBuilder: (context, index) {
                                     final trip = _pastTrips[index];
-                                    return _buildTripCard(
-                                      title: trip.title,
-                                      description: trip.description,
-                                      location: trip.routes.isNotEmpty ? trip.routes.first.address : 'No location',
-                                      icon: Icons.delete_outline,
-                                      banner: trip.banner,
-                                      onIconPressed: () => _handleDeleteHistory(trip.progressId),
-                                      iconColor: _darkGrey,
-                                    );
+                                   return _buildTripCard(
+  title: trip.title,
+  description: trip.description,
+  location: trip.routes.isNotEmpty
+      ? trip.routes.first.address
+      : 'No location',
+  icon: Icons.delete_outline, // ✅ Ganti jadi ikon delete
+  banner: trip.banner,
+  onIconPressed: () => _handleDeleteHistory(trip.progressId),
+  iconColor: const Color.fromARGB(255, 0, 0, 0), // ✅ Gunakan merah seperti di gambar
+);
                                   },
                                 ),
                 ],
@@ -500,19 +593,26 @@ String? _errorActiveTrip;
             ),
           ),
           const SizedBox(width: 8),
-         Container(
-  height: 40,
-  width: 40,
-  decoration: BoxDecoration(
-    color: _darkGrey,
-    borderRadius: BorderRadius.circular(12),
-  ),
-  child: IconButton(
-    icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-    onPressed: onIconPressed,
-    tooltip: 'Open Schedule',
-  ),
-),
+    icon == Icons.arrow_forward_ios
+    ? Container(
+        height: 40,
+        width: 40,
+        decoration: BoxDecoration(
+          color: _darkGrey,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: IconButton(
+          icon: Icon(icon, color: Colors.white, size: 20),
+          onPressed: onIconPressed,
+          tooltip: 'Open Schedule',
+        ),
+      )
+    : IconButton(
+        icon: Icon(icon, color: iconColor ?? Colors.black, size: 24),
+        onPressed: onIconPressed,
+        tooltip: 'Open',
+      ),
+
 
         ],
       ),

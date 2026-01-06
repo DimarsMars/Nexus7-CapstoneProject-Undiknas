@@ -258,28 +258,6 @@ func GetPlanDetail(c *gin.Context) {
 	})
 }
 
-func DeletePlan(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	idStr := c.Param("id")
-	planID, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var plan models.Plan
-	if err := config.DB.Where("plan_id = ? AND user_id = ?", planID, userID).First(&plan).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Plan tidak ditemukan"})
-		return
-	}
-
-	if err := config.DB.Delete(&plan).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus plan"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "Plan berhasil dihapus"})
-}
 
 type VerifyLocationInput struct {
 	Latitude  float64 `json:"latitude" binding:"required"`
@@ -828,32 +806,6 @@ func GetActiveTrip(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": sessions,
 	})
-}
-
-func GetCompletedStepsByUser(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	planIDStr := c.Param("id") // ✅ BENAR
-
-	planID, err := strconv.ParseUint(planIDStr, 10, 64)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID plan tidak valid"})
-		return
-	}
-
-	var progresses []models.PlanProgress
-	if err := config.DB.
-		Where("user_id = ? AND plan_id = ?", userID, planID).
-		Find(&progresses).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data progress"})
-		return
-	}
-
-	completed := []int{}
-	for _, p := range progresses {
-		completed = append(completed, p.StepOrder)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": completed})
 }
 
 func CancelTripSession(c *gin.Context) {

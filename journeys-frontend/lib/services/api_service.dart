@@ -34,7 +34,7 @@ class ApiService {
 
   // --- CONFIGURATION ---
   // Satu variabel untuk semua endpoint agar konsisten
-  static const String _baseUrl = 'http://172.20.10.2:8080';
+  static const String _baseUrl = 'http://172.20.10.7:8080';
 
   // --- HELPER ---
   // Helper untuk mengambil token agar tidak duplicate code

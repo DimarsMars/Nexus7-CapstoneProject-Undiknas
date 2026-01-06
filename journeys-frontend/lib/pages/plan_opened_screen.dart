@@ -417,7 +417,7 @@ void _handleReportTrip() async {
     return Icon(
       Icons.star,
       size: 24,
-      color: index < rating ? Colors.amber : Colors.white,
+      color: index < rating ? Colors.amber : const Color.fromARGB(255, 173, 169, 169),
     );
   }),
 ),
@@ -454,7 +454,34 @@ Row(
     SizedBox(
       height: 34,
       child: ElevatedButton(
-        onPressed: () {},
+  onPressed: () async {
+  if (_plan == null || _plan!.routes.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('This trip has no routes to start')),
+    );
+    return;
+  }
+
+  final firstRoute = _plan!.routes.first;
+
+  try {
+    final res = await ApiService().postTripSessionStart(
+      widget.planId,
+      firstRoute.routeId,
+    );
+
+    if (!mounted) return;
+    context.push('/trip-schedule', extra: {
+      'planId': widget.planId,
+    });
+  } catch (err) {
+    final msg = err.toString();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to start trip: $msg')),
+    );
+  }
+},
+
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF1E3A5F),
           foregroundColor: Colors.white,

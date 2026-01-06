@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/pages/auth/presentation/signup_screen.dart';
-import 'package:journeys/pages/explore/presentation/explore_screen.dart';
-import 'package:journeys/pages/home_screen.dart';
 import 'package:journeys/pages/categories_screen.dart';
-import 'package:journeys/pages/plan_opened_screen.dart';
-import 'package:journeys/pages/review/presentation/give_review_screen.dart';
-import 'package:journeys/pages/review/presentation/place_detail_screen.dart';
-import 'package:journeys/pages/review/presentation/traveller_screen.dart';
-import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
+import 'package:journeys/pages/explore/presentation/explore_screen.dart';
+import 'package:journeys/pages/history_screen.dart';
+import 'package:journeys/pages/home_screen.dart';
 import 'package:journeys/pages/main_wrapper.dart';
-import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart';
-
+import 'package:journeys/pages/plan_opened_screen.dart';
 // --- TAMBAHAN DARI KODE ANDA (Import) ---
 import 'package:journeys/pages/profile/profile_screen.dart';
-import 'package:journeys/pages/history_screen.dart';
+import 'package:journeys/pages/review/presentation/give_review_screen.dart';
+import 'package:journeys/pages/review/presentation/place_detail_screen.dart';
+import 'package:journeys/pages/review/presentation/traveller_detail_screen.dart';
+import 'package:journeys/pages/review/presentation/traveller_screen.dart';
+import 'package:journeys/pages/review/presentation/trip_review_screen.dart';
+import 'package:journeys/pages/route_screen.dart';
+import 'package:journeys/pages/trip_schedule_screen.dart';
+
 // ----------------------------------------
 
 import '../../pages/auth/presentation/intro_screen.dart';
@@ -57,6 +59,12 @@ final GoRouter appRouter = GoRouter(
           path: '/home',
           builder: (BuildContext context, GoRouterState state) {
             return const HomeScreen();
+          },
+        ),
+        GoRoute(
+          path: '/route',
+          builder: (BuildContext context, GoRouterState state) {
+            return const RouteScreen();
           },
         ),
         GoRoute(
@@ -149,5 +157,30 @@ final GoRouter appRouter = GoRouter(
         return const TripReviewScreen();
       },
     ),
+
+ GoRoute(
+  path: '/trip-schedule',
+  pageBuilder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    final planId = extra?['planId'];
+    final key = extra?['key'] as ValueKey?;
+
+    if (planId == null) {
+      return const MaterialPage(
+        child: Scaffold(
+          body: Center(child: Text('Plan ID missing')),
+        ),
+      );
+    }
+
+    return MaterialPage(
+      key: key, // ✅ penting agar rebuild saat key berbeda
+      child: TripScheduleScreen(planId: planId),
+    );
+  },
+),
+
+
+
   ],
 );

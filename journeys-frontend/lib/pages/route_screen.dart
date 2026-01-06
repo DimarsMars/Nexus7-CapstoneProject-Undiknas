@@ -1,12 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
+
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart'; // untuk kIsWeb
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:journeys/pages/bookmark_screen.dart';
-import 'package:journeys/pages/trip_schedule_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:journeys/services/api_service.dart';
+import 'package:latlong2/latlong.dart';
+
 
 class RouteScreen extends StatefulWidget {
   const RouteScreen({super.key});
@@ -17,13 +21,62 @@ class RouteScreen extends StatefulWidget {
 
 class _RouteScreenState extends State<RouteScreen> {
   // ================= CONFIG =================
-  late final String orsApiKey;
+  static const String orsApiKey =
+      "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6ImQ1NmVlYzAzODhmMjQyYTU4YzNlYzFjNjcyZmJmOWNmIiwiaCI6Im11cm11cjY0In0=";
 
 @override
 void initState() {
   super.initState();
-  orsApiKey = dotenv.env['ORS_API_KEY'] ?? '';
+  fetchCategories();
 }
+
+Future<void> fetchCategories() async {
+  try {
+    final cats = await ApiService().getCategories();
+    setState(() {
+      categories.clear();
+      categories.addAll(cats.map((cat) => cat.name));
+    });
+  } catch (e) {
+    debugPrint("Fetch categories error: $e");
+  }
+}
+
+
+Future<void> pickImage(ImageSource source, int index) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(
+    source: source,
+    imageQuality: 80,
+  );
+
+  if (pickedFile == null) return;
+
+  Uint8List? bytes;
+String? path;
+
+if (kIsWeb) {
+  bytes = await pickedFile.readAsBytes();
+  path = pickedFile.name; // nama file, bukan path
+} else {
+  bytes = null;
+  path = pickedFile.path;
+}
+
+setState(() {
+  routes[index]["image"] = {
+    "path": path,
+    "bytes": bytes,       // ← simpan bytes di web
+    "isWeb": kIsWeb,
+  };
+});
+
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text("Image selected: ${pickedFile.path}")),
+  );
+}
+
 
 Future<String?> getFirebaseToken() async {
   final user = FirebaseAuth.instance.currentUser;
@@ -33,8 +86,14 @@ Future<String?> getFirebaseToken() async {
 
   final MapController mapController = MapController();
   
-  final titleController = TextEditingController();
-  final descController = TextEditingController();
+  // ✅ CONTROLLER UNTUK PLAN
+final planTitleController = TextEditingController();
+final planDescController = TextEditingController();
+
+// ✅ CONTROLLER UNTUK ROUTE
+final titleController = TextEditingController();
+final descController = TextEditingController();
+
   final addressController = TextEditingController();
   final doingController = TextEditingController();
   
@@ -88,6 +147,8 @@ Widget buildDropdown() {
 }
 
   String? selectedCategory;
+  bool isCategoryDropdownOpen = false;
+final List<String> selectedCategories = [];
   final List<String> categories = [
     "Food",
     "Adventure",
@@ -138,21 +199,41 @@ void showEditRouteDialog(int index) {
   );
 }
 
-void showAddImageDialog() {
-  showDialog(
+void showAddImageDialog(int index) {
+  showModalBottomSheet(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Add Image"),
-      content: const Text("Feature add image coming soon 📸"),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
-        ),
-      ],
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
+    builder: (context) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text("Pick from Gallery"),
+              onTap: () async {
+                Navigator.pop(context);
+                await pickImage(ImageSource.gallery, index);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text("Take a Photo"),
+              onTap: () async {
+                Navigator.pop(context);
+                await pickImage(ImageSource.camera, index);
+              },
+            ),
+          ],
+        ),
+      );
+    },
   );
 }
+
+
 
 void showDeleteConfirmDialog(int index) {
   showDialog(
@@ -237,10 +318,13 @@ fetchRoute();
     final data = jsonDecode(res.body);
     final coords = data["features"][0]["geometry"]["coordinates"];
 
-    setState(() {
-      previewPoint = LatLng(coords[1], coords[0]);
-      mapCenter = previewPoint!;
-    });
+   setState(() {
+  previewPoint = LatLng(coords[1], coords[0]);
+  mapCenter = previewPoint!;
+});
+
+await reverseGeocode(previewPoint!);
+
 
     mapController.move(mapCenter, 15);
   }
@@ -255,8 +339,17 @@ fetchRoute();
     final props = data["features"][0]["properties"];
 
     setState(() {
-      addressController.text = props["label"];
-    });
+  // 🟢 TITLE → nama tempat / jalan
+  titleController.text =
+      props["name"] ??
+      props["street"] ??
+      props["locality"] ??
+      "";
+
+  // 🟢 ADDRESS → alamat lengkap
+  addressController.text = props["label"] ?? "";
+});
+
   }
   // ================= FETCH ROUTE =================
   Future<void> fetchRoute() async {
@@ -287,32 +380,68 @@ fetchRoute();
   }
 
   // ================= ADD ROUTE =================
-  void addRoute() {
-    if (previewPoint == null) return;
+void addRoute() {
+  if (previewPoint == null) return;
+
+  setState(() {
+  routes.add({
+    "title": titleController.text.isNotEmpty
+    ? titleController.text
+    : addressController.text.split(",").first,
+      // ✅ FIXED: ambil dari input Title
+    "address": addressController.text,
+    "latlng": previewPoint!,
+    "doing": doingController.text,
+    "image": null,
+  });
+
+
+    routePoints.add(previewPoint!);
+    previewPoint = null;
+  });
+
+  // Kosongkan input
+  titleController.clear();
+  addressController.clear();
+  doingController.clear();
+
+  fetchRoute();
+}
+
+
+
+
+
+  // ================= POST ROUTE =================
+  void postRoute() {
+    if (routes.isEmpty) return;
 
     setState(() {
-      routes.add({
-        "title": titleController.text,
-        "address": addressController.text,
-        "latlng": previewPoint!,
-      });
-
-      routePoints.add(previewPoint!);
+      routes.clear();
+      routePoints.clear();
+      routeGeometry.clear();
       previewPoint = null;
+      mapCenter = const LatLng(-8.436697, 115.279947);
     });
 
-    fetchRoute();
+    mapController.move(mapCenter, 14);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Route berhasil di-post")),
+    );
   }
 
+ void clearForm() {
+  planTitleController.clear();
+  planDescController.clear();
 
-  void clearForm() {
-    titleController.clear();
-    descController.clear();
-    addressController.clear();
-    doingController.clear();
+  titleController.clear();
+  addressController.clear();
+  doingController.clear();
 
-    selectedCategory = null;
-  }
+  selectedCategory = null;
+}
+
 
   // ================= ADD CATEGORY =================
   void addMoreCategory() {
@@ -349,56 +478,89 @@ fetchRoute();
   }
 
 Future<void> postRouteToBackend() async {
-  final token = await getFirebaseToken();
-  if (token == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("User belum login")),
-    );
-    return;
+  if (routes.isEmpty) return;
+
+  // 1. Convert routes & image to Base64
+  final List<Map<String, dynamic>> convertedRoutes = [];
+
+ for (int i = 0; i < routes.length; i++) {
+  final r = routes[i];
+  String base64Image = "";
+  debugPrint("🔎 Route $i - Title: ${r["title"]}");
+  debugPrint("🖼️ Route $i - Image: ${r["image"]}");
+
+  if (r["image"] != null) {
+    if (r["image"]["isWeb"] == true) {
+      final bytes = r["image"]["bytes"] as Uint8List;
+      base64Image = base64Encode(bytes);
+      debugPrint("📦 Base64 (web) route $i length: ${base64Image.length}");
+    } else if (r["image"]["path"] != null) {
+      final path = r["image"]["path"];
+      final bytes = await File(path).readAsBytes();
+      base64Image = base64Encode(bytes);
+      debugPrint("📦 Base64 (mobile) route $i length: ${base64Image.length}");
+    }
   }
 
-  final body = {
-    "title": titleController.text,
-    "description": descController.text,
-    "status": selectedValue ?? "",
-    "tags": categories.map((e) => "#$e").toList(),
-  };
+  convertedRoutes.add({
+    "title": r["title"] ?? "",
+    "description": r["doing"] ?? "",
+    "address": r["address"] ?? "",
+    "latitude": r["latlng"].latitude,
+    "longitude": r["latlng"].longitude,
+    "image": base64Image,
+    "tags": [],
+    "stepOrder": i,
+  });
+}
 
-  final response = await http.post(
-    Uri.parse("http://localhost:8080/plans/"),
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    },
-    body: jsonEncode(body),
-  );
 
-  if (response.statusCode == 200 || response.statusCode == 201) {
+  try {
+    // 2. POST Plan
+    final allCategories = await ApiService().getCategories();
+final selectedCategoryIds = allCategories
+    .where((cat) => selectedCategories.contains(cat.name))
+    .map((cat) => cat.id.toString())
+    .toList();
+  final newPlan = await ApiService().postPlanMultipart(
+  title: planTitleController.text.trim(),
+  description: planDescController.text.trim(),
+  status: selectedValue ?? "",
+  categories: selectedCategoryIds, // ← INI FIXED
+  routes: convertedRoutes,
+);
+
+
+    if (newPlan != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Plan berhasil dibuat!")),
+      );
+
+      // reset UI
+      setState(() {
+        routes.clear();
+        routePoints.clear();
+        routeGeometry.clear();
+        previewPoint = null;
+        selectedCategories.clear();
+        selectedValue = null;
+      });
+      clearForm();
+    }
+  } catch (e) {
+    debugPrint("Post Plan Error: $e");
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Plan berhasil dibuat")),
-    );
-
-    setState(() {
-      routes.clear();
-      routePoints.clear();
-      routeGeometry.clear();
-      previewPoint = null;
-      selectedCategory = null;
-      selectedValue = null;
-    });
-
-    clearForm();
-  } else {
-    debugPrint("ERROR: ${response.body}");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Gagal membuat plan")),
+      const SnackBar(content: Text("Error saat membuat plan")),
     );
   }
 }
 
+
+
   // ================= UI =================
   @override
-  Widget build(BuildContext context) {
+  @override
+Widget build(BuildContext context) {
   return Scaffold(
     backgroundColor: const Color(0xffF3F4F6),
     appBar: AppBar(
@@ -409,16 +571,21 @@ Future<void> postRouteToBackend() async {
         style: TextStyle(color: Colors.black),
       ),
     ),
-      body: SingleChildScrollView(
+    body: SingleChildScrollView(
       padding: const EdgeInsets.all(18),
       child: Column(
         children: [
-          inputField(titleController, "Add title"),
-          inputField(descController, "Add Description"),
+          // ===== PLAN INFO =====
+          inputField(planTitleController, "Add plan title"),
+          inputField(planDescController, "Add plan description"),
+
           buildDropdown(),
           buildMap(),
 
-          // 🔍 input + search icon
+          // ===== ROUTE INPUT =====
+
+
+          // 🔍 ADDRESS (SEARCH / MAP)
           inputField(
             addressController,
             "Cari lokasi atau klik peta",
@@ -428,169 +595,182 @@ Future<void> postRouteToBackend() async {
               onPressed: searchLocation,
             ),
           ),
-        
-      
-    
-            inputField(doingController, "What are you doing"),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                mainButton("Add Route", addRoute),
-                mainButton("Bookmark's", () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const BookmarkScreen()),
-                  );
-                }),
-              ],
-            ),
+          // 📝 DESCRIPTION
+          inputField(doingController, "What are you doing"),
 
-            const SizedBox(height: 16),
+          const SizedBox(height: 10),
 
-            /// ROUTE LIST
-            ListView.builder(
-  shrinkWrap: true,
-  physics: const NeverScrollableScrollPhysics(),
-  itemCount: routes.length,
-  itemBuilder: (context, index) {
-    final r = routes[index];
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              mainButton("Add Route", addRoute),
+              mainButton("Bookmark's", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const BookmarkScreen()),
+                );
+              }),
+            ],
+          ),
 
-    return InkWell(
+          const SizedBox(height: 16),
+
+          // ===== ROUTE LIST =====
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: routes.length,
+            itemBuilder: (context, index) {
+              final r = routes[index];
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TripScheduleScreen()),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 6)],
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: const Color(0xffE8F0FE),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.location_on_outlined, color: Color(0xff4B6CB7)),
-                        ),
-          const SizedBox(width: 12),
-
-          /// CONTENT
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// TITLE
-                Text(
-                  "Lokasi ${index + 1} : ${r["title"] ?? "Lokasi"}",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                    )
+                  ],
                 ),
-
-                const SizedBox(height: 4),
-
-                /// SUBTITLE
-                Text(
-                  r["address"] ?? "-",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                /// ACTION BUTTONS
-                Row(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _actionButton(
-                      text: "Edit Route",
-                      color: Colors.grey.shade200,
-                      textColor: Colors.black,
-                      onTap: () => showEditRouteDialog(index),
+                    // ICON / IMAGE
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: r["image"] != null
+                          ? (r["image"]["isWeb"] == true
+                              ? Image.memory(
+                                  r["image"]["bytes"],
+                                  width: 42,
+                                  height: 42,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(
+                                  File(r["image"]["path"]),
+                                  width: 42,
+                                  height: 42,
+                                  fit: BoxFit.cover,
+                                ))
+                          : Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: const Color(0xffE8F0FE),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.location_on_outlined,
+                                color: Color(0xff4B6CB7),
+                              ),
+                            ),
                     ),
-                    const SizedBox(width: 8),
-                    _actionButton(
-                      text: "Add Image",
-                      color: const Color(0xffE8F0FE),
-                      textColor: const Color(0xff4B6CB7),
-                     onTap: showAddImageDialog,
-                    ),
-                    const SizedBox(width: 8),
-                    _actionButton(
-                      text: "Delete",
-                      color: Colors.red,
-                      textColor: Colors.white,
-                      onTap: () => showDeleteConfirmDialog(index),
+
+                    const SizedBox(width: 12),
+
+                    // CONTENT
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // TITLE
+                          Text(
+                            "Lokasi ${index + 1}: ${r["title"] ?? "-"}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // ADDRESS
+                          Text(
+                            r["address"] ?? "-",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+
+                          // DESCRIPTION
+                          if (r["doing"] != null &&
+                              r["doing"].toString().isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              r["doing"],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 10),
+
+                          // ACTION BUTTONS
+                          Row(
+                            children: [
+                              _actionButton(
+                                text: "Edit Route",
+                                color: Colors.grey.shade200,
+                                textColor: Colors.black,
+                                onTap: () => showEditRouteDialog(index),
+                              ),
+                              const SizedBox(width: 8),
+                              _actionButton(
+                                text: "Add Image",
+                                color: const Color(0xffE8F0FE),
+                                textColor: const Color(0xff4B6CB7),
+                                onTap: () => showAddImageDialog(index),
+                              ),
+                              const SizedBox(width: 8),
+                              _actionButton(
+                                text: "Delete",
+                                color: Colors.red,
+                                textColor: Colors.white,
+                                onTap: () => showDeleteConfirmDialog(index),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ],
+              );
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          buildCategoryDropdown(),
+
+          const SizedBox(height: 14),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xff1A3250),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+            ),
+            onPressed: postRouteToBackend,
+            child: const Text(
+              "Post Route",
+              style: TextStyle(color: Colors.white),
             ),
           ),
         ],
       ),
-),
-    );
-  },
-),
-
-            const SizedBox(height: 16),
-            buildCategoryDropdown(),
-
-            SizedBox(
-  width: double.infinity, // 🔥 bikin full lebar
-  child: OutlinedButton.icon(
-    onPressed: addMoreCategory,
-    icon: const Icon(Icons.add),
-    label: const Text("Add more Categories"),
-    style: OutlinedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(vertical: 14), // 🔥 tinggi tombol
-      side: const BorderSide(color: Color(0xff1A3250)),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      textStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
-),
-
-
-            const SizedBox(height: 14),
-
-            ElevatedButton(
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xff1A3250),
-    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
-  ),
-  onPressed: postRouteToBackend, // 🔥 WAJIB INI
-  child: const Text(
-    "Post Route",
-    style: TextStyle(color: Colors.white),
-  ),
-),
-        ],
-      ),
     ),
   );
-  }
+}
+
 
   // ================= MAP =================
   Widget buildMap() {
@@ -663,37 +843,139 @@ Future<void> postRouteToBackend() async {
 
   // ================= WIDGETS =================
   Widget buildCategoryDropdown() {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 170, vertical: 0),
-    decoration: BoxDecoration(
-      color: Colors.grey.shade200,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(
-        color: Colors.black, // 🔥 warna garis
-        width: 1,                    // 🔥 tebal garis
-      ),
-    ),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        hint: const Text(
-          "Select Categories",
-          style: TextStyle(color: Colors.black), // 🔥 warna teks
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // 🟦 Selected Chips + Add Button
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade400),
         ),
-        value: selectedCategory,
-        isExpanded: true,
-        items: categories
-            .map(
-              (e) => DropdownMenuItem(
-                value: e,
-                child: Text(e),
-              ),
-            )
-            .toList(),
-        onChanged: (v) => setState(() => selectedCategory = v),
+        child: Row(
+          children: [
+            // 🔘 Selected chips
+            Expanded(
+              child: Wrap(
+  spacing: 6,
+  runSpacing: 6,
+  children: selectedCategories.isEmpty
+      ? [
+          const Text(
+            "Add Categories",
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 14,
+            ),
+          )
+        ]
+      : selectedCategories.map((cat) {
+          return Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xffE8F0FE),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  cat,
+                  style: const TextStyle(
+                    color: Color(0xff1A3250),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      selectedCategories.remove(cat);
+                    });
+                  },
+                  child: const Icon(Icons.close,
+                      size: 16, color: Color(0xff1A3250)),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+),
+
+            ),
+
+            // ➕ Add toggle button
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  isCategoryDropdownOpen = !isCategoryDropdownOpen;
+                });
+              },
+              child: const Icon(Icons.add, color: Color(0xff1A3250)),
+            ),
+          ],
+        ),
       ),
-    ),
+
+      // 🔻 Dropdown List
+      if (isCategoryDropdownOpen)
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 6,
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              ...categories.map((cat) {
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      if (!selectedCategories.contains(cat)) {
+                        selectedCategories.add(cat);
+                      }
+                      selectedCategory = cat;
+                      isCategoryDropdownOpen = false;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(cat),
+                    ),
+                  ),
+                );
+              }).toList(),
+
+              const Divider(height: 1),
+
+              InkWell(
+                onTap: addMoreCategory,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+    ],
   );
 }
+
+
 
 
   Widget inputField(
