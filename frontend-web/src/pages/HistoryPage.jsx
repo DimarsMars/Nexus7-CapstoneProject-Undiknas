@@ -141,6 +141,54 @@ const HistoryPage = () => {
         }
     }, [favoriteTrips, removeFavorite]);
 
+    // Fungsi untuk menghapus seluruh riwayat perjalanan
+    const handleRemoveAllHistory = useCallback(async () => {
+        if (pastTrips.length === 0) {
+            Swal.fire({
+                title: 'Info',
+                text: 'Tidak ada riwayat perjalanan yang bisa dihapus.',
+                icon: 'info',
+                confirmButtonColor: '#1e293b',
+            });
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: 'Hapus Semua Riwayat?',
+            text: "Seluruh riwayat perjalanan Anda akan dihapus permanen!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#1e293b',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Ya, Hapus Semua!',
+            cancelButtonText: 'Batal',
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const deletePromises = pastTrips.map(trip => apiService.deletePastTripPlan(trip.progress_id));
+            await Promise.all(deletePromises);
+            
+            setPastTrips([]);
+
+            Swal.fire({
+                title: 'Berhasil!',
+                text: 'Semua riwayat perjalanan Anda telah dihapus.',
+                icon: 'success',
+                confirmButtonColor: '#1e293b',
+            });
+        } catch (error) {
+            console.error("Gagal menghapus semua riwayat:", error);
+            Swal.fire({
+                title: 'Gagal!',
+                text: 'Terjadi kesalahan saat menghapus riwayat.',
+                icon: 'error',
+                confirmButtonColor: '#1e293b',
+            });
+        }
+    }, [pastTrips]);
+
     // Fungsi untuk membatalkan semua perjalanan yang sedang aktif secara massal
     const handleCancelTripNow = useCallback(async () => {
         if (activeTrips.length === 0) {
@@ -269,7 +317,10 @@ const HistoryPage = () => {
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-slate-900">Your Past Trips</h2> 
-                        <button className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition">
+                        <button 
+                            onClick={handleRemoveAllHistory}
+                            className="px-4 py-1.5 bg-slate-800 text-white text-xs font-medium rounded hover:bg-slate-700 transition"
+                        >
                             Remove all
                         </button>
                     </div>
