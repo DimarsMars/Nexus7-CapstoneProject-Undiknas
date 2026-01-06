@@ -32,6 +32,9 @@ const MyProfilePage = () => {
     const [myReviews, setMyReviews] = useState([]);
     const [reviewsOnMyPlans, setReviewsOnMyPlans] = useState([]);
 
+    // State untuk mengontrol tampilan semua rute
+    const [showAllRoutes, setShowAllRoutes] = useState(false);
+
     // --- DATA FETCHING ---
     
     // useEffect untuk mengambil seluruh data dari server saat komponen dimuat atau authUser berubah
@@ -253,12 +256,7 @@ const MyProfilePage = () => {
                 </div>
 
                 {/* Bagian Navigasi Statis (Location & Languages) */}
-                <div className="my-8">
-                    <div className="border-t-2 border-[#1e293b]"></div>
-                    <div className="flex flex-col items-center gap-2 my-4 text-base font-medium text-[#1e293b]">
-                        <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Location</a>
-                        <a href="#" className="underline decoration-1 underline-offset-4 hover:text-gray-600">Languages</a>
-                    </div>
+                <div className="py-8">
                     <div className="border-t-2 border-[#1e293b]"></div>
                 </div>
 
@@ -274,10 +272,23 @@ const MyProfilePage = () => {
 
                 {/* Section: My Routes (Menampilkan maksimal 3 rencana perjalanan terbaru) */}
                 <div className="pt-12">
-                    <h2 className="mb-4 text-lg font-bold text-slate-900 md:text-xl text-start">My Route</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-slate-900 md:text-xl text-start">My Route</h2>
+                        {/* Tombol pemicu: Muncul hanya jika total rencana lebih dari 3 */}
+                        {myPlans.length > 3 && (
+                            <button 
+                                onClick={() => setShowAllRoutes(!showAllRoutes)}
+                                className="text-md font-semibold text-slate-700 hover:text-slate-900 transition"
+                            >
+                                {showAllRoutes ? "Tampilkan Sedikit" : `Lihat Semua (${myPlans.length})`}
+                            </button>
+                        )}
+                    </div>
+
                     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                         {myPlans.length > 0 ? (
-                            myPlans.slice(0, 3).map((trip, index) => (
+                            // Jika showAllRoutes true, tampilkan semua. Jika false, potong hanya 3 data pertama.
+                            (showAllRoutes ? myPlans : myPlans.slice(0, 3)).map((trip, index) => (
                                 <TripCard
                                     key={trip.plan_id}
                                     id={trip.plan_id}
@@ -285,7 +296,7 @@ const MyProfilePage = () => {
                                     author={trip.author_name || "Unknown Author"}
                                     rating={trip.rating}
                                     image={getImageSrc(trip.banner)}
-                                    // Membuat kartu pertama lebih besar di tampilan desktop
+                                    // Logika index === 0 agar kartu pertama selalu besar
                                     className={index === 0 ? "h-56 md:col-span-2 md:h-72" : "h-56 md:h-60"}
                                     onClick={() => handleCardClick(trip.plan_id)}
                                 />
