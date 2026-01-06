@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,19 @@ import 'package:journeys/models/favorite_trip_model.dart';
 import 'package:journeys/models/past_trip_model.dart';
 import 'package:journeys/services/api_service.dart';
 
+=======
+// Mengimpor paket dasar Flutter dan material design
+import 'package:flutter/material.dart';
+// Mengimpor model data untuk riwayat perjalanan dan favorit
+import 'package:journeys/models/past_trip_model.dart';
+import 'package:journeys/models/favorite_trip_model.dart';
+// Mengimpor layanan API untuk komunikasi dengan server
+import 'package:journeys/services/api_service.dart';
+// Mengimpor paket untuk konversi data seperti base64
+import 'dart:convert';
+
+// Widget utama HistoryScreen sebagai StatefulWidget karena memiliki data yang dinamis
+>>>>>>> dev-dimars
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -13,19 +27,26 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _MyHistoryScreen();
 }
 
+// State untuk mengelola logika dan data pada halaman History
 class _MyHistoryScreen extends State<HistoryScreen> {
+  // Inisialisasi layanan API
   final ApiService _apiService = ApiService();
 
+<<<<<<< HEAD
   // State for Past Trips
+=======
+  // State untuk mengelola data Past Trips (Riwayat Perjalanan)
+>>>>>>> dev-dimars
   List<PastTripModel> _pastTrips = [];
   bool _isLoadingPastTrips = true;
   String? _errorPastTrips;
 
-  // State for Favorite Trips
+  // State untuk mengelola data Favorite Trips (Perjalanan Favorit)
   List<FavoriteTripModel> _favoriteTrips = [];
   bool _isLoadingFavorites = true;
   String? _errorFavorites;
 
+<<<<<<< HEAD
   // State for Active Trip
  List<Map<String, dynamic>> _activeTrips = [];
 bool _isLoadingActiveTrip = true;
@@ -38,8 +59,17 @@ String? _errorActiveTrip;
     _fetchActiveTrip();
     _fetchPastTrips();
     _fetchFavoriteTrips();
+=======
+  // Fungsi lifecycle yang dipanggil pertama kali saat halaman dimuat
+  @override
+  void initState() {
+    super.initState();
+    _fetchPastTrips(); // Mengambil data riwayat perjalanan
+    _fetchFavoriteTrips(); // Mengambil data favorit
+>>>>>>> dev-dimars
   }
 
+  // Fungsi asinkron untuk mengambil data riwayat perjalanan dari API
   Future<void> _fetchPastTrips() async {
     try {
       if (!mounted) return;
@@ -64,6 +94,10 @@ String? _errorActiveTrip;
     }
   }
 
+<<<<<<< HEAD
+=======
+  // Fungsi asinkron untuk mengambil data perjalanan favorit dari API
+>>>>>>> dev-dimars
   Future<void> _fetchFavoriteTrips() async {
     try {
       if (!mounted) return;
@@ -88,6 +122,7 @@ String? _errorActiveTrip;
     }
   }
 
+<<<<<<< HEAD
   Future<void> _fetchActiveTrip() async {
     try {
       if (!mounted) return;
@@ -115,6 +150,9 @@ String? _errorActiveTrip;
     }
   }
 
+=======
+  // Menangani penghapusan item riwayat perjalanan dengan dialog konfirmasi
+>>>>>>> dev-dimars
   Future<void> _handleDeleteHistory(int progressId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -137,7 +175,11 @@ String? _errorActiveTrip;
     if (confirm == true) {
       try {
         await _apiService.deletePastTrip(progressId);
+<<<<<<< HEAD
         _fetchPastTrips();
+=======
+        _fetchPastTrips(); // Memperbarui daftar setelah dihapus
+>>>>>>> dev-dimars
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip history deleted successfully')),
@@ -153,6 +195,7 @@ String? _errorActiveTrip;
     }
   }
 
+  // Menangani penghapusan item dari daftar favorit
   Future<void> _handleRemoveFavorite(int favoriteId) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -171,10 +214,15 @@ String? _errorActiveTrip;
         ],
       ),
     );
+
     if (confirm == true) {
       try {
         await _apiService.removeFavoriteTrip(favoriteId);
+<<<<<<< HEAD
         _fetchFavoriteTrips();
+=======
+        _fetchFavoriteTrips(); // Memperbarui daftar favorit
+>>>>>>> dev-dimars
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Removed from favorites')),
@@ -190,6 +238,7 @@ String? _errorActiveTrip;
     }
   }
 
+  // Menangani penghapusan seluruh daftar favorit sekaligus
   Future<void> _handleRemoveAllFavorites() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -208,6 +257,7 @@ String? _errorActiveTrip;
         ],
       ),
     );
+<<<<<<< HEAD
     if (confirm == true) {
       try {
         final List<Future> deleteFutures = _favoriteTrips.map((trip) {
@@ -216,6 +266,20 @@ String? _errorActiveTrip;
 
         await Future.wait(deleteFutures);
         _fetchFavoriteTrips();
+=======
+
+    if (confirm == true) {
+      try {
+        // Membuat daftar proses (Future) untuk menghapus tiap item favorit
+        final List<Future> deleteFutures = _favoriteTrips.map((trip) {
+          return _apiService.removeFavoriteTrip(trip.favoriteId);
+        }).toList();
+
+        // Menjalankan semua proses penghapusan secara paralel
+        await Future.wait(deleteFutures);
+
+        _fetchFavoriteTrips(); // Memperbarui UI
+>>>>>>> dev-dimars
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('All favorites have been removed')),
@@ -231,6 +295,7 @@ String? _errorActiveTrip;
     }
   }
 
+<<<<<<< HEAD
   Future<void> _handleCancelTrip() async {
     if (_activeTrips.isEmpty) return;
 
@@ -321,11 +386,15 @@ String? _errorActiveTrip;
 
 
 
+=======
+  // Definisi konstanta warna untuk tema halaman
+>>>>>>> dev-dimars
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
   static const Color _lightGreyText = Colors.black;
   static const Color _backgroundColor = Color(0xFFe9ebee);
 
+  // Widget builder utama untuk merender UI halaman
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -362,11 +431,23 @@ String? _errorActiveTrip;
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+<<<<<<< HEAD
                   _buildSectionHeader('Your trip now', 'Cancel Trip', onPressed: _activeTrips.isNotEmpty ? _handleCancelTrip : null),
+=======
+                  // --- SEKSI 1: PERJALANAN AKTIF SAAT INI ---
+                  _buildSectionHeader('Your trip now', 'Cancel Trip'),
+>>>>>>> dev-dimars
                   const SizedBox(height: 16),
                   _buildCurrentTripCard(),
                   const SizedBox(height: 32),
+<<<<<<< HEAD
                   _buildSectionHeader('Favourites', 'Remove all', onPressed: _handleRemoveAllFavorites),
+=======
+
+                  // --- SEKSI 2: DAFTAR FAVORIT ---
+                  _buildSectionHeader('Favourites', 'Remove all',
+                      onPressed: _handleRemoveAllFavorites),
+>>>>>>> dev-dimars
                   const SizedBox(height: 16),
                   _isLoadingFavorites
                       ? const Center(child: CircularProgressIndicator())
@@ -389,7 +470,9 @@ String? _errorActiveTrip;
                                     return _buildTripCard(
                                       title: fav.plan.title,
                                       description: fav.plan.description,
-                                      location: fav.plan.routes.isNotEmpty ? fav.plan.routes.first.address : 'No location',
+                                      location: fav.plan.routes.isNotEmpty
+                                          ? fav.plan.routes.first.address
+                                          : 'No location',
                                       icon: Icons.favorite,
                                       banner: fav.plan.bannerBase64,
                                       onIconPressed: () => _handleRemoveFavorite(fav.favoriteId),
@@ -400,6 +483,11 @@ String? _errorActiveTrip;
                   const SizedBox(height: 32),
                   _buildSectionHeader('Your past trip\'s', 'Remove all', onPressed: _pastTrips.isNotEmpty ? _handleRemoveAllPastTrips : null),
 
+<<<<<<< HEAD
+=======
+                  // --- SEKSI 3: RIWAYAT PERJALANAN MASA LALU ---
+                  _buildSectionHeader('Your past trip\'s', 'Remove all'),
+>>>>>>> dev-dimars
                   const SizedBox(height: 16),
                   _isLoadingPastTrips
                       ? const Center(child: CircularProgressIndicator())
@@ -419,6 +507,7 @@ String? _errorActiveTrip;
                                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                                   itemBuilder: (context, index) {
                                     final trip = _pastTrips[index];
+<<<<<<< HEAD
                                    return _buildTripCard(
   title: trip.title,
   description: trip.description,
@@ -430,6 +519,19 @@ String? _errorActiveTrip;
   onIconPressed: () => _handleDeleteHistory(trip.progressId),
   iconColor: const Color.fromARGB(255, 0, 0, 0), // ✅ Gunakan merah seperti di gambar
 );
+=======
+                                    return _buildTripCard(
+                                      title: trip.title,
+                                      description: trip.description,
+                                      location: trip.routes.isNotEmpty
+                                          ? trip.routes.first.address
+                                          : 'No location',
+                                      icon: Icons.delete_outline,
+                                      banner: trip.banner,
+                                      onIconPressed: () => _handleDeleteHistory(trip.progressId),
+                                      iconColor: _darkGrey,
+                                    );
+>>>>>>> dev-dimars
                                   },
                                 ),
                 ],
@@ -441,6 +543,7 @@ String? _errorActiveTrip;
     );
   }
 
+  // Widget Helper untuk membangun bagian Header setiap seksi
   Widget _buildSectionHeader(String title, String buttonText, {VoidCallback? onPressed}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -471,7 +574,9 @@ String? _errorActiveTrip;
     );
   }
 
+  // Widget Helper untuk membangun kartu perjalanan yang sedang berlangsung (hardcoded placeholder)
   Widget _buildCurrentTripCard() {
+<<<<<<< HEAD
   if (_isLoadingActiveTrip) {
     return const Center(child: CircularProgressIndicator());
   }
@@ -519,6 +624,88 @@ String? _errorActiveTrip;
 }
 
 
+=======
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(60),
+            spreadRadius: 1,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.image_not_supported_outlined,
+              color: Colors.grey[500],
+              size: 40,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Seasonal Trip',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: _darkBlue,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
+                  style: TextStyle(fontSize: 12, color: _lightGreyText),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.location_on, size: 14, color: _lightGreyText),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Bedugul - Gianyar',
+                      style: TextStyle(fontSize: 12, color: _lightGreyText),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: _darkGrey,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Widget Helper umum untuk membangun kartu daftar "Favourites" dan "Past Trips"
+>>>>>>> dev-dimars
   Widget _buildTripCard({
     required String title,
     required String description,
@@ -554,7 +741,14 @@ String? _errorActiveTrip;
                   ? Image.memory(
                       base64Decode(banner.split(',').last),
                       fit: BoxFit.cover,
+<<<<<<< HEAD
                       errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+=======
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.grey,
+                          size: 40),
+>>>>>>> dev-dimars
                     )
                   : const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
             ),
@@ -593,6 +787,7 @@ String? _errorActiveTrip;
             ),
           ),
           const SizedBox(width: 8),
+<<<<<<< HEAD
     icon == Icons.arrow_forward_ios
     ? Container(
         height: 40,
@@ -614,8 +809,18 @@ String? _errorActiveTrip;
       ),
 
 
+=======
+          IconButton(
+            onPressed: onIconPressed,
+            icon: Icon(icon, color: iconColor ?? _darkGrey, size: 24),
+          ),
+>>>>>>> dev-dimars
         ],
       ),
     );
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> dev-dimars

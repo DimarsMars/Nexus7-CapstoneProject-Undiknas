@@ -156,52 +156,103 @@ const getCompletedSteps = (planId) => {
 };
 
 const cancelTripSessions = (planId) => {
+
   return apiClient.delete(`/trip-sessions/cancel?plan_id=${planId}`);
+
 };
 
 
 
+const getRecommendedPlans = () => {
+
+  return apiClient.get('/plans/recommendations');
+
+};
+
+
 
 const apiService = {
+
   updateUserProfile,
+
   getUserMe,
+
   getProfileMe,
+
   getCategories,
+
   postCategory,
+
   createPlan,
+
   getAllPlan,
+
   getAllPlanByUserLogin,
+
   getMostActiveTravellers,
+
   getTravellersByCategory,
+
   getUserXP,
+
   getUserProfileById,
+
   followUser,
+
   checkIsFollowing,
+
   getUserSocials,
+
   unfollowUser,
+
   getMyTripReviews,
+
   getReviewsOnMyPlans,
+
   getAllUsers,
+
   getRouteData,
+
   getReviewPlace,
+
   postReviewPlace,
+
   postReviewTrip,
+
   postBookmarkRoute,
+
   getBookmarkRoute,
+
   deleteBookmarkRoute,
+
   getPlanForRunTrip,
+
   postPlanVerifyLocation,
+
   postFavorite,
+
   getFavorite,
+
   deleteFavorite,
+
   getPasTripCard,
+
   deleteReviewTrips,
+
   deletePastTripPlan,
+
   postTripSessionAction,
+
   postTripSessionStart,
+
   getActiveTrip,
+
   getCompletedSteps,
+
   cancelTripSessions,
+
+  getRecommendedPlans,
+
 };
 
 export default apiService;

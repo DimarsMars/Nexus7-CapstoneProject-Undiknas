@@ -31,6 +31,7 @@ import 'api_client.dart';
 class ApiService {
   final _auth = FirebaseAuth.instance;
   final _client = ApiClient();
+<<<<<<< HEAD
 
   // --- CONFIGURATION ---
   // Satu variabel untuk semua endpoint agar konsisten
@@ -48,6 +49,9 @@ class ApiService {
   // ===========================================================================
   // AUTHENTICATION (Login & Register)
   // ===========================================================================
+=======
+  final String _loginUrl = 'http://192.168.1.54:8080/auth/login';
+>>>>>>> dev-dimars
 
   Future<UserModel> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
@@ -79,10 +83,17 @@ class ApiService {
 
     final idToken = await credential.user!.getIdToken();
 
+<<<<<<< HEAD
     final response = await _client.post('$_baseUrl/auth/register', {
       'idToken': idToken,
       'username': username,
     });
+=======
+  final response = await _client.post('http://192.168.1.54:8080/auth/register', {
+    'idToken': idToken,
+    'username': username,
+  });
+>>>>>>> dev-dimars
 
     final user = UserModel.fromJson(response['user']);
 
@@ -97,6 +108,7 @@ class ApiService {
   // MY PROFILE FEATURES (Dari Code Anda)
   // ===========================================================================
 
+<<<<<<< HEAD
   Future<UserModel> getUserMe() async {
     final headers = await _getHeaders();
     if (headers == null) throw Exception("User not logged in");
@@ -104,6 +116,46 @@ class ApiService {
     final response = await _client.get(
       '$_baseUrl/user/me',
       headers: headers,
+=======
+  final idToken = await user.getIdToken();
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/user/me',
+    headers: {
+      'Authorization': 'Bearer $idToken',
+    },
+  );
+
+  final data = response['data'];
+  return UserModel.fromJson(data);
+}
+
+Future<ProfileModel> getProfile() async {
+  final user = _auth.currentUser;
+  if (user == null) throw Exception("User not logged in");
+
+  final idToken = await user.getIdToken();
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/profile/me',
+    headers: {
+      'Authorization': 'Bearer $idToken',
+    },
+  );
+
+  final data = response['data'];
+  return ProfileModel.fromJson(data);
+}
+
+Future<UserXpModel> getUserXP() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.54:8080/user/xp',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
 
     return UserModel.fromJson(response['data']);
@@ -143,6 +195,7 @@ class ApiService {
     final headers = await _getHeaders();
     if (headers == null) throw Exception("User not logged in");
 
+<<<<<<< HEAD
     http.MultipartFile? photoFile;
     if (photo != null) {
       if (kIsWeb) {
@@ -152,6 +205,115 @@ class ApiService {
       } else {
         photoFile = await http.MultipartFile.fromPath('photo', photo.path);
       }
+=======
+  if (user == null) throw Exception("User not logged in");
+
+  final idToken = await user.getIdToken();
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/category/',
+    headers: {
+      'Authorization': 'Bearer $idToken',
+    },
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data.map((json) => CategoryModel.fromJson(json)).toList();
+}
+
+Future<List<PlanModel>> getAllPlans() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/plans/all',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data.map((json) => PlanModel.fromJson(json)).toList();
+}
+
+ Future<PlanModel?> getPlanDetail(int planId) async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/plans/$planId/detail',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  if (response['data'] == null) return null;
+
+  final planJson = response['data']['plan'];
+  final routesJson = response['data']['routes'] as List<dynamic>;
+
+  final plan = PlanModel.fromJson({
+    ...planJson,
+    'routes': routesJson,
+  });
+
+  return plan;
+}
+
+Future<List<TravellerModel>> getAllTravellers() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/user/all',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data.map((json) => TravellerModel.fromJson(json)).toList();
+}
+
+Future<List<TravellerRecommendationModel>> getCategoryTravellers() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/user/recomendations/category',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data
+      .map((json) => TravellerRecommendationModel.fromJson(json))
+      .toList();
+}
+
+Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
+  final user = _auth.currentUser;
+  final idToken = user != null ? await user.getIdToken() : null;
+
+  final response = await _client.get(
+    'http://192.168.1.54:8080/user/mostactive',
+    headers: idToken != null
+        ? {'Authorization': 'Bearer $idToken'}
+        : null,
+  );
+
+  final data = response['data'] as List<dynamic>;
+  return data
+      .map((json) => MostActiveTravellerModel.fromJson(json))
+      .toList();
+}
+
+Future<List<PlanModel>> getMyPlans() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+>>>>>>> dev-dimars
     }
 
     await _client.putMultipart(
@@ -189,6 +351,7 @@ class ApiService {
     if (headers == null) throw Exception("User not logged in");
 
     final response = await _client.get(
+<<<<<<< HEAD
       '$_baseUrl/profile/socials/$userId',
       headers: headers,
     );
@@ -279,12 +442,19 @@ class ApiService {
     final response = await _client.get(
       '$_baseUrl/plans/all',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/plans/',
+      headers: {
+        'Authorization': 'Bearer $idToken',
+      },
+>>>>>>> dev-dimars
     );
 
     final data = response['data'] as List<dynamic>;
     return data.map((json) => PlanModel.fromJson(json)).toList();
   }
 
+<<<<<<< HEAD
   Future<List<PlanModel>> getMyPlans() async {
     final headers = await _getHeaders();
     if (headers == null) throw Exception("User not logged in");
@@ -292,6 +462,61 @@ class ApiService {
     final response = await _client.get(
       '$_baseUrl/plans/',
       headers: headers,
+=======
+  Future<void> updateUserProfile({
+    required String birthDate,
+    required String description,
+    required String status,
+    File? photo,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
+    final idToken = await user.getIdToken();
+
+    http.MultipartFile? photoFile;
+    if (photo != null) {
+      photoFile = await http.MultipartFile.fromPath('photo', photo.path);
+    }
+
+    await _client.putMultipart(
+      'http://192.168.1.54:8080/profile/update',
+      headers: {
+        'Authorization': 'Bearer $idToken',
+      },
+      fields: {
+        'birth_date': birthDate,
+        'description': description,
+        'status': status,
+        'location': 'Solo',
+        'languages': 'ID',
+      },
+      file: photoFile,
+    );
+  }
+
+  Future<void> deleteReviewTrips(int reviewId) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    await _client.delete(
+      'http://192.168.1.54:8080/reviews/my/$reviewId',
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+  }
+
+
+  Future<List<MyTripReviewModel>> getMyTripReviews() async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+    final idToken = await user.getIdToken();
+
+    final response = await _client.get(
+      'http://192.168.1.54:8080/reviews/trip/me',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
 
     final rawData = response['data'];
@@ -306,8 +531,13 @@ class ApiService {
   Future<PlanModelRating?> getPlanDetail(int planId) async {
     final headers = await _getHeaders();
     final response = await _client.get(
+<<<<<<< HEAD
       '$_baseUrl/plans/$planId/detail',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/reviews/trip/my-plans',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
 
     final data = response['data'];
@@ -368,8 +598,13 @@ class ApiService {
     if (headers == null) throw Exception("User not logged in");
 
     final response = await _client.get(
+<<<<<<< HEAD
       '$_baseUrl/plans/history',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/plans/history',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
 
     final rawData = response['data'];
@@ -386,8 +621,13 @@ class ApiService {
     if (headers == null) throw Exception("User not logged in");
 
     await _client.delete(
+<<<<<<< HEAD
       '$_baseUrl/plans/completed-plans/$progressId',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/plans/history/$progressId',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
   }
 
@@ -397,8 +637,13 @@ class ApiService {
     if (headers == null) throw Exception("User not logged in");
 
     final response = await _client.get(
+<<<<<<< HEAD
       '$_baseUrl/favorites/',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/favorites/',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
     final data = response['data'] as List<dynamic>;
     return data.map((json) => FavoriteTripModel.fromJson(json)).toList();
@@ -513,6 +758,7 @@ class ApiService {
     if (headers == null) throw Exception("User not logged in");
 
     await _client.delete(
+<<<<<<< HEAD
       '$_baseUrl/reviews/my/$reviewId',
       headers: headers,
     );
@@ -822,6 +1068,10 @@ Future<int> getCurrentSessionId() async {
     await _client.delete(
       '$_baseUrl/trip-sessions/cancel?plan_id=$planId',
       headers: headers,
+=======
+      'http://192.168.1.54:8080/favorites/$favoriteId',
+      headers: {'Authorization': 'Bearer $idToken'},
+>>>>>>> dev-dimars
     );
   }
 }

@@ -4,6 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import RouteCard from '../components/RouteCard';
 import { useData } from '../context/DataContext';
 import apiService from '../services/apiService';
+import Swal from 'sweetalert2';
+import placeholderImage from '../assets/images/placeholderTrip.png';
 
 // --- 1. Custom Hook for Data Fetching ---
 const useTripDetail = (id) => {
@@ -48,7 +50,12 @@ const ReviewModal = ({ isOpen, onClose, planId, onSubmit }) => {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      alert("Please provide a star rating.");
+      Swal.fire({
+        title: 'Rating Diperlukan',
+        text: 'Silakan berikan penilaian bintang sebelum mengirimkan ulasan Anda.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+      });
       return;
     }
     setIsSubmitting(true);
@@ -129,7 +136,12 @@ const TripDetailPage = () => {
 
   const handleSetTrip = useCallback(async () => {
     if (!tripData?.routes?.length) {
-      alert("This trip has no routes to start.");
+      Swal.fire({
+        title: 'Rute Tidak Tersedia',
+        text: 'Maaf, perjalanan ini tidak memiliki titik tujuan (routes) sehingga tidak dapat dimulai. Silakan periksa kembali data perjalanan Anda.',
+        icon: 'warning',
+        confirmButtonColor: '#1e293b',
+      });
       return;
     }
     try {
@@ -145,7 +157,12 @@ const TripDetailPage = () => {
 
   const handleSubmitReview = useCallback(async (reviewData) => {
     const response = await apiService.postReviewTrip(reviewData);
-    alert(response.message || "Review submitted successfully!");
+    await Swal.fire({
+      title: 'Success',
+      text: response.message || "Ulasan Anda telah berhasil dikirim",
+      icon: 'success',
+      confirmButtonColor: '#1e293b',
+    });
     // Optional: could add logic here to refetch trip data to show new average rating
   }, []);
 
@@ -168,7 +185,7 @@ const TripDetailPage = () => {
   }
 
   const { plan, routes, rating } = tripData;
-  const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : 'https://via.placeholder.com/1200x400?text=Trip+Banner';
+  const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : placeholderImage;
 
   return (
     <>
@@ -198,7 +215,7 @@ const TripDetailPage = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-2 pb-4">
               <div className="flex gap-3">
-                <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">Set Trip</button>
+                <button onClick={handleSetTrip} className="bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition shadow-sm">Start</button>
                 <button onClick={handleReport} className="bg-red-600 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-red-700 transition shadow-sm">Report</button>
               </div>
               <button onClick={handleLike} aria-label={isLiked ? "Unsave Trip" : "Save Trip"}>
@@ -223,7 +240,7 @@ const TripDetailPage = () => {
                   routes.map((item, index) => (
                     <RouteCard
                       key={item.route_id || index}
-                      image={item.image ? `data:image/jpeg;base64,${item.image}` : undefined}
+                      image={item.image ? `data:image/jpeg;base64,${item.image}` : placeholderImage}
                       title={item.title}
                       activity={item.description}
                       location={item.address}
