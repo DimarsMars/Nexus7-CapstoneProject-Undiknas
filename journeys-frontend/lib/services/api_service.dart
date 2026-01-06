@@ -1,28 +1,32 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// --- IMPORTS MODELS (Gabungan Punya Anda & Teman) ---
-import 'api_client.dart';
-import '../models/user_model.dart';
-import '../models/profile_model.dart';
+import '../models/active_trip_session_model.dart';
 import '../models/category_model.dart';
-import '../models/plan_model.dart';
-import '../models/plan_rating.dart'; // Model Teman
-import '../models/traveller_model.dart';
-import '../models/traveller_recomen_model.dart';
-import '../models/most_active_traveller_model.dart';
-import '../models/traveller_profile_model.dart'; // Model Teman
-import '../models/user_xp_model.dart'; // Model Punya Anda
-import '../models/past_trip_model.dart'; // Model Punya Anda
 import '../models/favorite_trip_model.dart'; // Model Punya Anda
+import '../models/most_active_traveller_model.dart';
 import '../models/my_trip_review_model.dart'; // Model Punya Anda
-import '../models/review_on_my_plan_model.dart'; // Model Punya Anda
+import '../models/past_trip_model.dart'; // Model Punya Anda
 import '../models/place_detail.dart';
 import '../models/place_review.dart';
+import '../models/plan_model.dart';
+import '../models/plan_rating.dart'; // Model Teman
+import '../models/profile_model.dart';
+import '../models/review_on_my_plan_model.dart'; // Model Punya Anda
+import '../models/traveller_model.dart';
+import '../models/traveller_profile_model.dart'; // Model Teman
+import '../models/traveller_recomen_model.dart';
+import '../models/user_model.dart';
+import '../models/user_xp_model.dart'; // Model Punya Anda
+// --- IMPORTS MODELS (Gabungan Punya Anda & Teman) ---
+import 'api_client.dart';
 
 class ApiService {
   final _auth = FirebaseAuth.instance;
@@ -125,7 +129,7 @@ class ApiService {
       '$_baseUrl/user/xp',
       headers: headers,
     );
-    
+
     return UserXpModel.fromJson(response);
   }
 
@@ -134,14 +138,20 @@ class ApiService {
     required String birthDate,
     required String description,
     required String status,
-    File? photo,
+    XFile? photo,
   }) async {
     final headers = await _getHeaders();
     if (headers == null) throw Exception("User not logged in");
 
     http.MultipartFile? photoFile;
     if (photo != null) {
-      photoFile = await http.MultipartFile.fromPath('photo', photo.path);
+      if (kIsWeb) {
+        final bytes = await photo.readAsBytes();
+        photoFile =
+            http.MultipartFile.fromBytes('photo', bytes, filename: photo.name);
+      } else {
+        photoFile = await http.MultipartFile.fromPath('photo', photo.path);
+      }
     }
 
     await _client.putMultipart(
@@ -152,7 +162,7 @@ class ApiService {
         'description': description,
         'status': status,
         'location': 'Solo', // Default value
-        'languages': 'ID',  // Default value
+        'languages': 'ID', // Default value
       },
       file: photoFile,
     );
@@ -182,7 +192,7 @@ class ApiService {
       '$_baseUrl/profile/socials/$userId',
       headers: headers,
     );
-    
+
     // Safety check untuk response structure
     if (response.containsKey('data')) {
       return response['data'];
@@ -200,7 +210,7 @@ class ApiService {
     );
 
     if (response.containsKey('data')) {
-       return response['data']['is_following'] ?? false;
+      return response['data']['is_following'] ?? false;
     }
     return response['is_following'] ?? false;
   }
@@ -284,8 +294,12 @@ class ApiService {
       headers: headers,
     );
 
-    final data = response['data'] as List<dynamic>;
-    return data.map((json) => PlanModel.fromJson(json)).toList();
+    final rawData = response['data'];
+    if (rawData == null || rawData is! List) {
+      return []; // Jika tidak ada data, kembalikan list kosong
+    }
+
+    return rawData.map((json) => PlanModel.fromJson(json)).toList();
   }
 
   // Dari Teman: Return PlanModelRating (Lebih lengkap)
@@ -328,7 +342,9 @@ class ApiService {
     );
 
     final data = response['data'] as List<dynamic>;
-    return data.map((json) => TravellerRecommendationModel.fromJson(json)).toList();
+    return data
+        .map((json) => TravellerRecommendationModel.fromJson(json))
+        .toList();
   }
 
   Future<List<MostActiveTravellerModel>> getMostActiveTravellers() async {
@@ -355,9 +371,15 @@ class ApiService {
       '$_baseUrl/plans/history',
       headers: headers,
     );
-    final data = response['data'] as List<dynamic>;
-    return data.map((json) => PastTripModel.fromJson(json)).toList();
+
+    final rawData = response['data'];
+    if (rawData == null || rawData is! List) {
+      return [];
+    }
+
+    return rawData.map((json) => PastTripModel.fromJson(json)).toList();
   }
+
 
   Future<void> deletePastTrip(int progressId) async {
     final headers = await _getHeaders();
@@ -463,8 +485,12 @@ class ApiService {
       '$_baseUrl/reviews/trip/me',
       headers: headers,
     );
-    final data = response['data'] as List<dynamic>;
-    return data.map((json) => MyTripReviewModel.fromJson(json)).toList();
+    final rawData = response['data'];
+    if (rawData == null || rawData is! List) {
+      return []; // Jika kosong/null, kembalikan list kosong
+    }
+
+    return rawData.map((json) => MyTripReviewModel.fromJson(json)).toList();
   }
 
   Future<List<ReviewOnMyPlanModel>> getReviewsOnMyPlans() async {
@@ -475,8 +501,11 @@ class ApiService {
       '$_baseUrl/reviews/trip/my-plans',
       headers: headers,
     );
-    final data = response['data'] as List<dynamic>;
-    return data.map((json) => ReviewOnMyPlanModel.fromJson(json)).toList();
+    final rawData = response['data'];
+    if (rawData == null || rawData is! List) {
+      return []; // Jika kosong/null, kembalikan list kosong
+    }
+    return rawData.map((json) => ReviewOnMyPlanModel.fromJson(json)).toList();
   }
 
   Future<void> deleteReviewTrips(int reviewId) async {
@@ -525,7 +554,7 @@ class ApiService {
 
     for (int i = 0; i < imageBytesList.length; i++) {
       request.files.add(http.MultipartFile.fromBytes(
-        'image', 
+        'image',
         imageBytesList[i],
         filename: 'review_$i.jpg',
       ));
@@ -583,5 +612,216 @@ class ApiService {
     );
 
     return response != null && response['message'] != null;
+  }
+
+  Future<PlanModel?> postPlanMultipart({
+    required String title,
+    required String description,
+    required String status,
+    required List<String> categories,
+    required List<Map<String, dynamic>> routes,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) throw Exception("User not logged in");
+
+    final token = await user.getIdToken();
+    final uri = Uri.parse('$_baseUrl/plans/');
+
+    final request = http.MultipartRequest('POST', uri);
+
+    // 🔐 Auth
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // 📝 FORM FIELDS (HARUS STRING)
+    request.fields['title'] = title;
+    request.fields['description'] = description;
+    request.fields['status'] = status;
+
+    // backend pakai category_ids (comma separated)
+    request.fields['category_ids'] = categories.join(',');
+
+    // backend expect JSON string
+    request.fields['routes'] = jsonEncode(routes);
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final decoded = jsonDecode(response.body);
+      final data = decoded['data'];
+      if (data == null) return null;
+      return PlanModel.fromJson(data);
+    } else {
+      throw Exception("Post plan failed: ${response.body}");
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllBookmarks() async {
+    final headers = await _getHeaders();
+    final response = await _client.get('$_baseUrl/bookmarks/', headers: headers);
+
+    final data = response['data'] as List<dynamic>;
+
+    return data.map((bookmark) {
+      final route = bookmark['route'] ?? {};
+      return {
+        'bookmark_id': bookmark['bookmark_id'],
+        'title': route['title'] ?? '',
+        'description': route['description'] ?? '',
+        'address': route['address'] ?? '',
+        'image': route['image'] ?? '',
+      };
+    }).toList();
+  }
+
+ Future<List<Map<String, dynamic>>> getActiveTripSessions() async {
+  final headers = await _getHeaders();
+  final response = await _client.get(
+    '$_baseUrl/trip-sessions/active',
+    headers: headers,
+  );
+
+  final data = response['data'];
+  if (data is List) {
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  return [];
+}
+
+
+  Future<bool> postTripSessionAction({
+    required int planId,
+    required String action,
+    required int routeId,
+  }) async {
+    final headers = await _getHeaders();
+
+    final response = await _client.post(
+      '$_baseUrl/trip-sessions/$planId', // ✅ BENAR
+      {
+        'action': action,
+        'route_id': routeId,
+      },
+      headers: headers,
+    );
+
+    return response['message'] != null;
+  }
+
+  Future<Map<String, dynamic>?> verifyLocation(
+    int planId,
+    int stepOrder, // ✅ Ubah nama param juga biar gak bingung
+    LatLng currentLocation,
+  ) async {
+    final headers = await _getHeaders();
+
+    final response = await _client.post(
+      '$_baseUrl/plans/$planId/verify-location',
+      {
+        "step_order": stepOrder,
+        "latitude": currentLocation.latitude,
+        "longitude": currentLocation.longitude,
+      },
+      headers: headers,
+    );
+
+    return response;
+  }
+Future<int> getCurrentSessionId() async {
+  final sessions = await getActiveTrips(); // ← versi model
+  if (sessions.isEmpty) throw Exception("No active trip");
+
+  return sessions.first.sessionId;
+}
+
+
+  Future<Map<String, dynamic>> postTripSessionStart(
+      int planId, int routeId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    final response = await _client.post(
+      '$_baseUrl/trip-sessions/$planId',
+      {
+        'action': 'start',
+        'route_id': routeId,
+      },
+      headers: headers,
+    );
+
+    if (response.containsKey('data')) {
+      return response['data'];
+    }
+
+    throw Exception("Failed to start trip session");
+  }
+
+  Future<PlanModel?> getPlanDetailForTrip(int planId) async {
+    final headers = await _getHeaders();
+    final response = await _client.get(
+      '$_baseUrl/plans/$planId/detail',
+      headers: headers,
+    );
+
+    final data = response['data'];
+    if (data == null) return null;
+
+    // Ambil plan info dari data['plan']
+    final planJson = data['plan'] as Map<String, dynamic>? ?? {};
+
+    // Ambil routes list dari data['routes']
+    final routesJson = data['routes'] as List<dynamic>? ?? [];
+
+    // Gabungkan ke satu JSON yang cocok dengan PlanModel
+    final merged = {
+      "plan_id": planJson['plan_id'],
+      "title": planJson['title'],
+      "description": planJson['description'],
+      "banner": data['banner'], // dari root
+      "categories": planJson['categories'] ?? [],
+      "status": planJson['status'] ?? "",
+      "author_name": planJson['author_name'] ?? "",
+      "rating": (data['rating'] ?? 0),
+      "routes": routesJson, // pakai yang ini!
+    };
+
+    return PlanModel.fromJson(merged);
+  }
+
+    Future<List<ActiveTripSessionModel>> getActiveTrips() async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    final response = await _client.get(
+      '$_baseUrl/trip-sessions/active',
+      headers: headers,
+    );
+
+    final rawData = response['data'];
+
+    if (rawData == null) {
+      return [];
+    }
+
+    // Pastikan rawData is a List
+    if (rawData is List) {
+      return rawData
+          .map((json) => ActiveTripSessionModel.fromJson(json))
+          .toList();
+    }
+
+    // Jika hanya 1 object
+    return [ActiveTripSessionModel.fromJson(rawData)];
+  }
+
+  Future<void> cancelTripSessions(int planId) async {
+    final headers = await _getHeaders();
+    if (headers == null) throw Exception("User not logged in");
+
+    await _client.delete(
+      '$_baseUrl/trip-sessions/cancel?plan_id=$planId',
+      headers: headers,
+    );
   }
 }

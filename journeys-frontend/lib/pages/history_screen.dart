@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:journeys/models/past_trip_model.dart';
-import 'package:journeys/models/favorite_trip_model.dart';
-import 'package:journeys/services/api_service.dart';
 import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:journeys/models/favorite_trip_model.dart';
+import 'package:journeys/models/past_trip_model.dart';
+import 'package:journeys/services/api_service.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -13,7 +15,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _MyHistoryScreen extends State<HistoryScreen> {
   final ApiService _apiService = ApiService();
-  
+
   // State for Past Trips
   List<PastTripModel> _pastTrips = [];
   bool _isLoadingPastTrips = true;
@@ -24,9 +26,16 @@ class _MyHistoryScreen extends State<HistoryScreen> {
   bool _isLoadingFavorites = true;
   String? _errorFavorites;
 
+  // State for Active Trip
+ List<Map<String, dynamic>> _activeTrips = [];
+bool _isLoadingActiveTrip = true;
+String? _errorActiveTrip;
+
+
   @override
   void initState() {
     super.initState();
+    _fetchActiveTrip();
     _fetchPastTrips();
     _fetchFavoriteTrips();
   }
@@ -55,7 +64,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     }
   }
 
-    Future<void> _fetchFavoriteTrips() async {
+  Future<void> _fetchFavoriteTrips() async {
     try {
       if (!mounted) return;
       setState(() {
@@ -74,6 +83,33 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         setState(() {
           _errorFavorites = 'Failed to load favorite trips: $e';
           _isLoadingFavorites = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchActiveTrip() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingActiveTrip = true;
+        _errorActiveTrip = null;
+      });
+
+      final data = await _apiService.getActiveTripSessions();
+      if (mounted) {
+        setState(() {
+          setState(() {
+  _activeTrips = data;
+  _isLoadingActiveTrip = false;
+});
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorActiveTrip = 'Failed to load active trip.';
+          _isLoadingActiveTrip = false;
         });
       }
     }
@@ -101,7 +137,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     if (confirm == true) {
       try {
         await _apiService.deletePastTrip(progressId);
-        _fetchPastTrips(); // Refresh the list
+        _fetchPastTrips();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trip history deleted successfully')),
@@ -138,7 +174,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
     if (confirm == true) {
       try {
         await _apiService.removeFavoriteTrip(favoriteId);
-        _fetchFavoriteTrips(); // Refresh the list
+        _fetchFavoriteTrips();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Removed from favorites')),
@@ -155,7 +191,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
   }
 
   Future<void> _handleRemoveAllFavorites() async {
-     final confirm = await showDialog<bool>(
+    final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove All Favorites'),
@@ -172,43 +208,38 @@ class _MyHistoryScreen extends State<HistoryScreen> {
         ],
       ),
     );
-     if (confirm == true) {
-        try {
-          // Create a list of futures to delete each favorite
-          final List<Future> deleteFutures = _favoriteTrips.map((trip) {
-            return _apiService.removeFavoriteTrip(trip.favoriteId);
-          }).toList();
+    if (confirm == true) {
+      try {
+        final List<Future> deleteFutures = _favoriteTrips.map((trip) {
+          return _apiService.removeFavoriteTrip(trip.favoriteId);
+        }).toList();
 
-          // Wait for all delete operations to complete
-          await Future.wait(deleteFutures);
-
-          _fetchFavoriteTrips(); // Refresh the list
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('All favorites have been removed')),
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('An error occurred while removing favorites: $e')),
-            );
-          }
+        await Future.wait(deleteFutures);
+        _fetchFavoriteTrips();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('All favorites have been removed')),
+          );
         }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('An error occurred while removing favorites: $e')),
+          );
+        }
+      }
     }
   }
 
   static const Color _darkBlue = Color(0xFF1C314A);
   static const Color _darkGrey = Color(0xFF1C314A);
   static const Color _lightGreyText = Colors.black;
-
   static const Color _backgroundColor = Color(0xFFe9ebee);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
-
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -219,8 +250,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
           fontWeight: FontWeight.bold,
         ),
       ),
-
-
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
@@ -238,20 +267,15 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                 ),
               ],
             ),
-            
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- SECTION 1: YOUR TRIP NOW ---
                   _buildSectionHeader('Your trip now', 'Cancel Trip'),
                   const SizedBox(height: 16),
                   _buildCurrentTripCard(),
-
                   const SizedBox(height: 32),
-
-                  // --- SECTION 2: FAVOURITES ---
                   _buildSectionHeader('Favourites', 'Remove all', onPressed: _handleRemoveAllFavorites),
                   const SizedBox(height: 16),
                   _isLoadingFavorites
@@ -283,10 +307,7 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                                     );
                                   },
                                 ),
-
                   const SizedBox(height: 32),
-
-                  // --- SECTION 3: YOUR PAST TRIP'S ---
                   _buildSectionHeader('Your past trip\'s', 'Remove all'),
                   const SizedBox(height: 16),
                   _isLoadingPastTrips
@@ -318,21 +339,20 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                                     );
                                   },
                                 ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildSectionHeader(String title, String buttonText, {VoidCallback? onPressed}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Judul Section
         Text(
           title,
           style: const TextStyle(
@@ -341,7 +361,6 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             color: Color(0xFF1F3651),
           ),
         ),
-        // Tombol Aksi
         ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
@@ -360,90 +379,53 @@ class _MyHistoryScreen extends State<HistoryScreen> {
   }
 
   Widget _buildCurrentTripCard() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        // Style dari profile_screen.dart
-        borderRadius: BorderRadius.circular(4.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(60),
-            spreadRadius: 1,
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.image_not_supported_outlined,
-              color: Colors.grey[500],
-              size: 40,
-            ),
-          ),
-
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Seasonal Trip',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _darkBlue,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'My own schedule trip to get to somewhere full with guidance to someplace i like but i can go anywhere...',
-                  style: TextStyle(fontSize: 12, color: _lightGreyText),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: _lightGreyText),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Bedugul - Gianyar',
-                      style: TextStyle(fontSize: 12, color: _lightGreyText),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Tombol Panah
-          Container(
-            decoration: BoxDecoration(
-              color: _darkGrey,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.arrow_forward_ios,
-                  color: Colors.white, size: 16),
-            ),
-          ),
-        ],
-      ),
-    );
+  if (_isLoadingActiveTrip) {
+    return const Center(child: CircularProgressIndicator());
   }
 
-  /// Helper untuk kartu "Favourites" dan "Past Trip's"
+  if (_errorActiveTrip != null) {
+    return Center(child: Text(_errorActiveTrip!));
+  }
+
+  if (_activeTrips.isEmpty) {
+    return const Center(child: Text('You have no active trips right now.'));
+  }
+
+  return Column(
+    children: _activeTrips.map((trip) {
+      final plan = trip['Plan'] ?? {};
+      final planId = plan['plan_id'] ?? trip['plan_id'];
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _buildTripCard(
+          title: plan['title'] ?? '',
+          description: plan['description'] ?? '',
+          location: plan['routes'] != null && plan['routes'].isNotEmpty
+              ? plan['routes'][0]['address'] ?? 'No location'
+              : 'No location',
+          icon: Icons.arrow_forward_ios,
+          banner: plan['banner'],
+          onIconPressed: () {
+ context.push(
+  '/trip-schedule',
+  extra: {
+    'planId': planId,
+    'key': ValueKey(planId), // <- Tambahkan key unik
+  },
+);
+
+
+},
+
+          iconColor: Colors.white,
+        ),
+      );
+    }).toList(),
+  );
+}
+
+
   Widget _buildTripCard({
     required String title,
     required String description,
@@ -479,29 +461,19 @@ class _MyHistoryScreen extends State<HistoryScreen> {
                   ? Image.memory(
                       base64Decode(banner.split(',').last),
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
+                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
                     )
-                  : const Icon(
-                      Icons.image_not_supported_outlined,
-                      color: Colors.grey,
-                      size: 40,
-                    ),
+                  : const Icon(Icons.image_not_supported_outlined, color: Colors.grey, size: 40),
             ),
           ),
           const SizedBox(width: 12),
-          // Kolom Teks
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _darkBlue,
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: _darkBlue),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -528,11 +500,20 @@ class _MyHistoryScreen extends State<HistoryScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Ikon (Bookmark/Delete)
-          IconButton(
-            onPressed: onIconPressed,
-            icon: Icon(icon, color: iconColor ?? _darkGrey, size: 24),
-          ),
+         Container(
+  height: 40,
+  width: 40,
+  decoration: BoxDecoration(
+    color: _darkGrey,
+    borderRadius: BorderRadius.circular(12),
+  ),
+  child: IconButton(
+    icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+    onPressed: onIconPressed,
+    tooltip: 'Open Schedule',
+  ),
+),
+
         ],
       ),
     );
