@@ -5,6 +5,7 @@ import RouteCard from '../components/RouteCard';
 import { useData } from '../context/DataContext';
 import apiService from '../services/apiService';
 import Swal from 'sweetalert2';
+import placeholderImage from '../assets/images/placeholderTrip.png';
 
 // --- 1. Custom Hook for Data Fetching ---
 const useTripDetail = (id) => {
@@ -184,7 +185,7 @@ const TripDetailPage = () => {
   }
 
   const { plan, routes, rating } = tripData;
-  const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : 'https://via.placeholder.com/1200x400?text=Trip+Banner';
+  const tripImage = plan.banner ? `data:image/jpeg;base64,${plan.banner}` : placeholderImage;
 
   return (
     <>
@@ -239,7 +240,7 @@ const TripDetailPage = () => {
                   routes.map((item, index) => (
                     <RouteCard
                       key={item.route_id || index}
-                      image={item.image ? `data:image/jpeg;base64,${item.image}` : undefined}
+                      image={item.image ? `data:image/jpeg;base64,${item.image}` : placeholderImage}
                       title={item.title}
                       activity={item.description}
                       location={item.address}

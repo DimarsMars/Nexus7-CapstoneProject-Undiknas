@@ -5,6 +5,7 @@ import TripCard from '../components/TripCard';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/apiService';
+import placeholderImage from '../assets/images/placeholderTrip.png';
 
 const ExplorePage = () => {
   const navigate = useNavigate();
@@ -158,7 +159,7 @@ const ExplorePage = () => {
                   title={plan.title}
                   author={plan.author_name || "Unknown Author"}
                   rating={plan.rating}
-                  image={`data:image/jpeg;base64,${plan.banner}`}
+                  image={plan.banner ? `data:image/jpeg;base64,${plan.banner}` : placeholderImage}
                   className={isBigCard ? "md:col-span-2 h-64 md:h-80" : "h-64"}
                   onClick={() => handleCardClick(plan.plan_id)}
                 />

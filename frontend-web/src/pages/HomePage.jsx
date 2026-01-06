@@ -8,6 +8,7 @@ import HeroSection from "../components/HeroSection";
 import PlanCategorySection from "../components/PlanCategorySection"; // Renamed import
 import TravellerSection from "../components/TravellerSection";
 import TripCard from "../components/TripCard";
+import placeholderImage from '../assets/images/placeholderTrip.png';
 
 const HomePage = () => {
   const { user } = useAuth();
@@ -61,7 +62,7 @@ const HomePage = () => {
                     title={plan.title}
                     author={plan.author_name || "Unknown Author"}
                     rating={plan.rating} 
-                    image={`data:image/jpeg;base64,${plan.banner}`}
+                    image={plan.banner ? `data:image/jpeg;base64,${plan.banner}` : placeholderImage}
                     className={
                         index === 0
                         ? "md:col-span-2 h-64 md:h-80" 
@@ -87,7 +88,7 @@ const HomePage = () => {
                     title={plan.title}
                     author={plan.author_name || "Unknown Author"}
                     rating={plan.rating} 
-                    image={`data:image/jpeg;base64,${plan.banner}`}
+                    image={plan.banner ? `data:image/jpeg;base64,${plan.banner}` : placeholderImage}
                     className={
                         index === 0
                         ? "md:col-span-2 h-64 md:h-80" 

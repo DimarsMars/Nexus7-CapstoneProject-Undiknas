@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 
 import Swal from 'sweetalert2'; // Import SweetAlert untuk notifikasi
+import placeholderImage from '../assets/images/placeholderTrip.png';
 
 // Import komponen kustom untuk menampilkan data trip dan ulasan
 import TripCard from '../components/TripCard';
@@ -295,7 +296,7 @@ const MyProfilePage = () => {
                                     title={trip.title}
                                     author={trip.author_name || "Unknown Author"}
                                     rating={trip.rating}
-                                    image={getImageSrc(trip.banner)}
+                                    image={trip.banner ? `data:image/jpeg;base64,${trip.banner}` : placeholderImage}
                                     // Logika index === 0 agar kartu pertama selalu besar
                                     className={index === 0 ? "h-56 md:col-span-2 md:h-72" : "h-56 md:h-60"}
                                     onClick={() => handleCardClick(trip.plan_id)}
