@@ -319,9 +319,9 @@ class _MyEditProfileScreen extends State<EditProfileScreen> {
                                 alignment: Alignment.center,
                                 children: [
                                   const Icon(
-                                    CupertinoIcons.shield_fill,
+                                    Icons.brightness_7,
                                     color: Color(0xFF1C314A),
-                                    size: 32,
+                                    size: 34,
                                   ),
                                   Text(
                                     _profile?.rank.split(' ').last.replaceAll('lvl', '') ?? '?',

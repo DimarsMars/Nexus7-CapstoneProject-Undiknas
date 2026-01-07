@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:journeys/models/profile_model.dart';
@@ -143,7 +142,7 @@ class _MyProfileScreen extends State<ProfileScreen> {
                               // Widget untuk menampilkan Foto Profil (Base64 atau Default Icon)
                               Container(
                                 width: 120.0,
-                                height: 120.0,
+                                height: 230.0,
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1C314A),
                                   shape: BoxShape.circle,
@@ -205,9 +204,9 @@ class _MyProfileScreen extends State<ProfileScreen> {
                                       alignment: Alignment.center,
                                       children: [
                                         const Icon(
-                                          CupertinoIcons.shield_fill,
+                                          Icons.brightness_7,
                                           color: Color(0xFF1C314A),
-                                          size: 32,
+                                          size: 34,
                                         ),
                                         Text(
                                           _profile!.rank
@@ -277,11 +276,6 @@ class _MyProfileScreen extends State<ProfileScreen> {
 
                               const SizedBox(height: 40),
 
-                              // Daftar Menu Informasi Profil (Bahasa, Lokasi, Rute, Rating)
-                              _buildMenuItem(context,
-                                  'Languages: ${_profile!.languages ?? ''}'),
-                              _buildMenuItem(context,
-                                  'Location: ${_profile!.location ?? ''}'),
                               _buildMenuItem(context, 'My Route\'s',
                                   onTap: () {
                                 Navigator.push(
